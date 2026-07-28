@@ -15,7 +15,7 @@ namespace UnityEngine.XR.Content.Interaction
             "Create new keys by selecting \"Assets/Create/XR/Key Lock System/Key\"")]
         List<Key> m_Keys;
 
-        HashSet<int> m_KeysHashSet = new HashSet<int>();
+        HashSet<EntityId> m_KeysHashSet = new HashSet<EntityId>();
 
         void Awake()
         {
@@ -35,7 +35,7 @@ namespace UnityEngine.XR.Content.Interaction
             foreach (var key in m_Keys)
             {
                 if (key != null)
-                    m_KeysHashSet.Add(key.GetInstanceID());
+                    m_KeysHashSet.Add(key.GetEntityId());
             }
         }
 
@@ -49,7 +49,7 @@ namespace UnityEngine.XR.Content.Interaction
                 return;
 
             m_Keys.Add(key);
-            m_KeysHashSet.Add(key.GetInstanceID());
+            m_KeysHashSet.Add(key.GetEntityId());
         }
 
         /// <summary>
@@ -61,13 +61,13 @@ namespace UnityEngine.XR.Content.Interaction
             m_Keys.Remove(key);
 
             if (key != null)
-                m_KeysHashSet.Remove(key.GetInstanceID());
+                m_KeysHashSet.Remove(key.GetEntityId());
         }
 
         /// <inheritdoc />
         public bool Contains(Key key)
         {
-            return key != null && m_KeysHashSet.Contains(key.GetInstanceID());
+            return key != null && m_KeysHashSet.Contains(key.GetEntityId());
         }
     }
 }

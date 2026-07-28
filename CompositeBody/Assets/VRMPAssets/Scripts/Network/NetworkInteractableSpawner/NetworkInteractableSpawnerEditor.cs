@@ -118,10 +118,11 @@ public class NetworkInteractableSpawnerEditor : Editor
             return root;
     }
 
-    private string GetFoldoutDataKey(SerializedObject serializedObject)
-    {
-        return $"{serializedObject.GetEntityID()}.{serializedObject.targetObject.name}";
-    }
+  
+private string GetFoldoutDataKey(SerializedObject serializedObject)
+{
+    return $"{serializedObject.targetObject.GetEntityId()}.{serializedObject.targetObject.name}";
+}
 }
 
 [CustomPropertyDrawer(typeof(MeshPreviewHelper))]
