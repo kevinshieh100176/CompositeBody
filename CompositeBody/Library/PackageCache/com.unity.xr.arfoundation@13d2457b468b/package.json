@@ -1,0 +1,52 @@
+{
+  "name": "com.unity.xr.arfoundation",
+  "displayName": "AR Foundation",
+  "version": "6.5.0",
+  "unity": "6000.0",
+  "description": "AR Foundation enables you to create multi-platform augmented reality (AR) apps with Unity. To learn more about AR Foundation, click the Documentation link above.",
+  "keywords": [
+    "xreditorsubsystem",
+    "xr",
+    "ar",
+    "augmented",
+    "mixed",
+    "reality",
+    "foundation",
+    "core",
+    "subsystem",
+    "simulation",
+    "visualscripting"
+  ],
+  "dependencies": {
+    "com.unity.editorcoroutines": "1.0.0",
+    "com.unity.inputsystem": "1.6.3",
+    "com.unity.xr.core-utils": "2.5.1",
+    "com.unity.xr.management": "4.4.0",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.mathematics": "1.2.6",
+    "com.unity.modules.particlesystem": "1.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.unityanalytics": "1.0.0",
+    "com.unity.modules.unitywebrequest": "1.0.0"
+  },
+  "samples": [
+    {
+      "displayName": "Debug Visualizers",
+      "description": "Runtime debug visualizers for AR Foundation trackables. Includes a prefab for Markers that displays real-time data properties. Assign it to the 'Prefab' slot on your Trackable Manager to visualize trackable behavior and assist with runtime debugging.",
+      "path": "Samples~/DebugVisualizers"
+    }
+  ],
+  "_upm": {
+    "changelog": "No changes"
+  },
+  "upmCi": {
+    "footprint": "92684dd5ff2efd3e35fa622333aca615a4b0c59f"
+  },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@6.5/manual/index.html",
+  "repository": {
+    "url": "https://github.cds.internal.unity3d.com/unity/arfoundation.git",
+    "type": "git",
+    "revision": "116af15c3fda31344435771fa9e9e7553f68132b"
+  },
+  "_fingerprint": "13d2457b468bdba0500ae2635522c877a0bc9645"
+}

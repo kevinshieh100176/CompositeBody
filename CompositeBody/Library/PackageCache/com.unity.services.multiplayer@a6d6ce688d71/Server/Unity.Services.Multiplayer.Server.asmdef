@@ -1,0 +1,56 @@
+{
+    "name": "Unity.Services.Multiplayer.Server",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Collections",
+        "Unity.Services.Core",
+        "Unity.Services.Core.Internal",
+        "Unity.Services.Authentication",
+        "Unity.Services.QoS",
+        "Unity.NetCode",
+        "Unity.Netcode.Runtime",
+        "Unity.Networking.Transport",
+        "Unity.Services.Multiplayer",
+        "Unity.Services.Multiplayer.Multiplay",
+        "Unity.Services.Multiplayer.Multiplay.Wire.Internal",
+        "Unity.Entities"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "LinuxStandalone64",
+        "macOSStandalone",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_SERVER || ENABLE_UCS_SERVER"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.netcode.gameobjects",
+            "expression": "1.5.0",
+            "define": "GAMEOBJECTS_NETCODE_AVAILABLE"
+        },
+        {
+            "name": "com.unity.netcode.gameobjects",
+            "expression": "2.0.0",
+            "define": "GAMEOBJECTS_NETCODE_2_AVAILABLE"
+        },
+        {
+            "name": "com.unity.netcode",
+            "expression": "1.3.2",
+            "define": "ENTITIES_NETCODE_AVAILABLE"
+        },
+        {
+            "name": "com.unity.netcode",
+            "expression": "1.7.0",
+            "define": "ENTITIES_NETCODE_HOST_MIGRATION_AVAILABLE"
+        }
+    ],
+    "noEngineReferences": false
+}

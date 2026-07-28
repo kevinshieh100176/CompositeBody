@@ -1,0 +1,23 @@
+.hidden {
+    display: none;
+}
+
+.session-viewer-header {
+    -unity-font-style: bold;
+    margin-top: 4px;
+}
+
+.vertical-spacer {
+    height: 10px;
+}
+
+.not-connected-label {
+    -unity-font-style: italic;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.state__error .unity-base-text-field__input--single-line{
+    border-color: red;
+    border-width: 1px;
+}

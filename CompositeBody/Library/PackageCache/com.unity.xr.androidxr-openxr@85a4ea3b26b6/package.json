@@ -1,0 +1,40 @@
+{
+  "name": "com.unity.xr.androidxr-openxr",
+  "displayName": "Unity OpenXR Android XR",
+  "version": "1.3.1",
+  "unity": "6000.0",
+  "unityRelease": "23f1",
+  "description": "Enables you to build mixed reality apps for Android XR devices by implementing support for Android XR extensions.",
+  "keywords": [
+    "openxr",
+    "google",
+    "android",
+    "xr",
+    "vr",
+    "mr",
+    "mixed",
+    "reality",
+    "virtual",
+    "arfoundation"
+  ],
+  "dependencies": {
+    "com.unity.xr.openxr": "1.17.0",
+    "com.unity.xr.arfoundation": "6.4.0",
+    "com.unity.xr.management": "4.5.0",
+    "com.unity.xr.hands": "1.6.1",
+    "com.unity.xr.compositionlayers": "2.3.0"
+  },
+  "_upm": {
+    "changelog": "### Changed\n- Changed the minimum supported Android SDK version to API level 25 for Unity 6.3+ and level 26 for Unity 6.5+, matching the minimum supported SDK versions for each Unity version.\n- Android XR: Performance Metrics and Hand Mesh Data features now being included as default in Android XR feature group.\n- Moved `AndroidXRSettingsInitializer` asset file from the **Assets** folder to the **ProjectSettings** folder and renamed it to `AndroidXRSettingsManager.asset`.\n\n### Fixed\n- Fixed usages of APIs that were deprecated in AR Foundation 6.5 and Unity 6.3.\n- Fixed internal build logic so that builds from the Unity 6.6 alpha now correctly contain their Android App Manifest entries.\n- Fixed settings management singleton so it no longer modifies its underlying asset during import, preventing related warnings."
+  },
+  "upmCi": {
+    "footprint": "345d1399f4084160b338a9d9e7d7c7831ea08fa7"
+  },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.xr.androidxr-openxr@1.3/manual/index.html",
+  "repository": {
+    "url": "https://github.cds.internal.unity3d.com/unity/xr.sdk.androidxr-openxr.git",
+    "type": "git",
+    "revision": "423f16cf14910c4507353e95505ca2629fb4b773"
+  },
+  "_fingerprint": "85a4ea3b26b601d032ee7e1607802b0c88343ac5"
+}

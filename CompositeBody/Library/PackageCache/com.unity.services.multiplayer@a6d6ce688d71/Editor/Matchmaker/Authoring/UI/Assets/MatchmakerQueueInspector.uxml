@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:VisualElement name="root-container">
+        <ui:Foldout text="Queue Settings" style="margin-bottom: 7px;">
+            <uie:PropertyField binding-path="Name" name="queue-name-field" label="Queue Name" tooltip="The name of this matchmaking queue"/>
+            <uie:PropertyField binding-path="MaxPlayersPerTicket" name="max-players-field" label="Max Players" tooltip="Maximum number of players allowed per ticket"/>
+        </ui:Foldout>
+        <ui:Foldout text="Pool Settings" style="margin-bottom: 7px;">
+            <uie:PropertyField binding-path="DefaultPool.Name" name="pool-name-field" label="Pool Name" tooltip="The name of the default pool"/>
+            <uie:PropertyField binding-path="DefaultPool.TimeoutSeconds" name="timeout-seconds-field" label="Timeout (seconds)" tooltip="How long to wait before timing out a matchmaking request"/>
+        </ui:Foldout>
+        <uie:PropertyField binding-path="DefaultPool.MatchHosting" label="Hosting" tooltip="The match hosting type"/>
+        <ui:Foldout text="Match definition" style="margin-bottom: 7px;">
+            <ui:ListView name="match-logic-field" binding-path="DefaultPool.MatchLogic.MatchDefinition.Teams" show-add-remove-footer="true" show-border="true" virtualization-method="DynamicHeight" show-bound-collection-size="false" show-alternating-row-backgrounds="All" binding-source-selection-mode="AutoAssign" item-template="./MatchDefinitionTeam.uxml?fileID=9197481963319205126&amp;guid=4d9facdacede4aab81fbc5658d1ddc70&amp;type=3#MatchDefinitionTeam" class="unity-base-field__inspector-field"/>
+        </ui:Foldout>
+        <ui:Label text="To edit additional queue settings, open the &lt;a href=&quot;&quot;&gt;Unity Dashboard&lt;/a&gt;." name="DashboardLinkLabel" style="flex-wrap: wrap; white-space: normal;"/>
+    </ui:VisualElement>
+</ui:UXML>

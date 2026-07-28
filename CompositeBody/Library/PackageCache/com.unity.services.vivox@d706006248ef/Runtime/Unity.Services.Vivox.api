@@ -1,0 +1,455 @@
+// This file is generated. Do not modify by hand.
+// XML documentation file not found. To check if public methods have XML comments,
+// make sure the XML doc file is present and located next to the scraped dll
+namespace Unity.Services.Core
+{
+    public static class VivoxServicesExtensions
+    {
+        public static Unity.Services.Vivox.IVivoxService GetVivoxService(this IUnityServices unityServices);
+    }
+}
+
+namespace Unity.Services.Vivox
+{
+    public readonly struct AudioClippingProtectorParameters
+    {
+        public readonly float MinimumThresholdDb;
+        public readonly float ThresholdBoostSlope;
+        public AudioClippingProtectorParameters(float minimumThresholdDb, float thresholdBoostSlope) {}
+    }
+
+    public enum AudioFadeModel
+    {
+        ExponentialByDistance = 3,
+        InverseByDistance = 1,
+        LinearByDistance = 2,
+    }
+
+    public enum BluetoothProfile
+    {
+        A2DP = 0,
+        HFP = 1,
+    }
+
+    public class Channel3DProperties
+    {
+        public int AudibleDistance { get; }
+        public float AudioFadeIntensityByDistance { get; }
+        public AudioFadeModel AudioFadeModel { get; }
+        public int ConversationalDistance { get; }
+        public Channel3DProperties() {}
+        public Channel3DProperties(int audibleDistance, int conversationalDistance, float audioFadeIntensityByDistanceaudio, AudioFadeModel audioFadeModel) {}
+        public override string ToString();
+    }
+
+    public sealed class ChannelOptions
+    {
+        public bool IsLargeText { get; set; }
+        public bool MakeActiveChannelUponJoining { get; set; }
+        public ChannelOptions() {}
+    }
+
+    public enum ChatCapability
+    {
+        AudioOnly = 1,
+        TextAndAudio = 2,
+        TextOnly = 0,
+    }
+
+    public sealed class ChatHistoryQueryOptions
+    {
+        public string PlayerId { get; set; }
+        public string SearchText { get; set; }
+        public System.Nullable<System.DateTime> TimeEnd { get; set; }
+        public System.Nullable<System.DateTime> TimeStart { get; set; }
+        public ChatHistoryQueryOptions() {}
+    }
+
+    public sealed class ConversationQueryOptions
+    {
+        public System.Nullable<System.DateTime> CutoffTime { get; set; }
+        public int PageCursor { get; set; }
+        public int PageSize { get; set; }
+        public ConversationQueryOptions() {}
+    }
+
+    public enum ConversationType
+    {
+        ChannelConversation = 0,
+        DirectedMessageConversation = 1,
+    }
+
+    public static class InitializationOptionsExtensions
+    {
+        public static Unity.Services.Core.InitializationOptions SetVivoxCredentials(this Unity.Services.Core.InitializationOptions self, string server, string domain, string issuer, string tokenKey = @"");
+    }
+
+    public enum IosVoiceProcessingIOModes
+    {
+        Always = 2,
+        ErrorOccurred = -1,
+        Never = 0,
+        OnSpeakerPhone = 1,
+    }
+
+    public interface IVivoxGlobalAudioSettings
+    {
+        public bool AudioClippingProtectorEnabled { get; set; }
+        public AudioClippingProtectorParameters AudioClippingProtectorParameters { get; set; }
+        public bool AutomaticGainControlEnabled { get; set; }
+        public bool DynamicVoiceProcessingSwitchingEnabled { get; set; }
+        public bool NoiseSuppressionEnabled { get; set; }
+        public bool PlatformAcousticEchoCancellationEnabled { get; set; }
+        public bool PositionalChannelVolumeProtectionEnabled { get; set; }
+        public bool VivoxAcousticEchoCancellationEnabled { get; set; }
+        public bool VolumeBasedDuplicationSuppressionEnabled { get; set; }
+    }
+
+    public interface IVivoxService
+    {
+        public event System.Action AvailableInputDevicesChanged;
+        public event System.Action AvailableOutputDevicesChanged;
+        public event System.Action<string> ChannelJoined;
+        public event System.Action<string> ChannelLeft;
+        public event System.Action<VivoxMessage> ChannelMessageDeleted;
+        public event System.Action<VivoxMessage> ChannelMessageEdited;
+        public event System.Action<VivoxMessage> ChannelMessageReceived;
+        public event System.Action ConnectionFailedToRecover;
+        public event System.Action ConnectionRecovered;
+        public event System.Action ConnectionRecovering;
+        public event System.Action<VivoxMessage> DirectedMessageDeleted;
+        public event System.Action<VivoxMessage> DirectedMessageEdited;
+        public event System.Action<VivoxMessage> DirectedMessageReceived;
+        public event System.Action EffectiveInputDeviceChanged;
+        public event System.Action EffectiveOutputDeviceChanged;
+        public event System.Action<System.Exception> InitializationFailed;
+        public event System.Action Initialized;
+        public event System.Action LoggedIn;
+        public event System.Action LoggedOut;
+        public event System.Action<VivoxParticipant> ParticipantAddedToChannel;
+        public event System.Action<VivoxParticipant> ParticipantRemovedFromChannel;
+        public event System.Action<VivoxMessage> SpeechToTextMessageReceived;
+        public System.Collections.ObjectModel.ReadOnlyDictionary<string, System.Collections.ObjectModel.ReadOnlyCollection<VivoxParticipant>> ActiveChannels { get; }
+        public VivoxInputDevice ActiveInputDevice { get; }
+        public VivoxOutputDevice ActiveOutputDevice { get; }
+        public System.Collections.ObjectModel.ReadOnlyCollection<VivoxInputDevice> AvailableInputDevices { get; }
+        public System.Collections.ObjectModel.ReadOnlyCollection<VivoxOutputDevice> AvailableOutputDevices { get; }
+        public VivoxInputDevice EffectiveInputDevice { get; }
+        public VivoxOutputDevice EffectiveOutputDevice { get; }
+        public VivoxInitializationState InitializationState { get; }
+        public int InputDeviceVolume { get; }
+        public IosVoiceProcessingIOModes IosVoiceProcessingIOMode { get; }
+        public bool IsAudioEchoCancellationEnabled { get; }
+        public bool IsInjectingAudio { get; }
+        public bool IsInputDeviceMuted { get; }
+        public bool IsLoggedIn { get; }
+        public bool IsOutputDeviceMuted { get; }
+        public int OutputDeviceVolume { get; }
+        public string SignedInPlayerId { get; }
+        public System.Collections.ObjectModel.ReadOnlyCollection<string> TextToSpeechAvailableVoices { get; }
+        public string TextToSpeechCurrentVoice { get; }
+        public System.Collections.ObjectModel.ReadOnlyCollection<string> TransmittingChannels { get; }
+        public IVivoxGlobalAudioSettings VivoxGlobalAudioSettings { get; }
+        public System.Threading.Tasks.Task BlockPlayerAsync(string playerId);
+        public System.Threading.Tasks.Task DeleteChannelTextMessageAsync(string channelName, string messageId);
+        public System.Threading.Tasks.Task DeleteDirectTextMessageAsync(string messageId);
+        public void DisableAcousticEchoCancellation();
+        public System.Threading.Tasks.Task DisableAutoVoiceActivityDetectionAsync();
+        public System.Threading.Tasks.Task EditChannelTextMessageAsync(string channelName, string messageId, string newMessage);
+        public System.Threading.Tasks.Task EditDirectTextMessageAsync(string messageId, string newMessage);
+        public void EnableAcousticEchoCancellation();
+        public System.Threading.Tasks.Task EnableAutoVoiceActivityDetectionAsync();
+        public System.Threading.Tasks.Task<System.Collections.ObjectModel.ReadOnlyCollection<VivoxMessage>> GetChannelTextMessageHistoryAsync(string channelName, int requestSize = 10, ChatHistoryQueryOptions chatHistoryQueryOptions = default(ChatHistoryQueryOptions));
+        public System.Threading.Tasks.Task<System.Collections.ObjectModel.ReadOnlyCollection<VivoxConversation>> GetConversationsAsync(ConversationQueryOptions options = default(ConversationQueryOptions));
+        public System.Threading.Tasks.Task<System.Collections.ObjectModel.ReadOnlyCollection<VivoxMessage>> GetDirectTextMessageHistoryAsync(string playerId = default(string), int requestSize = 10, ChatHistoryQueryOptions chatHistoryQueryOptions = default(ChatHistoryQueryOptions));
+        public System.Threading.Tasks.Task<bool> GetSafeVoiceConsentStatus();
+        public System.Threading.Tasks.Task InitializeAsync(VivoxConfigurationOptions options = default(VivoxConfigurationOptions));
+        public bool IsSpeechToTextEnabled(string channelName);
+        public System.Threading.Tasks.Task JoinEchoChannelAsync(string channelName, ChatCapability chatCapability, ChannelOptions channelOptions = default(ChannelOptions));
+        public System.Threading.Tasks.Task JoinGroupChannelAsync(string channelName, ChatCapability chatCapability, ChannelOptions channelOptions = default(ChannelOptions));
+        public System.Threading.Tasks.Task JoinPositionalChannelAsync(string channelName, ChatCapability chatCapability, Channel3DProperties positionalChannelProperties, ChannelOptions channelOptions = default(ChannelOptions));
+        public System.Threading.Tasks.Task LeaveAllChannelsAsync();
+        public System.Threading.Tasks.Task LeaveChannelAsync(string channelName);
+        public System.Threading.Tasks.Task LoginAsync(LoginOptions options = default(LoginOptions));
+        public System.Threading.Tasks.Task LogoutAsync();
+        public void MuteInputDevice();
+        public void MuteOutputDevice();
+        public System.Threading.Tasks.Task SendChannelTextMessageAsync(string channelName, string message, MessageOptions options = default(MessageOptions));
+        public System.Threading.Tasks.Task SendDirectTextMessageAsync(string playerId, string message, MessageOptions options = default(MessageOptions));
+        public void Set3DPosition(UnityEngine.GameObject participantObject, string channelName, bool allowPanning = true);
+        public void Set3DPosition(UnityEngine.Vector3 speakerPos, UnityEngine.Vector3 listenerPos, UnityEngine.Vector3 listenerAtOrient, UnityEngine.Vector3 listenerUpOrient, string channelName, bool allowPanning = true);
+        public System.Threading.Tasks.Task SetActiveInputDeviceAsync(VivoxInputDevice device);
+        public System.Threading.Tasks.Task SetActiveOutputDeviceAsync(VivoxOutputDevice device);
+        public System.Threading.Tasks.Task SetChannelTransmissionModeAsync(TransmissionMode transmissionMode, string channelName = default(string));
+        public System.Threading.Tasks.Task SetChannelVolumeAsync(string channelName, int value);
+        public void SetInputDeviceVolume(int value);
+        public void SetIosVoiceProcessingIOMode(IosVoiceProcessingIOModes IOSVoiceProcessingIOMode);
+        public System.Threading.Tasks.Task SetMessageAsReadAsync(VivoxMessage message, System.Nullable<System.DateTime> seenAt = default(System.Nullable<System.DateTime>));
+        public void SetOutputDeviceVolume(int value);
+        public System.Threading.Tasks.Task<bool> SetSafeVoiceConsentStatus(bool consentGiven);
+        public void SetTokenProvider(IVivoxTokenProvider tokenProvider);
+        public System.Threading.Tasks.Task SetVoiceActivityDetectionPropertiesAsync(int hangover = 2000, int noiseFloor = 576, int sensitivity = 43);
+        public System.Threading.Tasks.Task SpeechToTextDisableTranscription(string channelName);
+        public System.Threading.Tasks.Task SpeechToTextEnableTranscription(string channelName);
+        public void StartAudioInjection(string audioFilePath);
+        public void StopAudioInjection();
+        public void TextToSpeechCancelAllMessages();
+        public void TextToSpeechCancelMessages(TextToSpeechMessageType messageType);
+        public void TextToSpeechSendMessage(string message, TextToSpeechMessageType messageType);
+        public void TextToSpeechSetVoice(string voiceName);
+        public System.Threading.Tasks.Task UnblockPlayerAsync(string playerId);
+        public void UnmuteInputDevice();
+        public void UnmuteOutputDevice();
+    }
+
+    public interface IVivoxTokenProvider
+    {
+        public System.Threading.Tasks.Task<string> GetTokenAsync(string issuer = default(string), System.Nullable<System.TimeSpan> expiration = default(System.Nullable<System.TimeSpan>), string targetUserUri = default(string), string action = default(string), string channelUri = default(string), string fromUserUri = default(string), string realm = default(string));
+    }
+
+    public sealed class LoginOptions
+    {
+        public System.Collections.Generic.List<string> BlockedUserList { get; set; }
+        public string DisplayName { get; set; }
+        public bool EnableTTS { get; set; }
+        public ParticipantPropertyUpdateFrequency ParticipantUpdateFrequency { get; set; }
+        public string PlayerId { get; set; }
+        public System.Collections.Generic.List<string> SpeechToTextLanguages { get; set; }
+        public LoginOptions() {}
+    }
+
+    public sealed class MessageOptions
+    {
+        public string Language { get; set; }
+        public string Metadata { get; set; }
+        public MessageOptions() {}
+    }
+
+    [System.Obsolete(@"The Mint service is being deprecated. MintException will be removed in a future release. Please update your code to no longer rely on this exception type. ", false)] public class MintException : Unity.Services.Core.RequestFailedException
+    {
+        public string Detail { get; }
+        public MintExceptionCode ExceptionCode { get; }
+        public System.Nullable<System.DateTime> ExpiresAt { get; }
+    }
+
+    [System.Obsolete(@"The Mint service and its associated exception codes are being deprecated. MintExceptionCode will be removed in a future release. Please update your code to no longer rely on this enum type. ", false)] public enum MintExceptionCode
+    {
+        FailedToDecodeToken = 406,
+        ServiceDeprecated = -1,
+        Unauthorized = 403,
+    }
+
+    public enum ParticipantPropertyUpdateFrequency
+    {
+        FivePerSecond = 10,
+        Never = 0,
+        OnePerSecond = 50,
+        StateChange = 100,
+        TenPerSecond = 5,
+    }
+
+    public enum TextToSpeechMessageType
+    {
+        LocalPlayback = 1,
+        QueuedLocalPlayback = 4,
+        QueuedRemoteTransmission = 3,
+        QueuedRemoteTransmissionWithLocalPlayback = 5,
+        RemoteTransmission = 0,
+        RemoteTransmissionWithLocalPlayback = 2,
+        ScreenReader = 6,
+    }
+
+    public enum TransmissionMode
+    {
+        All = 2,
+        None = 0,
+        Single = 1,
+    }
+
+    public class VivoxApiException : System.Exception
+    {
+        public string RequestId { get; }
+        public int StatusCode { get; }
+    }
+
+    public sealed class VivoxConfigurationOptions
+    {
+        public BluetoothProfile BluetoothProfile { get; set; }
+        public int CaptureDeviceBufferSizeIntervals { get; set; }
+        public bool DisableAudioDucking { get; set; }
+        public bool DisableDevicePolling { get; set; }
+        public bool DynamicVoiceProcessingSwitching { get; set; }
+        public bool EnableAdvancedAutoLevels { get; set; }
+        public bool EnableDtx { get; set; }
+        public bool EnableFastNetworkChangeDetection { get; set; }
+        public bool ForceCaptureSilence { get; set; }
+        public IosVoiceProcessingIOModes IosVoiceProcessingMode { get; set; }
+        public VivoxLogLevel LogLevel { get; set; }
+        public int LostRtpTimeoutMs { get; set; }
+        public int MaxLoginsPerUser { get; set; }
+        public bool MobileRecordingConflictAvoidance { get; set; }
+        public int NeverRtpTimeoutMs { get; set; }
+        public int RenderDeviceBufferSizeIntervals { get; set; }
+        public int RenderSourceInitialBufferCount { get; set; }
+        public int RenderSourceQueueDepthMax { get; set; }
+        public bool SkipPrepareForVivox { get; set; }
+        public int UpstreamJitterFrameCount { get; set; }
+        public int UseOsProxySettings { get; set; }
+        public VivoxConfigurationOptions() {}
+    }
+
+    public sealed class VivoxConversation
+    {
+        public ConversationType ConversationType { get; }
+        public string Name { get; }
+    }
+
+    public enum VivoxInitializationState
+    {
+        Failed = 3,
+        Initialized = 2,
+        Initializing = 1,
+        Uninitialized = 0,
+    }
+
+    public sealed class VivoxInputDevice
+    {
+        public string DeviceID { get; }
+        public string DeviceName { get; }
+        public System.Threading.Tasks.Task SetActiveDeviceAsync();
+    }
+
+    public enum VivoxLogLevel
+    {
+        All = 5,
+        Debug = 3,
+        Error = 0,
+        Info = 2,
+        None = -1,
+        Trace = 4,
+        Warning = 1,
+    }
+
+    public sealed class VivoxMessage
+    {
+        public string ChannelName { get; }
+        public bool FromSelf { get; }
+        public bool IsRead { get; }
+        public bool IsTranscribedMessage { get; }
+        public string Language { get; }
+        public string MessageId { get; }
+        public string MessageText { get; }
+        public string Metadata { get; }
+        public System.DateTime ReceivedTime { get; }
+        public string RecipientPlayerId { get; }
+        public string SenderDisplayName { get; }
+        public string SenderPlayerId { get; }
+        public System.Threading.Tasks.Task SetMessageAsReadAsync(System.Nullable<System.DateTime> seenAt = default(System.Nullable<System.DateTime>));
+    }
+
+    public sealed class VivoxObserver : System.IDisposable
+    {
+        public readonly VivoxObserverType ObserverType;
+        public readonly string TargetChannelName;
+        public event System.Action AvailableInputDevicesChanged;
+        public event System.Action AvailableOutputDevicesChanged;
+        public event System.Action<string> ChannelJoined;
+        public event System.Action<string> ChannelLeft;
+        public event System.Action<VivoxMessage> ChannelMessageDeleted;
+        public event System.Action<VivoxMessage> ChannelMessageEdited;
+        public event System.Action<VivoxMessage> ChannelMessageReceived;
+        public event System.Action<VivoxMessage> DirectMessageDeleted;
+        public event System.Action<VivoxMessage> DirectMessageEdited;
+        public event System.Action<VivoxMessage> DirectMessageReceived;
+        public event System.Action EffectiveInputDeviceChanged;
+        public event System.Action EffectiveOutputDeviceChanged;
+        public event System.Action LoggedIn;
+        public event System.Action LoggedOut;
+        public event System.Action<VivoxParticipant> ParticipantJoined;
+        public event System.Action<VivoxParticipant> ParticipantLeft;
+        public event System.Action<System.Exception> ServiceInitializationFailed;
+        public event System.Action ServiceInitialized;
+        public bool IsInTargetChannel { get; }
+        public bool IsLoggedIn { get; }
+        public bool IsServiceInitialized { get; }
+        public IVivoxService VivoxService { get; }
+        public VivoxObserver(VivoxObserverType observerType, string targetChannelName = default(string)) {}
+        public VivoxObserver(VivoxObserverType observerType, string targetChannelName, Unity.Services.Core.IUnityServices registry) {}
+        public void Dispose();
+    }
+
+    [System.Flags] public enum VivoxObserverType
+    {
+        All = 31,
+        AudioDevices = 16,
+        Channel = 2,
+        ChannelMessages = 4,
+        DirectMessages = 8,
+        Login = 1,
+        None = 0,
+    }
+
+    public sealed class VivoxOutputDevice
+    {
+        public string DeviceID { get; }
+        public string DeviceName { get; }
+        public System.Threading.Tasks.Task SetActiveDeviceAsync();
+    }
+
+    public sealed class VivoxParticipant
+    {
+        public event System.Action ParticipantAudioEnergyChanged;
+        public event System.Action ParticipantAudioStateChanged;
+        public event System.Action ParticipantMuteStateChanged;
+        public event System.Action ParticipantSpeechDetected;
+        public event System.Action ParticipantTextStateChanged;
+        public double AudioEnergy { get; }
+        public string ChannelName { get; }
+        public string ChannelURI { get; }
+        public string DisplayName { get; }
+        public bool IsInAudio { get; }
+        public bool IsInText { get; }
+        public bool IsMuted { get; }
+        public bool IsSelf { get; }
+        public int LocalVolume { get; }
+        public UnityEngine.AudioSource ParticipantTapAudioSource { get; }
+        public string PlayerId { get; }
+        public bool SpeechDetected { get; }
+        public string URI { get; }
+        public UnityEngine.GameObject CreateVivoxParticipantTap(string gameObjectName = @"", bool silenceInChannelAudioMix = true);
+        public void DestroyVivoxParticipantTap();
+        public void MutePlayerLocally();
+        public void SetLocalVolume(int volume);
+        public void UnmutePlayerLocally();
+    }
+
+    public static class VivoxService
+    {
+        public static IVivoxService Instance { get; }
+    }
+}
+
+namespace Unity.Services.Vivox.AudioTaps
+{
+    [UnityEngine.RequireComponent(typeof(UnityEngine.AudioSource))] public abstract class VivoxAudioTap : UnityEngine.MonoBehaviour
+    {
+        public bool AutoAcquireChannel { get; set; }
+        public string ChannelName { get; set; }
+        public bool IsRunning { get; }
+        [UnityEngine.HideInInspector] public int TapId { get; }
+    }
+
+    [UnityEngine.AddComponentMenu(@"Audio/Vivox Capture Source Tap")] [UnityEngine.Icon(@"Packages/com.unity.services.vivox/Runtime/AudioTaps/icons/capture_source.png")] [UnityEngine.RequireComponent(typeof(UnityEngine.AudioSource))] public class VivoxCaptureSourceTap : VivoxAudioTap
+    {
+    }
+
+    [UnityEngine.AddComponentMenu(@"Audio/Vivox Channel Audio Tap")] [UnityEngine.Icon(@"Packages/com.unity.services.vivox/Runtime/AudioTaps/icons/channel_audio.png")] public class VivoxChannelAudioTap : VivoxAudioTap
+    {
+    }
+
+    [UnityEngine.AddComponentMenu(@"Audio/Vivox Participant Tap")] [UnityEngine.Icon(@"Packages/com.unity.services.vivox/Runtime/AudioTaps/icons/tap_participant.png")] [UnityEngine.RequireComponent(typeof(UnityEngine.AudioSource))] public class VivoxParticipantTap : VivoxAudioTap
+    {
+        public string ParticipantName { get; set; }
+        public bool SilenceInChannelAudioMix { get; set; }
+    }
+}

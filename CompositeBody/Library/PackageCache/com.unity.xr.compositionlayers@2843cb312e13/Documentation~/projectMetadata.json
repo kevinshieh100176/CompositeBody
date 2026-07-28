@@ -1,0 +1,9 @@
+{
+  "hideGlobalNamespace": false,
+  "useMemberPages": false,
+  "showScriptRef": true,
+  "xref": [
+      "com.unity.xr.openxr"
+    ],
+  "pmdt-additional-preprocessors": "DOCTOOLS_CONSTANT_EXAMPLE"
+}

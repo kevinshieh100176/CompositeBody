@@ -1,0 +1,31 @@
+{
+    "name": "Unity.Services.Deployment.Editor.Shared",
+    "rootNamespace": "Unity.Services.Deployment.Editor.Shared",
+    "references": [
+        "Unity.Services.DeploymentApi"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_2021_3_OR_NEWER"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.deployment.api",
+            "expression": "[1.0.0,1.3.0-exp.1)",
+            "define": "DEPLOYMENT_API_AVAILABLE_V1_0"
+        },
+        {
+            "name": "com.unity.services.deployment.api",
+            "expression": "[1.1.0-exp.3,1.3.0-exp.1)",
+            "define": "DEPLOYMENT_API_AVAILABLE_V1_1"
+        }
+    ],
+    "noEngineReferences": false
+}

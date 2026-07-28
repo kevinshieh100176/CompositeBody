@@ -1,0 +1,28 @@
+:root {
+    height: 100%;
+    min-width: 275px;
+}
+
+.help-button {
+    border-right-width: 0;
+}
+
+.help-button-image {
+    width: 16px;
+    height: 16px;
+}
+
+.deployment-toolbar__content {
+    height: 100%;
+}
+
+ToolbarMenu.menu {
+    padding: 0 4px 0 4px;
+    border-right-width: 0;
+}
+
+ToolbarMenu.menu .deployment-options {
+    background-image: var(--unity-icons-pane_options);
+    width: 16px;
+    height: 16px;
+}

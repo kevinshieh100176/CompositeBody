@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: 7541eb9520513704f9c86d4db9d58da2
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_MatchmakerInspectorUxml: {fileID: 9197481963319205126, guid: 84aaff3862f6b4f4196e8367bc611ca2, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

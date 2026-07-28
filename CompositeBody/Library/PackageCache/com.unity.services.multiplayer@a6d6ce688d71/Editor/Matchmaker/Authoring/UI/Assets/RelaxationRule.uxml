@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:VisualElement style="padding-right:5px">
+        <uie:PropertyField binding-path="ageType" label="Ticket Age Type" tooltip="Uses the Oldest (default), Average or Youngest ticket times in the match." />
+        <uie:PropertyField binding-path="value" label="Replacement Value" tooltip="The replacement value for the Min value of the rule." />
+        <uie:PropertyField binding-path="atSeconds" label="At Seconds" tooltip="The number of seconds (inclusive) after which the relaxation is triggered." />
+    </ui:VisualElement>
+</ui:UXML>

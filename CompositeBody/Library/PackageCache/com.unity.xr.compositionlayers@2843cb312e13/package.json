@@ -1,0 +1,43 @@
+{
+  "name": "com.unity.xr.compositionlayers",
+  "displayName": "XR Composition Layers",
+  "version": "2.5.0",
+  "unity": "2022.3",
+  "unityRelease": "11f1",
+  "description": "Support for Provider based XR SDK Composition Layers.",
+  "keywords": [
+    "xr",
+    "composition",
+    "layers"
+  ],
+  "dependencies": {
+    "com.unity.inputsystem": "1.6.3",
+    "com.unity.xr.management": "4.0.1",
+    "com.unity.xr.core-utils": "2.2.2"
+  },
+  "samples": [
+    {
+      "displayName": "Sample External Android Surface Project",
+      "description": "Sample project that implements an external Android surface rendering to a composition layer using the XR_KHR_android_surface_swapchain extension. \n\nCurrently, this sample can only be seen in the editor when using Unity's Built-in Render Pipline.",
+      "path": "Samples~/ExternalSurfaceSample"
+    },
+    {
+      "displayName": "Sample Composition Layers Scene",
+      "description": "Sample showing how to use Composition Layers.",
+      "path": "Samples~/CompositionLayersSample"
+    }
+  ],
+  "_upm": {
+    "changelog": "### Added\n* Added hierarchy window warning icon and inspector warnings for camera clear flags or background alpha using underlay or passthrough composition layers.\n* Added Individual, Left and Right Target Eye option to the source texture component. Allowing per-eye or single eye textures for standard Quad, Cylinder, Equirect, and Cube layers.\n\n### Fixed\n* Fixed Color Scale and Bias emulation in the Editor and Standalone builds.\n* Fixed composition layer emulation not rendering in Editor Play Mode or Standalone builds.\n* Fixed `CompositionLayer` to successfully open prefabs from scenes that do not contain any composition layers.\n* Fixed `EmulatedLayerData` so it no longer logs an error related to a destroyed CompositionLayer when changing scenes from within prefab mode.\n* Fixed `InteractableUIMirror` so that its fields are correctly serialized, resolving a warning that was previously logged to the console in Unity 6000.6.0a5 or newer.\n* Fixed `CameraTargetTextureFactory` so that it no longer logs an error related to releasing render texture that is set as Camera.targetTexture.\n\n### Changed\n* Emulation in Play mode and Standalone builds previously depended on the now obsolete `com.unity.modules.vr` and now depends on`com.unity.modules.xr` and falls back to always emulating when the XR module is not present."
+  },
+  "upmCi": {
+    "footprint": "a1ad1529aee1bc285895ac2ea27aaecbe1022b66"
+  },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.xr.compositionlayers@2.5/manual/index.html",
+  "repository": {
+    "url": "https://github.cds.internal.unity3d.com/unity/xr.sdk.compositionlayers.git",
+    "type": "git",
+    "revision": "1ec23fb965be8df279443d58394a5dd467f881df"
+  },
+  "_fingerprint": "2843cb312e13e070a1b63371bd3bcc64acff42f4"
+}

@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: b9f588569059715428a029442f2e8496
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_MultiplayerComponentsStyleSheet: {fileID: 7433441132597879392, guid: e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

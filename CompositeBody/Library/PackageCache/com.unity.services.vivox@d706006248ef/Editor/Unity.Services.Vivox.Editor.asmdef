@@ -1,0 +1,28 @@
+{
+    "name": "Unity.Services.Vivox.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Services.Vivox",
+        "Unity.Settings.Editor",
+        "Unity.Services.Core",
+        "Unity.Services.Core.Editor",
+        "Unity.Services.Core.Configuration.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.authentication",
+            "expression": "2.0.0",
+            "define": "AUTH_PACKAGE_PRESENT"
+        }
+    ],
+    "noEngineReferences": false
+}

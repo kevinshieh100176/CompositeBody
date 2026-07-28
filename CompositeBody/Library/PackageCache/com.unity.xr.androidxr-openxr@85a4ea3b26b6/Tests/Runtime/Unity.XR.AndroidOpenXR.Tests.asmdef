@@ -1,0 +1,31 @@
+{
+    "name": "Unity.XR.AndroidOpenXR.Tests",
+    "rootNamespace": "UnityEngine.XR.OpenXR.Features.Android.Tests",
+    "references": [
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:e40ba710768534012815d3193fa296cb",
+        "GUID:e7613e527d035461da6942ba7283ee2d",
+        "GUID:4847341ff46394e83bb78fbd0652937e",
+        "GUID:9de2e6a33a93480478eaf8469cfe8f10",
+        "GUID:92703082f92b41ba80f0d6912de66115",
+        "GUID:dc960734dc080426fa6612f1c5fe95f3",
+        "GUID:a9420e37d7990b54abdef6688edbe313"
+    ],
+    "includePlatforms": [
+        "Android",
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

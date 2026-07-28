@@ -1,0 +1,27 @@
+{
+    "name": "Unity.Services.Multiplayer.Editor",
+    "rootNamespace": "Unity.Services.Multiplayer.Editor",
+    "references": [
+        "Unity.Services.Core",
+        "Unity.Services.Core.Components",
+        "Unity.Services.Core.Editor",
+        "Unity.Services.Core.Environments.Editor",
+        "Unity.Services.Multiplayer",
+        "Unity.Services.Multiplayer.Editor.Shared",
+        "Unity.Services.Multiplayer.Editor.Matchmaker.Authoring.Core",
+        "Unity.Services.Multiplayer.Editor.Matchmaker.Authoring",
+        "Unity.UIElements",
+        "Unity.Services.Core.Internal"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

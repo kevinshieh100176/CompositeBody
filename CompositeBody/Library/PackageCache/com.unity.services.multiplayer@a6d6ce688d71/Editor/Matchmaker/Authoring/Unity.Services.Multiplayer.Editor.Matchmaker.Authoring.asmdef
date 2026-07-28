@@ -1,0 +1,38 @@
+{
+    "name": "Unity.Services.Multiplayer.Editor.Matchmaker.Authoring",
+    "rootNamespace": "Unity.Services.Multiplayer.Editor.Matchmaker.Authoring",
+    "references": [
+        "Unity.Services.Multiplayer.Editor.Matchmaker.Authoring.Core",
+        "Unity.Services.DeploymentApi",
+        "Unity.Services.Core.Editor",
+        "Unity.Services.Core.Environments.Editor",
+        "Unity.Services.Multiplayer.Editor.Shared",
+        "Unity.Services.Multiplayer"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "DEPLOYMENT_API_AVAILABLE",
+        "UNITY_2021_3_OR_NEWER",
+        "!DISABLE_MATCHMAKER_AUTHORING"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.deployment.api",
+            "expression": "[1.0.0-pre.1,2.0.0)",
+            "define": "DEPLOYMENT_API_AVAILABLE"
+        },
+        {
+            "name": "com.unity.services.deployment.api",
+            "expression": "[1.1.0-exp.3,1.3.0-exp.1)",
+            "define": "DEPLOYMENT_API_AVAILABLE_V1_1"
+        }
+    ],
+    "noEngineReferences": false
+}

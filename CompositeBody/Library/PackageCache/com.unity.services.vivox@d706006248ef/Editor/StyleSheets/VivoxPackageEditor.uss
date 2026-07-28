@@ -1,0 +1,266 @@
+.info-container {
+    margin-top: 10px;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    margin-right: 10px;
+}
+
+.info-container .title {
+    -unity-font-style: bold;
+    font-size: 18px;
+}
+
+.info-container .description {
+    margin-top: 5px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    width: 550px;
+    white-space: normal;
+}
+
+.info-container .description_no_bottom {
+    margin-top: 5px;
+    font-size: 12px;
+    width: auto;
+    white-space: normal;
+}
+
+.info-container .description_no_top {
+    margin-bottom: 15px;
+    font-size: 12px;
+    width: auto;
+    white-space: normal;
+}
+
+.info-container .word {
+    font-size: 12px;
+    margin-left: -3px;
+}
+
+.info-container .inline-link-button {
+    flex-grow: 0;
+    font-size: 12px;
+    align-self: flex-start;
+    cursor: link;
+    flex-direction: row;
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(0, 0, 0, 0);
+    margin-left: -3px;
+}
+
+.info-container .details {
+    font-size: 10px;
+}
+
+.horizontal-group {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    flex-direction: row;
+}
+
+.horizontal-group .label {
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-right: 5px;
+    margin-bottom: 2px;
+}
+
+.horizontal-group .info {
+    font-size: 12px;
+}
+
+.credentials-label {
+    font-size: 14px;
+    margin-left: 12px;
+    margin-top: 2px;
+}
+
+.credentials-text {
+    font-size: 12px;
+    margin-left: 37px;
+    margin-top: 2px;
+}
+
+.hyperlink-button {
+    flex-grow: 0;
+    align-self: flex-start;
+    cursor: link;
+    flex-direction: row;
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(0, 0, 0, 0);
+    margin-top: 0;
+    margin-bottom: 0;
+    border-width: 0;
+    flex-grow: 0;
+}
+
+.hyperlink-button:hover {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.separator {
+    height: 2px;
+    background-color: rgb(143, 143, 143);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.credentials-box {
+    justify-content: Center;
+    margin-right: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 5px;
+    border-bottom-width: 5px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+Toggle {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+Toggle > .unity-toggle__input {
+    left: 4px;
+    max-width: 293px;
+}
+
+TextField {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+TextField > .unity-text-field__input {
+    left: 70px;
+    max-width: 293px;
+}
+
+EnumField {
+    margin-left: 10px;
+}
+
+EnumField > .unity-enum-field__input {
+    left: 70px;
+    max-width: 295px;
+}
+
+.helper-text {
+    font-size: 12px;
+    color: grey;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.warning-text {
+    font-size: 12px;
+    color: yellow;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.multi-field-block {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.multi-field-block .title {
+    -unity-font-style: bold;
+}
+
+.multi-field-block .title {
+    padding-left: 0;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    white-space: normal;
+}
+
+.multi-field-block .description {
+    padding-left: 0;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    white-space: normal;
+}
+
+.multi-field-block .tag-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.test-field-block {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.small-button {
+    width: 120px;
+    margin-left: -1px;
+    top: 10px;
+}
+
+.integrated-check-icon {
+    padding-right: 10px;
+    left: 105px;
+    top: 14px;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+.check-icon {
+    background-image: resource('Builtin Skins/Shared/Images/icon_checked.png');
+}
+
+.check-label {
+    left: 115px;
+    top: 13px;
+    width: 20px;
+    height: 20px;
+}
+
+.external-link-icon {
+    width: 16px;
+    height: 16px;
+    cursor: link;
+    margin-left: 5px;
+}
+
+#FetchCredsText {
+    justify-content: space-around;
+    align-self: stretch;
+    width: auto;
+    height: 50px;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 18px;
+    flex-grow: 1;
+    align-items: stretch;
+    flex-wrap: wrap;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+#DashboardInfo {
+    margin-right: 15px;
+}
+
+#DocumentationLink{
+    margin-bottom: 10px;
+}
+
+#TestToggle {
+    margin-left: 15px;
+    margin-right: 0;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.configSettingsContainer {
+    margin-top: 10px;
+}

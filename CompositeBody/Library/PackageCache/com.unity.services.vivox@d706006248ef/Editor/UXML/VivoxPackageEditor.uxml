@@ -1,0 +1,38 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Packages/com.unity.services.vivox/Editor/StyleSheets/VivoxPackageEditor.uss?fileID=7433441132597879392&amp;guid=5cc3dbe05d6018e4ab95d47c8bd004ea&amp;type=3#VivoxPackageEditor" />
+    <ui:VisualElement name="VivoxTitleContainer" class="scroll-container info-container">
+        <ui:VisualElement name="DocumentationLink" class="field-block link-button">
+            <ui:TextElement text="Documentation" name="DocumentationLinkButton" class="link-button" />
+            <ui:VisualElement name="ExternalLinkDocs" class="external-link-icon" />
+        </ui:VisualElement>
+        <ui:VisualElement name="ConfigurationContainer" class="scroll-container">
+            <ui:Label text="Environment Configuration" class="service-title" />
+            <ui:Label text="Use your credentials to connect to your Vivox Service." class="description_no_bottom" />
+            <ui:VisualElement name="DashboardInfo" class="field-block link-button">
+                <ui:TextElement text="You can find these credentials on the Dashboard" name="DashboardLinkButton" class="link-button" />
+                <ui:VisualElement name="ExternalLinkDash" class="external-link-icon" />
+            </ui:VisualElement>
+            <ui:Box name="CredentialsBox" class="credentials-box">
+                <ui:Label tabindex="-1" text="Fetching Credentials..." display-tooltip-when-elided="true" name="FetchCredsText" class="fetchText" />
+                <ui:VisualElement name="ConfigurationSettingsContainer" class="configSettingsContainer">
+                    <ui:Label text="Server" class="credentials-label" />
+                    <ui:TextElement label="Server" name="ServerVar" class="credentials-text" />
+                    <ui:Label text="Domain" class="credentials-label" />
+                    <ui:TextElement label="Domain" name="DomainVar" class="credentials-text" />
+                    <ui:Label text="Token Issuer" class="credentials-label" />
+                    <ui:TextElement label="Token Issuer" name="IssuerVar" class="credentials-text" />
+                    <ui:Label text="Token Key" class="credentials-label" />
+                    <ui:TextElement label="Token Key" name="KeyVar" class="credentials-text" />
+                    <ui:VisualElement name="TestModeBlock" class="test-field-block">
+                        <ui:Label text="Test Mode" class="credentials-label" />
+                        <ui:Toggle name="TestToggle" />
+                        <ui:TextElement text="Only use Test Mode if you would like to generate debug tokens. Toggling test mode will place your Vivox Key into the build, which should only be allowed during internal development/test builds" name="TextElement" class="helper-text" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AuthPackageBlock" class="field-block">
+                        <ui:TextElement name="AuthPackageWarning" class="warning-text" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:Box>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

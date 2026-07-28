@@ -1,0 +1,2000 @@
+// This file is generated. Do not modify by hand.
+// XML documentation file not found. To check if public methods have XML comments,
+// make sure the XML doc file is present and located next to the scraped dll
+public class LobbyEventCallbacks
+{
+    public event System.Action<System.Collections.Generic.Dictionary<string, Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<Unity.Services.Lobbies.Models.DataObject>>> DataAdded;
+    public event System.Action<System.Collections.Generic.Dictionary<string, Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<Unity.Services.Lobbies.Models.DataObject>>> DataChanged;
+    public event System.Action<System.Collections.Generic.Dictionary<string, Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<Unity.Services.Lobbies.Models.DataObject>>> DataRemoved;
+    public event System.Action KickedFromLobby;
+    public event System.Action<Unity.Services.Lobbies.ILobbyChanges> LobbyChanged;
+    public event System.Action LobbyDeleted;
+    public event System.Action<Unity.Services.Lobbies.LobbyEventConnectionState> LobbyEventConnectionStateChanged;
+    public event System.Action<System.Collections.Generic.Dictionary<int, System.Collections.Generic.Dictionary<string, Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<Unity.Services.Lobbies.Models.PlayerDataObject>>>> PlayerDataAdded;
+    public event System.Action<System.Collections.Generic.Dictionary<int, System.Collections.Generic.Dictionary<string, Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<Unity.Services.Lobbies.Models.PlayerDataObject>>>> PlayerDataChanged;
+    public event System.Action<System.Collections.Generic.Dictionary<int, System.Collections.Generic.Dictionary<string, Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<Unity.Services.Lobbies.Models.PlayerDataObject>>>> PlayerDataRemoved;
+    public event System.Action<System.Collections.Generic.List<Unity.Services.Lobbies.LobbyPlayerJoined>> PlayerJoined;
+    public event System.Action<System.Collections.Generic.List<int>> PlayerLeft;
+    public LobbyEventCallbacks() {}
+}
+
+namespace Unity.Services.Core
+{
+    public static class UnityServicesExtensions
+    {
+        public static Unity.Services.Lobbies.ILobbyService GetLobbyService(this IUnityServices unityServices);
+        public static Unity.Services.Matchmaker.IMatchmakerService GetMatchmakerService(this IUnityServices unityServices);
+        public static Unity.Services.Multiplayer.IMultiplayerService GetMultiplayerService(this IUnityServices unityServices);
+        public static Unity.Services.Relay.IRelayService GetRelayService(this IUnityServices unityServices);
+    }
+}
+
+namespace Unity.Services.Lobbies
+{
+    public struct ChangedLobbyValue<T>
+    {
+        public bool Added { get; }
+        public bool Changed { get; }
+        public T Value { get; }
+        public ChangedLobbyValue(T value) {}
+    }
+
+    public struct ChangedOrRemovedLobbyValue<T>
+    {
+        public static readonly Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<T> RemoveThisValue;
+        public bool Added { get; }
+        public bool Changed { get; }
+        public LobbyValueChangeType ChangeType { get; }
+        public bool Removed { get; }
+        public T Value { get; }
+        public ChangedOrRemovedLobbyValue(T value, LobbyValueChangeType status) {}
+    }
+
+    public class CreateLobbyOptions
+    {
+        public System.Collections.Generic.Dictionary<string, Models.DataObject> Data { get; set; }
+        public System.Nullable<bool> IsLocked { get; set; }
+        public System.Nullable<bool> IsPrivate { get; set; }
+        public string Password { get; set; }
+        public Models.Player Player { get; set; }
+        public CreateLobbyOptions() {}
+    }
+
+    public interface ILobbyChanges
+    {
+        public Unity.Services.Lobbies.ChangedLobbyValue<int> AvailableSlots { get; }
+        public Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<System.Collections.Generic.Dictionary<string, Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<Models.DataObject>>> Data { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<bool> HasPassword { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<string> HostId { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<bool> IsLocked { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<bool> IsPrivate { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<System.DateTime> LastUpdated { get; }
+        public bool LobbyDeleted { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<int> MaxPlayers { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<string> Name { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<System.Collections.Generic.Dictionary<int, LobbyPlayerChanges>> PlayerData { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<System.Collections.Generic.List<LobbyPlayerJoined>> PlayerJoined { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<System.Collections.Generic.List<int>> PlayerLeft { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<int> Version { get; }
+        public void ApplyToLobby(Models.Lobby lobby);
+    }
+
+    public interface ILobbyEvents
+    {
+        public LobbyEventCallbacks Callbacks { get; }
+        public System.Threading.Tasks.Task SubscribeAsync();
+        public System.Threading.Tasks.Task UnsubscribeAsync();
+    }
+
+    public interface ILobbyService
+    {
+        public bool ConcurrencyControlEnabled { get; set; }
+        public System.Threading.Tasks.Task<Models.Lobby> CreateLobbyAsync(string lobbyName, int maxPlayers, CreateLobbyOptions options = default(CreateLobbyOptions));
+        public System.Threading.Tasks.Task<Models.Lobby> CreateOrJoinLobbyAsync(string lobbyId, string lobbyName, int maxPlayers, CreateLobbyOptions options = default(CreateLobbyOptions));
+        public System.Threading.Tasks.Task DeleteLobbyAsync(string lobbyId);
+        public System.Threading.Tasks.Task<Models.LobbyMigrationData> DownloadMigrationDataAsync(Models.MigrationDataInfo migrationDataInfo, Models.LobbyDownloadMigrationDataOptions options);
+        public System.Threading.Tasks.Task<System.Collections.Generic.List<string>> GetJoinedLobbiesAsync();
+        public System.Threading.Tasks.Task<Models.Lobby> GetLobbyAsync(string lobbyId);
+        public System.Threading.Tasks.Task<Models.Lobby> GetLobbyAsync(string lobbyId, string ifNoneMatchVersion);
+        public System.Threading.Tasks.Task<Models.MigrationDataInfo> GetMigrationDataInfoAsync(string lobbyId);
+        public System.Threading.Tasks.Task<Models.Lobby> JoinLobbyByCodeAsync(string lobbyCode, JoinLobbyByCodeOptions options = default(JoinLobbyByCodeOptions));
+        public System.Threading.Tasks.Task<Models.Lobby> JoinLobbyByIdAsync(string lobbyId, JoinLobbyByIdOptions options = default(JoinLobbyByIdOptions));
+        public System.Threading.Tasks.Task<Models.QueryResponse> QueryLobbiesAsync(QueryLobbiesOptions options = default(QueryLobbiesOptions));
+        public System.Threading.Tasks.Task<Models.Lobby> QuickJoinLobbyAsync(QuickJoinLobbyOptions options = default(QuickJoinLobbyOptions));
+        public System.Threading.Tasks.Task<Models.Lobby> ReconnectToLobbyAsync(string lobbyId);
+        public System.Threading.Tasks.Task RemovePlayerAsync(string lobbyId, string playerId);
+        public System.Threading.Tasks.Task SendHeartbeatPingAsync(string lobbyId);
+        public System.Threading.Tasks.Task<ILobbyEvents> SubscribeToLobbyEventsAsync(string lobbyId, LobbyEventCallbacks callbacks);
+        public System.Threading.Tasks.Task<Models.Lobby> UpdateLobbyAsync(string lobbyId, UpdateLobbyOptions options);
+        public System.Threading.Tasks.Task<Models.Lobby> UpdatePlayerAsync(string lobbyId, string playerId, UpdatePlayerOptions options);
+        public System.Threading.Tasks.Task<Models.LobbyUploadMigrationDataResults> UploadMigrationDataAsync(Models.MigrationDataInfo migrationDataInfo, byte[] data, Models.LobbyUploadMigrationDataOptions options);
+    }
+
+    public interface ILobbyServiceSDK : ILobbyService
+    {
+    }
+
+    public interface ILobbyServiceSDKConfiguration
+    {
+        public void SetBasePath(string basePath);
+    }
+
+    public class JoinLobbyByCodeOptions
+    {
+        public string Password { get; set; }
+        public Models.Player Player { get; set; }
+        public JoinLobbyByCodeOptions() {}
+    }
+
+    public class JoinLobbyByIdOptions
+    {
+        public string Password { get; set; }
+        public Models.Player Player { get; set; }
+        public JoinLobbyByIdOptions() {}
+    }
+
+    public enum LobbyEventConnectionState
+    {
+        Error = 5,
+        Subscribed = 3,
+        Subscribing = 2,
+        Unknown = 0,
+        Unsubscribed = 1,
+        Unsynced = 4,
+    }
+
+    public enum LobbyExceptionReason
+    {
+        AlreadySubscribedToLobby = 16601,
+        AlreadyUnsubscribedFromLobby = 16602,
+        BadGateway = 16502,
+        BadRequest = 16400,
+        Conflict = 16409,
+        EntityNotFound = 16404,
+        ExpectationFailed = 16417,
+        FailedDependency = 16424,
+        Forbidden = 16403,
+        GatewayTimeout = 16504,
+        Gone = 16410,
+        HttpVersionNotSupported = 16505,
+        IncorrectPassword = 16009,
+        InsufficientStorage = 16507,
+        InternalServerError = 16500,
+        InvalidArgument = 16400,
+        InvalidJoinCode = 16010,
+        LengthRequired = 16411,
+        LobbyAlreadyExists = 16007,
+        LobbyConflict = 16003,
+        LobbyEventServiceConnectionError = 16604,
+        LobbyFull = 16004,
+        LobbyLocked = 16005,
+        LobbyNotFound = 16001,
+        LobbyVersionDoesNotMatch = 16012,
+        Locked = 16423,
+        LoopDetected = 16508,
+        MethodNotAllowed = 16405,
+        MigrationDataRequestTimeout = 16011,
+        Misdirected = 16421,
+        NetworkAuthenticationRequired = 16511,
+        NetworkError = 16998,
+        NoOpenLobbies = 16006,
+        NotAcceptable = 16406,
+        NotExtended = 16510,
+        NotImplemented = 16501,
+        PaymentRequired = 16402,
+        PlayerNotFound = 16002,
+        PreconditionFailed = 16412,
+        PreconditionRequired = 16428,
+        ProxyAuthenticationRequired = 16407,
+        RangeNotSatisfiable = 16416,
+        RateLimited = 16429,
+        RequestEntityTooLarge = 16413,
+        RequestHeaderFieldsTooLarge = 16431,
+        RequestTimeOut = 16408,
+        RequestUriTooLong = 16414,
+        ServiceUnavailable = 16503,
+        SubscriptionToLobbyLostWhileBusy = 16603,
+        Teapot = 16418,
+        TooEarly = 16425,
+        Unauthorized = 16401,
+        UnavailableForLegalReasons = 16451,
+        Unknown = 16999,
+        UnknownErrorCode = 0,
+        UnprocessableTransaction = 16422,
+        UnsupportedMediaType = 16415,
+        UpgradeRequired = 16426,
+        ValidationError = 16000,
+        VariantAlsoNegotiates = 16506,
+    }
+
+    public class LobbyPlayerChanges
+    {
+        public Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<System.Collections.Generic.Dictionary<string, Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<Models.PlayerDataObject>>> ChangedData { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<string> ConnectionInfoChanged { get; }
+        public Unity.Services.Lobbies.ChangedLobbyValue<System.DateTime> LastUpdatedChanged { get; }
+        public int PlayerIndex { get; }
+        public LobbyPlayerChanges(int index) {}
+    }
+
+    public struct LobbyPlayerJoined
+    {
+        public Models.Player Player { get; }
+        public int PlayerIndex { get; }
+        public LobbyPlayerJoined(int index, Models.Player player) {}
+    }
+
+    public static class LobbyService
+    {
+        public static ILobbyService Instance { get; }
+    }
+
+    public class LobbyServiceException : Unity.Services.Core.RequestFailedException
+    {
+        public Models.ErrorStatus ApiError { get; }
+        public LobbyExceptionReason Reason { get; }
+        public LobbyServiceException(System.Exception innerException) {}
+        public LobbyServiceException(long errorCode, string message) {}
+        public LobbyServiceException(LobbyExceptionReason reason, string message) {}
+        public LobbyServiceException(LobbyExceptionReason reason, string message, System.Exception innerException) {}
+    }
+
+    public static class LobbyValue
+    {
+        public static Unity.Services.Lobbies.ChangedLobbyValue<T> Added<T>(T value);
+        public static Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<T> ChangeAdded<T>(T value);
+        public static Unity.Services.Lobbies.ChangedLobbyValue<T> Changed<T>(T value);
+        public static Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<T> ChangedNotRemoved<T>(T value);
+        public static Unity.Services.Lobbies.ChangedOrRemovedLobbyValue<T> Removed<T>();
+    }
+
+    public enum LobbyValueChangeType
+    {
+        Added = 3,
+        Changed = 1,
+        Removed = 2,
+        Unchanged = 0,
+    }
+
+    public class QueryLobbiesOptions
+    {
+        public string ContinuationToken { get; set; }
+        public int Count { get; set; }
+        public System.Collections.Generic.List<Models.QueryFilter> Filters { get; set; }
+        public System.Collections.Generic.List<Models.QueryOrder> Order { get; set; }
+        public bool SampleResults { get; set; }
+        public int Skip { get; set; }
+        public QueryLobbiesOptions() {}
+    }
+
+    public class QuickJoinLobbyOptions
+    {
+        public System.Collections.Generic.List<Models.QueryFilter> Filter { get; set; }
+        public Models.Player Player { get; set; }
+        public QuickJoinLobbyOptions() {}
+    }
+
+    public class UpdateLobbyOptions
+    {
+        public System.Collections.Generic.Dictionary<string, Models.DataObject> Data { get; set; }
+        public string HostId { get; set; }
+        public System.Nullable<bool> IsLocked { get; set; }
+        public System.Nullable<bool> IsPrivate { get; set; }
+        public System.Nullable<int> MaxPlayers { get; set; }
+        public string Name { get; set; }
+        public string Password { get; set; }
+        public UpdateLobbyOptions() {}
+    }
+
+    public class UpdatePlayerOptions
+    {
+        public string AllocationId { get; set; }
+        public string ConnectionInfo { get; set; }
+        public System.Collections.Generic.Dictionary<string, Models.PlayerDataObject> Data { get; set; }
+        public UpdatePlayerOptions() {}
+    }
+}
+
+namespace Unity.Services.Lobbies.Http
+{
+    public class DeserializationException : System.Exception
+    {
+        public DeserializationException() {}
+        public DeserializationException(string message) {}
+    }
+
+    public class DeserializationSettings
+    {
+        public MissingMemberHandling MissingMemberHandling = MissingMemberHandling.Error;
+        public DeserializationSettings() {}
+    }
+
+    [Newtonsoft.Json.JsonConverter(typeof(JsonObjectConverter))] [UnityEngine.Scripting.Preserve] public interface IDeserializable
+    {
+        public T GetAs<T>(DeserializationSettings deserializationSettings = default(DeserializationSettings));
+        public string GetAsString();
+    }
+
+    [Newtonsoft.Json.JsonConverter(typeof(JsonObjectConverter))] [UnityEngine.Scripting.Preserve] public class JsonObject : IDeserializable
+    {
+        public T GetAs<T>();
+        public T GetAs<T>(DeserializationSettings deserializationSettings = default(DeserializationSettings));
+        public string GetAsString();
+        public static System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<IDeserializable>> GetNewJsonObjectResponse(System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<object>> o);
+        public static System.Collections.Generic.Dictionary<string, IDeserializable> GetNewJsonObjectResponse(System.Collections.Generic.Dictionary<string, object> o);
+        public static System.Collections.Generic.List<System.Collections.Generic.List<IDeserializable>> GetNewJsonObjectResponse(System.Collections.Generic.List<System.Collections.Generic.List<object>> o);
+        public static System.Collections.Generic.List<IDeserializable> GetNewJsonObjectResponse(System.Collections.Generic.List<object> o);
+        public static IDeserializable GetNewJsonObjectResponse(object o);
+    }
+
+    [UnityEngine.Scripting.Preserve] public class JsonObjectConverter : Newtonsoft.Json.JsonConverter
+    {
+        public JsonObjectConverter() {}
+        public override bool CanConvert(System.Type objectType);
+        public override object ReadJson(Newtonsoft.Json.JsonReader reader, System.Type objectType, object existingValue, Newtonsoft.Json.JsonSerializer serializer);
+        public override void WriteJson(Newtonsoft.Json.JsonWriter writer, object value, Newtonsoft.Json.JsonSerializer serializer);
+    }
+
+    public enum MissingMemberHandling
+    {
+        Error = 0,
+        Ignore = 1,
+    }
+}
+
+namespace Unity.Services.Lobbies.Models
+{
+    [System.Runtime.Serialization.DataContract(Name = @"CreateRequest")] [UnityEngine.Scripting.Preserve] public class CreateRequest
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"data")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.Dictionary<string, DataObject> Data { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"isLocked")] [UnityEngine.Scripting.Preserve] public System.Nullable<bool> IsLocked { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"isPrivate")] [UnityEngine.Scripting.Preserve] public System.Nullable<bool> IsPrivate { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"maxPlayers")] [UnityEngine.Scripting.Preserve] public int MaxPlayers { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"name")] [UnityEngine.Scripting.Preserve] public string Name { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"password")] [UnityEngine.Scripting.Preserve] public string Password { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"player")] [UnityEngine.Scripting.Preserve] public Player Player { get; }
+        [UnityEngine.Scripting.Preserve] public CreateRequest(string name, int maxPlayers, System.Nullable<bool> isPrivate = False, System.Nullable<bool> isLocked = False, Player player = default(Player), System.Collections.Generic.Dictionary<string, DataObject> data = default(System.Collections.Generic.Dictionary<string, DataObject>), string password = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"DataObject")] [UnityEngine.Scripting.Preserve] public class DataObject
+    {
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"index")] [UnityEngine.Scripting.Preserve] public DataObject.IndexOptions Index { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"value")] [UnityEngine.Scripting.Preserve] public string Value { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"visibility")] [UnityEngine.Scripting.Preserve] public DataObject.VisibilityOptions Visibility { get; }
+        [UnityEngine.Scripting.Preserve] public DataObject(DataObject.VisibilityOptions visibility, string value = default(string), DataObject.IndexOptions index = ) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum IndexOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"N1")] N1 = 6,
+            [System.Runtime.Serialization.EnumMember(Value = @"N2")] N2 = 7,
+            [System.Runtime.Serialization.EnumMember(Value = @"N3")] N3 = 8,
+            [System.Runtime.Serialization.EnumMember(Value = @"N4")] N4 = 9,
+            [System.Runtime.Serialization.EnumMember(Value = @"N5")] N5 = 10,
+            [System.Runtime.Serialization.EnumMember(Value = @"S1")] S1 = 1,
+            [System.Runtime.Serialization.EnumMember(Value = @"S2")] S2 = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"S3")] S3 = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"S4")] S4 = 4,
+            [System.Runtime.Serialization.EnumMember(Value = @"S5")] S5 = 5,
+        }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum VisibilityOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"member")] Member = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"private")] Private = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"public")] Public = 1,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"Detail")] [UnityEngine.Scripting.Preserve] public class Detail
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"errorType")] [UnityEngine.Scripting.Preserve] public string ErrorType { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"message")] [UnityEngine.Scripting.Preserve] public string Message { get; }
+        [UnityEngine.Scripting.Preserve] public Detail(string errorType = default(string), string message = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"ErrorStatus")] [UnityEngine.Scripting.Preserve] public class ErrorStatus
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"code")] [UnityEngine.Scripting.Preserve] public int Code { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"detail")] [UnityEngine.Scripting.Preserve] public string Detail { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"details")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<Detail> Details { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"status")] [UnityEngine.Scripting.Preserve] public int Status { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"title")] [UnityEngine.Scripting.Preserve] public string Title { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"type")] [UnityEngine.Scripting.Preserve] public string Type { get; }
+        [UnityEngine.Scripting.Preserve] public ErrorStatus(string type = default(string), int status = 0, string title = default(string), string detail = default(string), int code = 0, System.Collections.Generic.List<Detail> details = default(System.Collections.Generic.List<Detail>)) {}
+    }
+
+    public interface IOneOf
+    {
+        public System.Type Type { get; }
+        public object Value { get; }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinByCodeRequest")] [UnityEngine.Scripting.Preserve] public class JoinByCodeRequest
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"lobbyCode")] [UnityEngine.Scripting.Preserve] public string LobbyCode { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"password")] [UnityEngine.Scripting.Preserve] public string Password { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"player")] [UnityEngine.Scripting.Preserve] public Player Player { get; }
+        [UnityEngine.Scripting.Preserve] public JoinByCodeRequest(string lobbyCode, Player player = default(Player), string password = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinByIdRequest")] [UnityEngine.Scripting.Preserve] public class JoinByIdRequest
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"password")] [UnityEngine.Scripting.Preserve] public string Password { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"player")] [UnityEngine.Scripting.Preserve] public Player Player { get; }
+        [UnityEngine.Scripting.Preserve] public JoinByIdRequest(string password = default(string), Player player = default(Player)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"Lobby")] [UnityEngine.Scripting.Preserve] public class Lobby
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"availableSlots")] [UnityEngine.Scripting.Preserve] public int AvailableSlots { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"created")] [UnityEngine.Scripting.Preserve] public System.DateTime Created { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"data")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.Dictionary<string, DataObject> Data { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"environmentId")] [UnityEngine.Scripting.Preserve] public string EnvironmentId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"hasPassword")] [UnityEngine.Scripting.Preserve] public bool HasPassword { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"hostId")] [UnityEngine.Scripting.Preserve] public string HostId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"id")] [UnityEngine.Scripting.Preserve] public string Id { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"isLocked")] [UnityEngine.Scripting.Preserve] public bool IsLocked { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"isPrivate")] [UnityEngine.Scripting.Preserve] public bool IsPrivate { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"lastUpdated")] [UnityEngine.Scripting.Preserve] public System.DateTime LastUpdated { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"lobbyCode")] [UnityEngine.Scripting.Preserve] public string LobbyCode { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"maxPlayers")] [UnityEngine.Scripting.Preserve] public int MaxPlayers { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"name")] [UnityEngine.Scripting.Preserve] public string Name { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"players")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<Player> Players { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"upid")] [UnityEngine.Scripting.Preserve] public string Upid { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"version")] [UnityEngine.Scripting.Preserve] public int Version { get; set; }
+        [UnityEngine.Scripting.Preserve] public Lobby(string id = default(string), string lobbyCode = default(string), string upid = default(string), string environmentId = default(string), string name = default(string), int maxPlayers = 0, int availableSlots = 0, bool isPrivate = false, bool isLocked = false, System.Collections.Generic.List<Player> players = default(System.Collections.Generic.List<Player>), System.Collections.Generic.Dictionary<string, DataObject> data = default(System.Collections.Generic.Dictionary<string, DataObject>), string hostId = default(string), System.DateTime created = default(System.DateTime), System.DateTime lastUpdated = default(System.DateTime), int version = 0, bool hasPassword = false) {}
+    }
+
+    public class LobbyDownloadMigrationDataOptions
+    {
+        public static readonly System.TimeSpan DefaultTimeout;
+        public System.TimeSpan Timeout { get; set; }
+        public LobbyDownloadMigrationDataOptions() {}
+    }
+
+    public class LobbyMigrationData : MigrationData
+    {
+        public override byte[] Data { get; }
+        public LobbyMigrationData(byte[] data) {}
+    }
+
+    public class LobbyUploadMigrationDataOptions
+    {
+        public static readonly System.TimeSpan DefaultTimeout;
+        public System.TimeSpan Timeout { get; set; }
+        public LobbyUploadMigrationDataOptions() {}
+    }
+
+    public class LobbyUploadMigrationDataResults
+    {
+        public LobbyUploadMigrationDataResults() {}
+    }
+
+    public abstract class MigrationData
+    {
+        public abstract byte[] Data { get; }
+        protected MigrationData() {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"MigrationDataInfo")] [UnityEngine.Scripting.Preserve] public class MigrationDataInfo
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"expires")] [UnityEngine.Scripting.Preserve] public System.DateTime Expires { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"maxSize")] [UnityEngine.Scripting.Preserve] public int MaxSize { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"read")] [UnityEngine.Scripting.Preserve] public string Read { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"write")] [UnityEngine.Scripting.Preserve] public string Write { get; }
+        [UnityEngine.Scripting.Preserve] public MigrationDataInfo(string write = default(string), string read = default(string), System.DateTime expires = default(System.DateTime), int maxSize = 0) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"Player")] [UnityEngine.Scripting.Preserve] public class Player
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"allocationId")] [UnityEngine.Scripting.Preserve] public string AllocationId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"connectionInfo")] [UnityEngine.Scripting.Preserve] public string ConnectionInfo { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"data")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.Dictionary<string, PlayerDataObject> Data { get; set; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"id")] [UnityEngine.Scripting.Preserve] public string Id { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"joined")] [UnityEngine.Scripting.Preserve] public System.DateTime Joined { get; set; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"lastUpdated")] [UnityEngine.Scripting.Preserve] public System.DateTime LastUpdated { get; set; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"profile")] [UnityEngine.Scripting.Preserve] public PlayerProfile Profile { get; set; }
+        [UnityEngine.Scripting.Preserve] public Player(string id = default(string), string connectionInfo = default(string), System.Collections.Generic.Dictionary<string, PlayerDataObject> data = default(System.Collections.Generic.Dictionary<string, PlayerDataObject>), string allocationId = default(string), System.DateTime joined = default(System.DateTime), System.DateTime lastUpdated = default(System.DateTime), PlayerProfile profile = default(PlayerProfile)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"PlayerDataObject")] [UnityEngine.Scripting.Preserve] public class PlayerDataObject
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"value")] [UnityEngine.Scripting.Preserve] public string Value { get; set; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"visibility")] [UnityEngine.Scripting.Preserve] public PlayerDataObject.VisibilityOptions Visibility { get; }
+        [UnityEngine.Scripting.Preserve] public PlayerDataObject(PlayerDataObject.VisibilityOptions visibility, string value = default(string)) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum VisibilityOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"member")] Member = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"private")] Private = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"public")] Public = 1,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"PlayerProfile")] [UnityEngine.Scripting.Preserve] public class PlayerProfile
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"name")] [UnityEngine.Scripting.Preserve] public string Name { get; }
+        [UnityEngine.Scripting.Preserve] public PlayerProfile(string name = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"PlayerUpdateRequest")] [UnityEngine.Scripting.Preserve] public class PlayerUpdateRequest
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"allocationId")] [UnityEngine.Scripting.Preserve] public string AllocationId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"connectionInfo")] [UnityEngine.Scripting.Preserve] public string ConnectionInfo { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Unity.Services.Lobbies.Http.JsonObjectCollectionConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"data")] [UnityEngine.Scripting.Preserve] public Unity.Services.Lobbies.Http.JsonObject Data { get; }
+        [UnityEngine.Scripting.Preserve] public PlayerUpdateRequest(string connectionInfo = default(string), System.Collections.Generic.Dictionary<string, PlayerDataObject> data = default(System.Collections.Generic.Dictionary<string, PlayerDataObject>), string allocationId = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"QueryFilter")] [UnityEngine.Scripting.Preserve] public class QueryFilter
+    {
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"field")] [UnityEngine.Scripting.Preserve] public QueryFilter.FieldOptions Field { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"op")] [UnityEngine.Scripting.Preserve] public QueryFilter.OpOptions Op { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"value")] [UnityEngine.Scripting.Preserve] public string Value { get; }
+        [UnityEngine.Scripting.Preserve] public QueryFilter(QueryFilter.FieldOptions field, string value, QueryFilter.OpOptions op) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum FieldOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"AvailableSlots")] AvailableSlots = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"Created")] Created = 4,
+            [System.Runtime.Serialization.EnumMember(Value = @"HasPassword")] HasPassword = 17,
+            [System.Runtime.Serialization.EnumMember(Value = @"IsLocked")] IsLocked = 16,
+            [System.Runtime.Serialization.EnumMember(Value = @"LastUpdated")] LastUpdated = 5,
+            [System.Runtime.Serialization.EnumMember(Value = @"MaxPlayers")] MaxPlayers = 1,
+            [System.Runtime.Serialization.EnumMember(Value = @"N1")] N1 = 11,
+            [System.Runtime.Serialization.EnumMember(Value = @"N2")] N2 = 12,
+            [System.Runtime.Serialization.EnumMember(Value = @"N3")] N3 = 13,
+            [System.Runtime.Serialization.EnumMember(Value = @"N4")] N4 = 14,
+            [System.Runtime.Serialization.EnumMember(Value = @"N5")] N5 = 15,
+            [System.Runtime.Serialization.EnumMember(Value = @"Name")] Name = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"S1")] S1 = 6,
+            [System.Runtime.Serialization.EnumMember(Value = @"S2")] S2 = 7,
+            [System.Runtime.Serialization.EnumMember(Value = @"S3")] S3 = 8,
+            [System.Runtime.Serialization.EnumMember(Value = @"S4")] S4 = 9,
+            [System.Runtime.Serialization.EnumMember(Value = @"S5")] S5 = 10,
+        }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum OpOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"CONTAINS")] CONTAINS = 1,
+            [System.Runtime.Serialization.EnumMember(Value = @"EQ")] EQ = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"GE")] GE = 7,
+            [System.Runtime.Serialization.EnumMember(Value = @"GT")] GT = 6,
+            [System.Runtime.Serialization.EnumMember(Value = @"LE")] LE = 5,
+            [System.Runtime.Serialization.EnumMember(Value = @"LT")] LT = 4,
+            [System.Runtime.Serialization.EnumMember(Value = @"NE")] NE = 3,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"QueryOrder")] [UnityEngine.Scripting.Preserve] public class QueryOrder
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"asc")] [UnityEngine.Scripting.Preserve] public bool Asc { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"field")] [UnityEngine.Scripting.Preserve] public QueryOrder.FieldOptions Field { get; }
+        [UnityEngine.Scripting.Preserve] public QueryOrder(bool asc = false, QueryOrder.FieldOptions field = ) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum FieldOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"AvailableSlots")] AvailableSlots = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"Created")] Created = 4,
+            [System.Runtime.Serialization.EnumMember(Value = @"ID")] ID = 6,
+            [System.Runtime.Serialization.EnumMember(Value = @"LastUpdated")] LastUpdated = 5,
+            [System.Runtime.Serialization.EnumMember(Value = @"MaxPlayers")] MaxPlayers = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"N1")] N1 = 12,
+            [System.Runtime.Serialization.EnumMember(Value = @"N2")] N2 = 13,
+            [System.Runtime.Serialization.EnumMember(Value = @"N3")] N3 = 14,
+            [System.Runtime.Serialization.EnumMember(Value = @"N4")] N4 = 15,
+            [System.Runtime.Serialization.EnumMember(Value = @"N5")] N5 = 16,
+            [System.Runtime.Serialization.EnumMember(Value = @"Name")] Name = 1,
+            [System.Runtime.Serialization.EnumMember(Value = @"S1")] S1 = 7,
+            [System.Runtime.Serialization.EnumMember(Value = @"S2")] S2 = 8,
+            [System.Runtime.Serialization.EnumMember(Value = @"S3")] S3 = 9,
+            [System.Runtime.Serialization.EnumMember(Value = @"S4")] S4 = 10,
+            [System.Runtime.Serialization.EnumMember(Value = @"S5")] S5 = 11,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"QueryRequest")] [UnityEngine.Scripting.Preserve] public class QueryRequest
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"continuationToken")] [UnityEngine.Scripting.Preserve] public string ContinuationToken { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"count")] [UnityEngine.Scripting.Preserve] public System.Nullable<int> Count { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"filter")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<QueryFilter> Filter { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"order")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<QueryOrder> Order { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"sampleResults")] [UnityEngine.Scripting.Preserve] public bool SampleResults { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"skip")] [UnityEngine.Scripting.Preserve] public System.Nullable<int> Skip { get; }
+        [UnityEngine.Scripting.Preserve] public QueryRequest(System.Nullable<int> count = 10, System.Nullable<int> skip = 0, bool sampleResults = false, System.Collections.Generic.List<QueryFilter> filter = default(System.Collections.Generic.List<QueryFilter>), System.Collections.Generic.List<QueryOrder> order = default(System.Collections.Generic.List<QueryOrder>), string continuationToken = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"QueryResponse")] [UnityEngine.Scripting.Preserve] public class QueryResponse
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"continuationToken")] [UnityEngine.Scripting.Preserve] public string ContinuationToken { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"results")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<Lobby> Results { get; }
+        [UnityEngine.Scripting.Preserve] public QueryResponse(System.Collections.Generic.List<Lobby> results = default(System.Collections.Generic.List<Lobby>), string continuationToken = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"QuickJoinRequest")] [UnityEngine.Scripting.Preserve] public class QuickJoinRequest
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"filter")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<QueryFilter> Filter { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"player")] [UnityEngine.Scripting.Preserve] public Player Player { get; }
+        [UnityEngine.Scripting.Preserve] public QuickJoinRequest(System.Collections.Generic.List<QueryFilter> filter = default(System.Collections.Generic.List<QueryFilter>), Player player = default(Player)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"TokenData")] [UnityEngine.Scripting.Preserve] public class TokenData
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"tokenValue")] [UnityEngine.Scripting.Preserve] public string TokenValue { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"uri")] [UnityEngine.Scripting.Preserve] public string Uri { get; }
+        [UnityEngine.Scripting.Preserve] public TokenData(string tokenValue = default(string), string uri = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"TokenRequest")] [UnityEngine.Scripting.Preserve] public class TokenRequest
+    {
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"tokenType")] [UnityEngine.Scripting.Preserve] public TokenRequest.TokenTypeOptions TokenType { get; }
+        [UnityEngine.Scripting.Preserve] public TokenRequest(TokenRequest.TokenTypeOptions tokenType) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum TokenTypeOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"vivoxJoin")] VivoxJoin = 1,
+            [System.Runtime.Serialization.EnumMember(Value = @"wireJoin")] WireJoin = 2,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"UpdateRequest")] [UnityEngine.Scripting.Preserve] public class UpdateRequest
+    {
+        [Newtonsoft.Json.JsonConverter(typeof(Unity.Services.Lobbies.Http.JsonObjectCollectionConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"data")] [UnityEngine.Scripting.Preserve] public Unity.Services.Lobbies.Http.JsonObject Data { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"hostId")] [UnityEngine.Scripting.Preserve] public string HostId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"isLocked")] [UnityEngine.Scripting.Preserve] public System.Nullable<bool> IsLocked { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"isPrivate")] [UnityEngine.Scripting.Preserve] public System.Nullable<bool> IsPrivate { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"maxPlayers")] [UnityEngine.Scripting.Preserve] public System.Nullable<int> MaxPlayers { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"name")] [UnityEngine.Scripting.Preserve] public string Name { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"password")] [UnityEngine.Scripting.Preserve] public string Password { get; }
+        [UnityEngine.Scripting.Preserve] public UpdateRequest(string name = default(string), System.Nullable<int> maxPlayers = default(System.Nullable<int>), System.Nullable<bool> isPrivate = default(System.Nullable<bool>), System.Nullable<bool> isLocked = default(System.Nullable<bool>), System.Collections.Generic.Dictionary<string, DataObject> data = default(System.Collections.Generic.Dictionary<string, DataObject>), string hostId = default(string), string password = default(string)) {}
+    }
+}
+
+namespace Unity.Services.Matchmaker
+{
+    public class CreateBackfillTicketOptions
+    {
+        public System.Collections.Generic.Dictionary<string, object> Attributes { get; set; }
+        public string Connection { get; set; }
+        public string MatchId { get; set; }
+        public string PoolId { get; set; }
+        public Models.BackfillTicketProperties Properties { get; set; }
+        public string QueueName { get; set; }
+        public CreateBackfillTicketOptions() {}
+        public CreateBackfillTicketOptions(string queueName, string connection = default(string), System.Collections.Generic.Dictionary<string, object> attributes = default(System.Collections.Generic.Dictionary<string, object>), Models.BackfillTicketProperties properties = default(Models.BackfillTicketProperties), string poolId = default(string), string matchId = default(string)) {}
+        public CreateBackfillTicketOptions WithCustomConnection(System.Collections.Generic.Dictionary<string, object> data = default(System.Collections.Generic.Dictionary<string, object>));
+        public CreateBackfillTicketOptions WithIpPortConnection(string ip, System.UInt32 port, System.Collections.Generic.Dictionary<string, object> data = default(System.Collections.Generic.Dictionary<string, object>));
+    }
+
+    public class CreateTicketOptions
+    {
+        public System.Collections.Generic.Dictionary<string, object> Attributes { get; set; }
+        public string QueueName { get; set; }
+        public CreateTicketOptions(string queueName = default(string), System.Collections.Generic.Dictionary<string, object> attributes = default(System.Collections.Generic.Dictionary<string, object>)) {}
+    }
+
+    public interface IMatchmakerSdkConfiguration
+    {
+        public void SetBasePath(string basePath);
+    }
+
+    public interface IMatchmakerService
+    {
+        public System.Threading.Tasks.Task<Models.BackfillTicket> ApproveBackfillTicketAsync(string backfillTicketId);
+        public System.Threading.Tasks.Task<string> CreateBackfillTicketAsync(CreateBackfillTicketOptions options);
+        public System.Threading.Tasks.Task<Models.CreateTicketResponse> CreateTicketAsync(System.Collections.Generic.List<Models.Player> players, CreateTicketOptions options);
+        public System.Threading.Tasks.Task DeleteBackfillTicketAsync(string backfillTicketId);
+        public System.Threading.Tasks.Task DeleteTicketAsync(string ticketId);
+        public System.Threading.Tasks.Task<Models.StoredMatchmakingResults> GetMatchmakingResultsAsync(string matchId);
+        public System.Threading.Tasks.Task<Models.TicketStatusResponse> GetTicketAsync(string ticketId);
+        public System.Threading.Tasks.Task UpdateBackfillTicketAsync(string backfillTicketId, Models.BackfillTicket ticket);
+    }
+
+    public enum MatchmakerExceptionReason
+    {
+        BadGateway = 21502,
+        BadRequest = 21400,
+        Conflict = 21409,
+        EntityNotFound = 21404,
+        ExpectationFailed = 21417,
+        FailedDependency = 21424,
+        Forbidden = 21403,
+        GatewayTimeout = 21504,
+        Gone = 21410,
+        HttpVersionNotSupported = 21505,
+        InsufficientStorage = 21507,
+        InternalServerError = 21500,
+        LengthRequired = 21411,
+        Locked = 21423,
+        LoopDetected = 21508,
+        Max = 21999,
+        MethodNotAllowed = 21405,
+        Min = 21000,
+        Misdirected = 21421,
+        NetworkAuthenticationRequired = 21511,
+        NetworkError = 21998,
+        NotAcceptable = 21406,
+        NotExtended = 21510,
+        NotImplemented = 21501,
+        PaymentRequired = 21402,
+        PreconditionFailed = 21412,
+        PreconditionRequired = 21428,
+        ProxyAuthenticationRequired = 21407,
+        RangeNotSatisfiable = 21416,
+        RateLimited = 21429,
+        RequestEntityTooLarge = 21413,
+        RequestHeaderFieldsTooLarge = 21431,
+        RequestTimeOut = 21408,
+        RequestUriTooLong = 21414,
+        ServiceUnavailable = 21503,
+        Teapot = 21418,
+        TooEarly = 21425,
+        Unauthorized = 21401,
+        UnavailableForLegalReasons = 21451,
+        Unknown = 21999,
+        UnprocessableTransaction = 21422,
+        UnsupportedMediaType = 21415,
+        UpgradeRequired = 21426,
+        VariantAlsoNegotiates = 21506,
+    }
+
+    public static class MatchmakerService
+    {
+        public static IMatchmakerService Instance { get; }
+    }
+
+    public class MatchmakerServiceException : Unity.Services.Core.RequestFailedException
+    {
+        public MatchmakerExceptionReason Reason { get; }
+        public MatchmakerServiceException(System.Exception innerException) {}
+        public MatchmakerServiceException(MatchmakerExceptionReason reason, string message, System.Exception innerException = default(System.Exception)) {}
+    }
+}
+
+namespace Unity.Services.Matchmaker.Http
+{
+    public class DeserializationSettings
+    {
+        public MissingMemberHandling MissingMemberHandling = MissingMemberHandling.Error;
+        public DeserializationSettings() {}
+    }
+
+    [Newtonsoft.Json.JsonConverter(typeof(JsonObjectConverter))] [UnityEngine.Scripting.Preserve] public interface IDeserializable
+    {
+        public T GetAs<T>(DeserializationSettings deserializationSettings = default(DeserializationSettings));
+        public string GetAsString();
+    }
+
+    public enum MissingMemberHandling
+    {
+        Error = 0,
+        Ignore = 1,
+    }
+}
+
+namespace Unity.Services.Matchmaker.Models
+{
+    [System.Runtime.Serialization.DataContract(Name = @"AbTestingResult")] [UnityEngine.Scripting.Preserve] public class AbTestingResult
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"basePoolId")] [UnityEngine.Scripting.Preserve] public string BasePoolId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, Name = @"isAbTesting")] [UnityEngine.Scripting.Preserve] public bool IsAbTesting { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"poolId")] [UnityEngine.Scripting.Preserve] public string PoolId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"variantId")] [UnityEngine.Scripting.Preserve] public string VariantId { get; }
+        [UnityEngine.Scripting.Preserve] public AbTestingResult(bool isAbTesting = false, string variantId = default(string), string poolId = default(string), string basePoolId = default(string)) {}
+    }
+
+    public class BackfillTicket
+    {
+        public System.Collections.Generic.Dictionary<string, object> Attributes { get; set; }
+        public string Connection { get; set; }
+        public string Id { get; set; }
+        public BackfillTicketProperties Properties { get; set; }
+        public BackfillTicket(string id = default(string), string connection = default(string), System.Collections.Generic.Dictionary<string, object> attributes = default(System.Collections.Generic.Dictionary<string, object>), BackfillTicketProperties properties = default(BackfillTicketProperties)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"BackfillTicketProperties")] [UnityEngine.Scripting.Preserve] public class BackfillTicketProperties
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"matchProperties")] [UnityEngine.Scripting.Preserve] public MatchProperties MatchProperties { get; }
+        [UnityEngine.Scripting.Preserve] public BackfillTicketProperties(MatchProperties matchProperties = default(MatchProperties)) {}
+    }
+
+    [Newtonsoft.Json.JsonConverter(typeof(ConnectionDetailsJsonConverter))] [System.Runtime.Serialization.DataContract(Name = @"ConnectionDetails")] [UnityEngine.Scripting.Preserve] public class ConnectionDetails
+    {
+        public System.Type Type { get; }
+        public object Value { get; }
+        public ConnectionDetails(object value, System.Type type) {}
+        public static ConnectionDetails FromJson(string jsonString);
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"CreateBackfillTicketResponse")] [UnityEngine.Scripting.Preserve] public class CreateBackfillTicketResponse
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"id")] [UnityEngine.Scripting.Preserve] public string Id { get; }
+        [UnityEngine.Scripting.Preserve] public CreateBackfillTicketResponse(string id = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"CreateTicketResponse")] [UnityEngine.Scripting.Preserve] public class CreateTicketResponse
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"abTestingResult")] [UnityEngine.Scripting.Preserve] public AbTestingResult AbTestingResult { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"id")] [UnityEngine.Scripting.Preserve] public string Id { get; }
+        [UnityEngine.Scripting.Preserve] public CreateTicketResponse(string id = default(string), AbTestingResult abTestingResult = default(AbTestingResult)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"CustomAssignment")] [UnityEngine.Scripting.Preserve] public class CustomAssignment
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"assignmentType")] [UnityEngine.Scripting.Preserve] public string AssignmentType { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Unity.Services.Matchmaker.Http.JsonObjectCollectionConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"customData")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.Dictionary<string, Unity.Services.Matchmaker.Http.IDeserializable> CustomData { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"matchId")] [UnityEngine.Scripting.Preserve] public string MatchId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"message")] [UnityEngine.Scripting.Preserve] public string Message { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"status")] [UnityEngine.Scripting.Preserve] public CustomAssignment.StatusOptions Status { get; }
+        [UnityEngine.Scripting.Preserve] public CustomAssignment(string assignmentType, string message = default(string), CustomAssignment.StatusOptions status = , string matchId = default(string), System.Collections.Generic.Dictionary<string, object> customData = default(System.Collections.Generic.Dictionary<string, object>)) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum StatusOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"Failed")] Failed = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"Found")] Found = 4,
+            [System.Runtime.Serialization.EnumMember(Value = @"InProgress")] InProgress = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"Timeout")] Timeout = 1,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"CustomConnectionDetails")] [UnityEngine.Scripting.Preserve] public class CustomConnectionDetails
+    {
+        [Newtonsoft.Json.JsonConverter(typeof(Unity.Services.Matchmaker.Http.JsonObjectCollectionConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"customData")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.Dictionary<string, Unity.Services.Matchmaker.Http.IDeserializable> CustomData { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"type")] [UnityEngine.Scripting.Preserve] public string Type { get; }
+        [UnityEngine.Scripting.Preserve] public CustomConnectionDetails(string type, System.Collections.Generic.Dictionary<string, object> customData = default(System.Collections.Generic.Dictionary<string, object>)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"IpPortAssignment")] [UnityEngine.Scripting.Preserve] public class IpPortAssignment
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"assignmentType")] [UnityEngine.Scripting.Preserve] public string AssignmentType { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Unity.Services.Matchmaker.Http.JsonObjectCollectionConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"customData")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.Dictionary<string, Unity.Services.Matchmaker.Http.IDeserializable> CustomData { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"ip")] [UnityEngine.Scripting.Preserve] public string Ip { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"matchId")] [UnityEngine.Scripting.Preserve] public string MatchId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"message")] [UnityEngine.Scripting.Preserve] public string Message { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"port")] [UnityEngine.Scripting.Preserve] public System.Nullable<int> Port { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"status")] [UnityEngine.Scripting.Preserve] public IpPortAssignment.StatusOptions Status { get; }
+        [UnityEngine.Scripting.Preserve] public IpPortAssignment(string assignmentType, string message = default(string), IpPortAssignment.StatusOptions status = , string ip = default(string), System.Nullable<int> port = default(System.Nullable<int>), string matchId = default(string), System.Collections.Generic.Dictionary<string, object> customData = default(System.Collections.Generic.Dictionary<string, object>)) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum StatusOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"Failed")] Failed = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"Found")] Found = 4,
+            [System.Runtime.Serialization.EnumMember(Value = @"InProgress")] InProgress = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"Timeout")] Timeout = 1,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"IpPortConnectionDetails")] [UnityEngine.Scripting.Preserve] public class IpPortConnectionDetails
+    {
+        [Newtonsoft.Json.JsonConverter(typeof(Unity.Services.Matchmaker.Http.JsonObjectCollectionConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"customData")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.Dictionary<string, Unity.Services.Matchmaker.Http.IDeserializable> CustomData { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"ip")] [UnityEngine.Scripting.Preserve] public string Ip { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"port")] [UnityEngine.Scripting.Preserve] public int Port { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"type")] [UnityEngine.Scripting.Preserve] public string Type { get; }
+        [UnityEngine.Scripting.Preserve] public IpPortConnectionDetails(string type, string ip = default(string), int port = 0, System.Collections.Generic.Dictionary<string, object> customData = default(System.Collections.Generic.Dictionary<string, object>)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"MatchIdAssignment")] [UnityEngine.Scripting.Preserve] public class MatchIdAssignment
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"assignmentType")] [UnityEngine.Scripting.Preserve] public string AssignmentType { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"matchId")] [UnityEngine.Scripting.Preserve] public string MatchId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"message")] [UnityEngine.Scripting.Preserve] public string Message { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"status")] [UnityEngine.Scripting.Preserve] public MatchIdAssignment.StatusOptions Status { get; }
+        [UnityEngine.Scripting.Preserve] public MatchIdAssignment(string assignmentType, string message = default(string), MatchIdAssignment.StatusOptions status = , string matchId = default(string)) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum StatusOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"Failed")] Failed = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"Found")] Found = 4,
+            [System.Runtime.Serialization.EnumMember(Value = @"InProgress")] InProgress = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"Timeout")] Timeout = 1,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"MatchmakingResults")] [UnityEngine.Scripting.Preserve] public class MatchmakingResults
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"backfillTicketId")] [UnityEngine.Scripting.Preserve] public string BackfillTicketId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"environmentId")] [UnityEngine.Scripting.Preserve] public string EnvironmentId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"generatorName")] [UnityEngine.Scripting.Preserve] public string GeneratorName { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"matchId")] [UnityEngine.Scripting.Preserve] public string MatchId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"matchProperties")] [UnityEngine.Scripting.Preserve] public MatchProperties MatchProperties { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"poolId")] [UnityEngine.Scripting.Preserve] public string PoolId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"poolName")] [UnityEngine.Scripting.Preserve] public string PoolName { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"queueName")] [UnityEngine.Scripting.Preserve] public string QueueName { get; }
+        [UnityEngine.Scripting.Preserve] public MatchmakingResults(MatchProperties matchProperties = default(MatchProperties), string generatorName = default(string), string queueName = default(string), string poolName = default(string), string environmentId = default(string), string backfillTicketId = default(string), string matchId = default(string), string poolId = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"MatchProperties")] [UnityEngine.Scripting.Preserve] public class MatchProperties
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"backfillTicketId")] [UnityEngine.Scripting.Preserve] public string BackfillTicketId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"players")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<Player> Players { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"region")] [UnityEngine.Scripting.Preserve] public string Region { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"teams")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<Team> Teams { get; }
+        [UnityEngine.Scripting.Preserve] public MatchProperties(System.Collections.Generic.List<Team> teams = default(System.Collections.Generic.List<Team>), System.Collections.Generic.List<Player> players = default(System.Collections.Generic.List<Player>), string region = default(string), string backfillTicketId = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"MultiplayAssignment")] [UnityEngine.Scripting.Preserve] public class MultiplayAssignment
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"assignmentType")] [UnityEngine.Scripting.Preserve] public string AssignmentType { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"ip")] [UnityEngine.Scripting.Preserve] public string Ip { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"matchId")] [UnityEngine.Scripting.Preserve] public string MatchId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"message")] [UnityEngine.Scripting.Preserve] public string Message { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"port")] [UnityEngine.Scripting.Preserve] public System.Nullable<int> Port { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"status")] [UnityEngine.Scripting.Preserve] public MultiplayAssignment.StatusOptions Status { get; }
+        [UnityEngine.Scripting.Preserve] public MultiplayAssignment(string assignmentType, string message = default(string), MultiplayAssignment.StatusOptions status = , string ip = default(string), System.Nullable<int> port = default(System.Nullable<int>), string matchId = default(string)) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum StatusOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"Failed")] Failed = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"Found")] Found = 4,
+            [System.Runtime.Serialization.EnumMember(Value = @"InProgress")] InProgress = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"Timeout")] Timeout = 1,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"MultiplayConnectionDetails")] [UnityEngine.Scripting.Preserve] public class MultiplayConnectionDetails
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"ip")] [UnityEngine.Scripting.Preserve] public string Ip { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"port")] [UnityEngine.Scripting.Preserve] public int Port { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"type")] [UnityEngine.Scripting.Preserve] public string Type { get; }
+        [UnityEngine.Scripting.Preserve] public MultiplayConnectionDetails(string type, string ip = default(string), int port = 0) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"NoneAssignment")] [UnityEngine.Scripting.Preserve] public class NoneAssignment
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"assignmentType")] [UnityEngine.Scripting.Preserve] public string AssignmentType { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"message")] [UnityEngine.Scripting.Preserve] public string Message { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"status")] [UnityEngine.Scripting.Preserve] public NoneAssignment.StatusOptions Status { get; }
+        [UnityEngine.Scripting.Preserve] public NoneAssignment(string assignmentType, string message = default(string), NoneAssignment.StatusOptions status = ) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum StatusOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"Failed")] Failed = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"Found")] Found = 4,
+            [System.Runtime.Serialization.EnumMember(Value = @"InProgress")] InProgress = 3,
+            [System.Runtime.Serialization.EnumMember(Value = @"Timeout")] Timeout = 1,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"Override")] [UnityEngine.Scripting.Preserve] public class Override
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"basePoolId")] [UnityEngine.Scripting.Preserve] public string BasePoolId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"poolOverrideId")] [UnityEngine.Scripting.Preserve] public string PoolOverrideId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"variantId")] [UnityEngine.Scripting.Preserve] public string VariantId { get; }
+        [UnityEngine.Scripting.Preserve] public Override(string basePoolId = default(string), string variantId = default(string), string poolOverrideId = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"Player")] [UnityEngine.Scripting.Preserve] public class Player
+    {
+        [Newtonsoft.Json.JsonConverter(typeof(Unity.Services.Matchmaker.Http.JsonObjectConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"customData")] [UnityEngine.Scripting.Preserve] public Unity.Services.Matchmaker.Http.IDeserializable CustomData { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"id")] [UnityEngine.Scripting.Preserve] public string Id { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"qosResults")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<QosResult> QosResults { get; }
+        [UnityEngine.Scripting.Preserve] public Player(string id, object customData = default(object), System.Collections.Generic.List<QosResult> qosResults = default(System.Collections.Generic.List<QosResult>)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"QosResult")] [UnityEngine.Scripting.Preserve] public class QosResult
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"annotations")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> Annotations { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"latency")] [UnityEngine.Scripting.Preserve] public System.Nullable<double> Latency { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"packetLoss")] [UnityEngine.Scripting.Preserve] public System.Nullable<double> PacketLoss { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"regionId")] [UnityEngine.Scripting.Preserve] public string RegionId { get; }
+        [UnityEngine.Scripting.Preserve] public QosResult(string regionId, System.Nullable<double> packetLoss, System.Nullable<double> latency, System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> annotations = default(System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"RelayConnectionDetails")] [UnityEngine.Scripting.Preserve] public class RelayConnectionDetails
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"joinCode")] [UnityEngine.Scripting.Preserve] public string JoinCode { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"type")] [UnityEngine.Scripting.Preserve] public string Type { get; }
+        [UnityEngine.Scripting.Preserve] public RelayConnectionDetails(string type, string joinCode = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"StoredMatchmakingResults")] [UnityEngine.Scripting.Preserve] public class StoredMatchmakingResults
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"backfillTicketId")] [UnityEngine.Scripting.Preserve] public string BackfillTicketId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"environmentId")] [UnityEngine.Scripting.Preserve] public string EnvironmentId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"generatorName")] [UnityEngine.Scripting.Preserve] public string GeneratorName { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"matchId")] [UnityEngine.Scripting.Preserve] public string MatchId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"matchProperties")] [UnityEngine.Scripting.Preserve] public StoredMatchProperties MatchProperties { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"poolId")] [UnityEngine.Scripting.Preserve] public string PoolId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"poolName")] [UnityEngine.Scripting.Preserve] public string PoolName { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"queueName")] [UnityEngine.Scripting.Preserve] public string QueueName { get; }
+        [UnityEngine.Scripting.Preserve] public StoredMatchmakingResults(StoredMatchProperties matchProperties = default(StoredMatchProperties), string generatorName = default(string), string queueName = default(string), string poolName = default(string), string environmentId = default(string), string backfillTicketId = default(string), string matchId = default(string), string poolId = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"StoredMatchProperties")] [UnityEngine.Scripting.Preserve] public class StoredMatchProperties
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"backfillTicketId")] [UnityEngine.Scripting.Preserve] public string BackfillTicketId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"maxPlayers")] [UnityEngine.Scripting.Preserve] public int MaxPlayers { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"players")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<Player> Players { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"region")] [UnityEngine.Scripting.Preserve] public string Region { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"teams")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<Team> Teams { get; }
+        [UnityEngine.Scripting.Preserve] public StoredMatchProperties(System.Collections.Generic.List<Team> teams = default(System.Collections.Generic.List<Team>), System.Collections.Generic.List<Player> players = default(System.Collections.Generic.List<Player>), string region = default(string), string backfillTicketId = default(string), int maxPlayers = 0) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"Team")] [UnityEngine.Scripting.Preserve] public class Team
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"playerIds")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<string> PlayerIds { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"teamId")] [UnityEngine.Scripting.Preserve] public string TeamId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"teamName")] [UnityEngine.Scripting.Preserve] public string TeamName { get; }
+        [UnityEngine.Scripting.Preserve] public Team(string teamName = default(string), string teamId = default(string), System.Collections.Generic.List<string> playerIds = default(System.Collections.Generic.List<string>)) {}
+    }
+
+    [Newtonsoft.Json.JsonConverter(typeof(TicketStatusResponseJsonConverter))] [System.Runtime.Serialization.DataContract(Name = @"TicketStatusResponse")] [UnityEngine.Scripting.Preserve] public class TicketStatusResponse
+    {
+        public System.Type Type { get; }
+        public object Value { get; }
+        public TicketStatusResponse(object value, System.Type type) {}
+        public static TicketStatusResponse FromJson(string jsonString);
+    }
+}
+
+namespace Unity.Services.Matchmaker.PayloadProxy
+{
+    [System.Runtime.Serialization.DataContract(Name = @"TokenResponse")] [UnityEngine.Scripting.Preserve] public class TokenResponse
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"error")] [UnityEngine.Scripting.Preserve] public string Error { get; set; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"token")] [UnityEngine.Scripting.Preserve] public string Token { get; set; }
+        [UnityEngine.Scripting.Preserve] public TokenResponse() {}
+        [UnityEngine.Scripting.Preserve] public TokenResponse(string token, string error) {}
+    }
+}
+
+namespace Unity.Services.Multiplayer
+{
+    public struct AddingSessionOptions
+    {
+        public readonly string Type;
+        public AddingSessionOptions(string type) {}
+    }
+
+    public class BackfillingConfiguration
+    {
+        public bool AutomaticallyRemovePlayers { get; }
+        public bool AutoStart { get; }
+        public int BackfillingLoopInterval { get; }
+        public bool Enable { get; set; }
+        public int PlayerConnectionTimeout { get; set; }
+        public BackfillingConfiguration() {}
+        public static BackfillingConfiguration WithBackfillingConfiguration(bool enable = true, bool automaticallyRemovePlayers = true, bool autoStart = true, int playerConnectionTimeout = 30, int backfillingLoopInterval = 1);
+    }
+
+    public abstract class BaseSessionOptions
+    {
+        public System.Collections.Generic.Dictionary<string, PlayerProperty> PlayerProperties { get; set; }
+        public string Type { get; set; }
+        protected BaseSessionOptions() {}
+    }
+
+    public class DirectNetworkOptions
+    {
+        public ListenIPAddress ListenIp { get; }
+        public System.UInt16 Port { get; }
+        public PublishIPAddress PublishIp { get; }
+        public DirectNetworkOptions() {}
+        public DirectNetworkOptions(System.UInt16 port) {}
+        public DirectNetworkOptions(ListenIPAddress listenIp, PublishIPAddress publishIp, System.UInt16 port) {}
+    }
+
+    public enum FilterField
+    {
+        AvailableSlots = 1,
+        Created = 3,
+        HasPassword = 16,
+        IsLocked = 15,
+        LastUpdated = 4,
+        MaxPlayers = 0,
+        Name = 2,
+        NumberIndex1 = 10,
+        NumberIndex2 = 11,
+        NumberIndex3 = 12,
+        NumberIndex4 = 13,
+        NumberIndex5 = 14,
+        StringIndex1 = 5,
+        StringIndex2 = 6,
+        StringIndex3 = 7,
+        StringIndex4 = 8,
+        StringIndex5 = 9,
+    }
+
+    public enum FilterOperation
+    {
+        Contains = 0,
+        Equal = 1,
+        Greater = 5,
+        GreaterOrEqual = 6,
+        Less = 3,
+        LessOrEqual = 4,
+        NotEqual = 2,
+    }
+
+    public class FilterOption
+    {
+        public FilterField Field { get; }
+        public FilterOperation Operation { get; }
+        public string Value { get; }
+        public FilterOption(FilterField field, string value, FilterOperation operation) {}
+    }
+
+    public interface IClientSessionNetwork
+    {
+        public event System.Action<SessionError> MigrationFailed;
+        public event System.Action<SessionError> StartFailed;
+        public event System.Action<NetworkState> StateChanged;
+        public event System.Action<SessionError> StopFailed;
+        public INetworkHandler NetworkHandler { get; set; }
+        public NetworkState State { get; }
+    }
+
+    public interface IHostSession : ISession
+    {
+        public string Host { get; set; }
+        public bool IsLocked { get; set; }
+        public bool IsPrivate { get; set; }
+        public string Name { get; set; }
+        public IHostSessionNetwork Network { get; }
+        public string Password { set; }
+        public System.Collections.Generic.IReadOnlyList<IPlayer> Players { get; }
+        public System.Threading.Tasks.Task DeleteAsync();
+        public System.Threading.Tasks.Task<SessionMigrationData> GetHostMigrationDataAsync(System.TimeSpan timeout);
+        public IPlayer GetPlayer(string playerId);
+        public System.Threading.Tasks.Task RemovePlayerAsync(string playerId);
+        public System.Threading.Tasks.Task SavePlayerDataAsync(string playerId);
+        public System.Threading.Tasks.Task SavePropertiesAsync();
+        public System.Threading.Tasks.Task SetHostMigrationDataAsync(byte[] data, System.TimeSpan timeout);
+        public void SetProperties(System.Collections.Generic.Dictionary<string, SessionProperty> properties);
+        public void SetProperty(string key, SessionProperty property);
+    }
+
+    public interface IHostSessionNetwork
+    {
+        public event System.Action<SessionError> MigrationFailed;
+        public event System.Action<SessionError> StartFailed;
+        public event System.Action<NetworkState> StateChanged;
+        public event System.Action<SessionError> StopFailed;
+        public INetworkHandler NetworkHandler { get; set; }
+        public NetworkState State { get; }
+        public System.Threading.Tasks.Task StartDirectNetworkAsync(DirectNetworkOptions networkOptions);
+        public System.Threading.Tasks.Task StartDistributedAuthorityNetworkAsync(RelayNetworkOptions networkOptions);
+        public System.Threading.Tasks.Task StartRelayNetworkAsync(RelayNetworkOptions networkOptions);
+        public System.Threading.Tasks.Task StopNetworkAsync();
+    }
+
+    public interface IIpValidator
+    {
+        public bool IsValidIPAddress(string ip);
+        public bool TryParseIPAddress(string ip, out NetworkEndpointAddress endpoint);
+    }
+
+    public interface IMigrationDataHandler
+    {
+        public void Apply(byte[] migrationData);
+        public byte[] Generate();
+    }
+
+    public interface IMultiplayerService
+    {
+        public event System.Action<AddingSessionOptions, SessionException> AddingSessionFailed;
+        public event System.Action<AddingSessionOptions> AddingSessionStarted;
+        public event System.Action<ISession> SessionAdded;
+        public event System.Action<ISession> SessionRemoved;
+        public System.Collections.Generic.IReadOnlyDictionary<string, ISession> Sessions { get; }
+        public System.Threading.Tasks.Task<ISession> CreateOrJoinSessionAsync(string sessionId, SessionOptions sessionOptions);
+        public System.Threading.Tasks.Task<IHostSession> CreateSessionAsync(SessionOptions sessionOptions);
+        public System.Threading.Tasks.Task<System.Collections.Generic.List<string>> GetJoinedSessionIdsAsync();
+        public System.Threading.Tasks.Task<ISession> JoinSessionByCodeAsync(string sessionCode, JoinSessionOptions sessionOptions = default(JoinSessionOptions));
+        public System.Threading.Tasks.Task<ISession> JoinSessionByIdAsync(string sessionId, JoinSessionOptions sessionOptions = default(JoinSessionOptions));
+        public System.Threading.Tasks.Task<ISession> MatchmakeSessionAsync(QuickJoinOptions quickJoinOptions, SessionOptions sessionOptions);
+        public System.Threading.Tasks.Task<ISession> MatchmakeSessionAsync(MatchmakerOptions matchOptions, SessionOptions sessionOptions, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public System.Threading.Tasks.Task<QuerySessionsResults> QuerySessionsAsync(QuerySessionsOptions queryOptions);
+        public System.Threading.Tasks.Task<ISession> ReconnectToSessionAsync(string sessionId, ReconnectSessionOptions options = default(ReconnectSessionOptions));
+    }
+
+    public interface INetworkHandler
+    {
+        public System.Threading.Tasks.Task StartAsync(NetworkConfiguration configuration);
+        public System.Threading.Tasks.Task StopAsync();
+    }
+
+    public interface IPlayer : IReadOnlyPlayer
+    {
+        public void SetAllocationId(string allocationId);
+        public void SetProperties(System.Collections.Generic.Dictionary<string, PlayerProperty> properties);
+        public void SetProperty(string key, PlayerProperty property);
+    }
+
+    public interface IReadOnlyPlayer
+    {
+        public string AllocationId { get; }
+        public string Id { get; }
+        public System.DateTime Joined { get; }
+        public System.DateTime LastUpdated { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, PlayerProperty> Properties { get; }
+    }
+
+    public interface IServerSession : IHostSession, ISession
+    {
+    }
+
+    public interface ISession
+    {
+        public event System.Action Changed;
+        public event System.Action Deleted;
+        public event System.Action<string> PlayerHasLeft;
+        public event System.Action<string> PlayerJoined;
+        public event System.Action<string> PlayerLeaving;
+        [System.Obsolete(@"PlayerLeft has been deprecated. Use PlayerLeaving instead (UnityUpgradable) -> PlayerLeaving")] public event System.Action<string> PlayerLeft;
+        public event System.Action PlayerPropertiesChanged;
+        public event System.Action RemovedFromSession;
+        public event System.Action<string> SessionHostChanged;
+        public event System.Action SessionMigrated;
+        public event System.Action SessionPropertiesChanged;
+        public event System.Action<SessionState> StateChanged;
+        public int AvailableSlots { get; }
+        public string Code { get; }
+        public bool ConcurrencyControlEnabled { get; set; }
+        public IPlayer CurrentPlayer { get; }
+        public bool HasPassword { get; }
+        public string Host { get; }
+        public string Id { get; }
+        public bool IsHost { get; }
+        public bool IsLocked { get; }
+        public bool IsMember { get; }
+        public bool IsPrivate { get; }
+        public bool IsServer { get; }
+        public int MaxPlayers { get; }
+        public string Name { get; }
+        public IClientSessionNetwork Network { get; }
+        public int PlayerCount { get; }
+        public System.Collections.Generic.IReadOnlyList<IReadOnlyPlayer> Players { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, SessionProperty> Properties { get; }
+        public SessionState State { get; }
+        public string Type { get; }
+        public IHostSession AsHost();
+        public IServerSession AsServer();
+        public IReadOnlyPlayer GetPlayer(string playerId);
+        public bool HasPlayer(string playerId);
+        public System.Threading.Tasks.Task LeaveAsync();
+        public System.Threading.Tasks.Task ReconnectAsync();
+        public System.Threading.Tasks.Task RefreshAsync();
+        public System.Threading.Tasks.Task SaveCurrentPlayerDataAsync();
+    }
+
+    public interface ISessionInfo
+    {
+        public int AvailableSlots { get; }
+        public System.DateTime Created { get; }
+        public bool HasPassword { get; }
+        public string HostId { get; }
+        public string Id { get; }
+        public bool IsLocked { get; }
+        public System.DateTime LastUpdated { get; }
+        public int MaxPlayers { get; }
+        public string Name { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, SessionProperty> Properties { get; }
+        public string Upid { get; }
+    }
+
+    public class JoinSessionOptions : BaseSessionOptions
+    {
+        public string Password { get; set; }
+        public JoinSessionOptions() {}
+    }
+
+    public readonly struct ListenIPAddress
+    {
+        public static ListenIPAddress AnyIpv4 { get; }
+        public static ListenIPAddress AnyIpv6 { get; }
+        public static ListenIPAddress LoopbackIpv4 { get; }
+        public static ListenIPAddress LoopbackIpv6 { get; }
+        public NetworkEndpointAddress NetworkEndpoint { get; }
+        public Unity.Networking.Transport.NetworkEndpoint UtpNetworkEndpoint { get; }
+        public ListenIPAddress(string address) {}
+        public ListenIPAddress(NetworkEndpointAddress endpoint) {}
+        public ListenIPAddress WithPort(System.UInt16 port);
+    }
+
+    public static class MatchmakerExtensions
+    {
+        public static Unity.Services.Matchmaker.Models.StoredMatchmakingResults GetMatchmakingResults(this ISession session);
+    }
+
+    public class MatchmakerOptions
+    {
+        public System.Collections.Generic.Dictionary<string, PlayerProperty> PlayerProperties { get; set; }
+        public string QueueName { get; set; }
+        public System.Collections.Generic.Dictionary<string, object> TicketAttributes { get; set; }
+        public MatchmakerOptions() {}
+    }
+
+    public class MatchmakerQueueAsset : UnityEngine.ScriptableObject
+    {
+        public int MaxPlayers { get; set; }
+        public string Name { get; set; }
+        public int TimeoutSeconds { get; set; }
+        public MatchmakerQueueAsset() {}
+    }
+
+    public enum MatchmakerState
+    {
+        Canceled = 2,
+        InProgress = 1,
+        Joined = 6,
+        JoinFailed = 5,
+        MatchFailed = 3,
+        MatchFound = 4,
+        None = 0,
+    }
+
+    public static class MultiplayerService
+    {
+        public static IMultiplayerService Instance { get; set; }
+    }
+
+    public class NetworkConfiguration
+    {
+        public Unity.Networking.Transport.NetworkEndpoint DirectNetworkListenAddress { get; }
+        public Unity.Networking.Transport.NetworkEndpoint DirectNetworkPublishAddress { get; }
+        public Unity.Networking.Transport.Relay.RelayServerData RelayClientData { get; }
+        public Unity.Networking.Transport.Relay.RelayServerData RelayServerData { get; }
+        public NetworkRole Role { get; }
+        public NetworkType Type { get; }
+        public void UpdatePublishPort(System.UInt16 port);
+    }
+
+    public struct NetworkEndpointAddress
+    {
+        public static readonly NetworkEndpointAddress AnyIpv4;
+        public static readonly NetworkEndpointAddress AnyIpv6;
+        public static readonly NetworkEndpointAddress LoopbackIpv4;
+        public static readonly NetworkEndpointAddress LoopbackIpv6;
+        public string Address { get; }
+        public string AddressNoPort { get; }
+        public System.UInt16 Port { get; }
+        public Unity.Networking.Transport.NetworkEndpoint UtpEndpoint { get; }
+        public NetworkEndpointAddress(Unity.Networking.Transport.NetworkEndpoint utpEndpoint) {}
+        public NetworkEndpointAddress(string ip, System.UInt16 port) {}
+        public NetworkEndpointAddress WithPort(System.UInt16 port);
+    }
+
+    public class NetworkOptions
+    {
+        public RelayProtocol RelayProtocol { get; set; }
+        public NetworkOptions() {}
+    }
+
+    public enum NetworkRole
+    {
+        Client = 0,
+        Host = 2,
+        Server = 1,
+    }
+
+    public enum NetworkState
+    {
+        Migrating = 4,
+        Started = 2,
+        Starting = 1,
+        Stopped = 0,
+        Stopping = 3,
+    }
+
+    public enum NetworkType
+    {
+        Direct = 0,
+        DistributedAuthority = 2,
+        Relay = 1,
+    }
+
+    public class PlayerProperty
+    {
+        public string Value { get; }
+        public VisibilityPropertyOptions Visibility { get; }
+        public PlayerProperty(string value = default(string), VisibilityPropertyOptions visibility = VisibilityPropertyOptions.Public) {}
+    }
+
+    public enum PropertyIndex
+    {
+        None = 0,
+        Number1 = 6,
+        Number2 = 7,
+        Number3 = 8,
+        Number4 = 9,
+        Number5 = 10,
+        String1 = 1,
+        String2 = 2,
+        String3 = 3,
+        String4 = 4,
+        String5 = 5,
+    }
+
+    public readonly struct PublishIPAddress
+    {
+        public static PublishIPAddress LoopbackIpv4 { get; }
+        public static PublishIPAddress LoopbackIpv6 { get; }
+        public NetworkEndpointAddress NetworkEndpoint { get; }
+        public Unity.Networking.Transport.NetworkEndpoint UtpNetworkEndpoint { get; }
+        public PublishIPAddress(string address) {}
+        public PublishIPAddress(NetworkEndpointAddress endpoint) {}
+        public PublishIPAddress WithPort(System.UInt16 port);
+    }
+
+    public class QuerySessionsOptions
+    {
+        public string ContinuationToken { get; set; }
+        public int Count { get; set; }
+        public System.Collections.Generic.List<FilterOption> FilterOptions { get; set; }
+        public int Skip { get; set; }
+        public System.Collections.Generic.List<SortOption> SortOptions { get; set; }
+        public QuerySessionsOptions() {}
+    }
+
+    public class QuerySessionsResults
+    {
+        public string ContinuationToken { get; }
+        public System.Collections.Generic.IList<ISessionInfo> Sessions { get; }
+        public void StartPolling(int pollingDelaySeconds = 5);
+        public void StopPolling();
+    }
+
+    public class QuickJoinOptions
+    {
+        public bool CreateSession { get; set; }
+        public System.Collections.Generic.List<FilterOption> Filters { get; set; }
+        public System.TimeSpan Timeout { get; set; }
+        public QuickJoinOptions() {}
+    }
+
+    public class ReconnectSessionOptions
+    {
+        public string Type { get; set; }
+        public ReconnectSessionOptions() {}
+        public ReconnectSessionOptions WithNetworkHandler(INetworkHandler networkHandler);
+    }
+
+    public class RelayNetworkOptions
+    {
+        public static RelayNetworkOptions Default { get; }
+        public bool PreserveRegion { get; }
+        [System.Obsolete(@"This value was moved to the SessionOptions.WithNetworkOptions() API.")] public RelayProtocol Protocol { get; }
+        public string Region { get; }
+        [System.Obsolete(@"The RelayProtocol value should be se through SessionOptions.WithNetworkOptions() API.")] public RelayNetworkOptions(RelayProtocol protocol) {}
+        public RelayNetworkOptions(string region = default(string), bool preserveRegion = false) {}
+        [System.Obsolete(@"The RelayProtocol value should be se through SessionOptions.WithNetworkOptions() API.")] public RelayNetworkOptions(RelayProtocol protocol, string region) {}
+        [System.Obsolete(@"The RelayProtocol value should be set through SessionOptions.WithNetworkOptions() API.")] public RelayNetworkOptions(RelayProtocol protocol, string region, bool preserveRegion) {}
+    }
+
+    public enum RelayProtocol
+    {
+        Default = 2,
+        DTLS = 2,
+        UDP = 1,
+        Unknown = 0,
+        WSS = 3,
+    }
+
+    public enum SessionError
+    {
+        AllocationAlreadyExists = 8,
+        AllocationNotFound = 9,
+        AlreadySubscribedToLobby = 31,
+        Forbidden = 10,
+        InvalidBackfillTicket = 33,
+        InvalidBackfillTicketOptions = 46,
+        InvalidCreateSessionOptions = 32,
+        InvalidLocalMatchProperties = 34,
+        InvalidMatchmakerAssignment = 14,
+        InvalidMatchmakerOptions = 40,
+        InvalidMatchmakerResults = 16,
+        InvalidMatchmakerState = 15,
+        InvalidMatchmakerTicket = 13,
+        InvalidNetworkConfig = 17,
+        InvalidOperation = 20,
+        InvalidParameter = 12,
+        InvalidPlatformOperation = 19,
+        InvalidPlayerName = 43,
+        InvalidPlayerTeam = 35,
+        InvalidSessionIdentifier = 42,
+        InvalidSessionMetadata = 18,
+        LobbyAlreadyExists = 4,
+        MatchmakerAssignmentFailed = 21,
+        MatchmakerAssignmentTimeout = 22,
+        MatchmakerCancelled = 23,
+        MatchmakerModuleMissing = 39,
+        MigrationDataRequestTimeout = 38,
+        MissingAssembly = 24,
+        MultiplayServerError = 25,
+        NetworkManagerNotInitialized = 26,
+        NetworkManagerStartFailed = 27,
+        NetworkSetupFailed = 28,
+        None = 0,
+        NotAuthorized = 2,
+        NotInLobby = 3,
+        OutOfSyncSession = 41,
+        PlayerMissingTeamProperties = 36,
+        PlayerNameSynchronizationFailed = 44,
+        QoSMeasurementFailed = 37,
+        RateLimitExceeded = 11,
+        SessionConflict = 45,
+        SessionDeleted = 7,
+        SessionNotFound = 6,
+        SessionTypeAlreadyExists = 5,
+        TranportComponentMissing = 29,
+        TransportComponentMissing = 29,
+        TransportInvalid = 30,
+        Unknown = 1,
+    }
+
+    public enum SessionEventConnectionState
+    {
+        Error = 5,
+        Subscribed = 3,
+        Subscribing = 2,
+        Unknown = 0,
+        Unsubscribed = 1,
+        Unsynced = 4,
+    }
+
+    public class SessionException : System.Exception
+    {
+        public SessionError Error { get; }
+        public SessionException(string message, SessionError error, System.Exception innerException) {}
+        public override string ToString();
+    }
+
+    public class SessionMigrationData : Unity.Services.Lobbies.Models.MigrationData
+    {
+        public override byte[] Data { get; }
+    }
+
+    public class SessionObserver : System.IDisposable
+    {
+        public readonly string SessionType;
+        public event System.Action<AddingSessionOptions, SessionException> AddingSessionFailed;
+        public event System.Action<AddingSessionOptions> AddingSessionStarted;
+        public event System.Action<ISession> SessionAdded;
+        public ISession Session { get; }
+        public SessionObserver(string sessionType) {}
+        public SessionObserver(string sessionType, Unity.Services.Core.IUnityServices registry) {}
+        public void Dispose();
+    }
+
+    public class SessionOptions : BaseSessionOptions
+    {
+        public bool IsLocked { get; set; }
+        public bool IsPrivate { get; set; }
+        public int MaxPlayers { get; set; }
+        public string Name { get; set; }
+        public string Password { get; set; }
+        public System.Collections.Generic.Dictionary<string, SessionProperty> SessionProperties { get; set; }
+        public SessionOptions() {}
+    }
+
+    public static class SessionOptionsExtensions
+    {
+        public static string GetPlayerName(this IReadOnlyPlayer player);
+        public static T WithDirectNetwork<T>(this T options) where T : SessionOptions;
+        public static T WithDirectNetwork<T>(this T options, DirectNetworkOptions networkOptions) where T : SessionOptions;
+        public static T WithDirectNetwork<T>(this T options, string listenIp = @"127.0.0.1", string publishIp = @"127.0.0.1", int port = 0) where T : SessionOptions;
+        public static T WithDistributedAuthorityNetwork<T>(this T options, string region = default(string)) where T : SessionOptions;
+        public static T WithDistributedAuthorityNetwork<T>(this T options, RelayNetworkOptions relayOptions) where T : SessionOptions;
+        public static T WithHostMigration<T>(this T options, IMigrationDataHandler migrationDataHandler) where T : BaseSessionOptions;
+        public static T WithHostMigration<T>(this T options, IMigrationDataHandler migrationDataHandler, System.TimeSpan dataUploadInterval, System.TimeSpan dataHandlingTimeout) where T : BaseSessionOptions;
+        public static T WithNetworkHandler<T>(this T options, INetworkHandler networkHandler) where T : BaseSessionOptions;
+        public static T WithNetworkOptions<T>(this T options, NetworkOptions networkOptions) where T : BaseSessionOptions;
+        public static T WithPlayerName<T>(this T options, VisibilityPropertyOptions visibility = VisibilityPropertyOptions.Member) where T : BaseSessionOptions;
+        public static T WithRelayNetwork<T>(this T options, string region = default(string)) where T : SessionOptions;
+        public static T WithRelayNetwork<T>(this T options, RelayNetworkOptions relayOptions) where T : SessionOptions;
+    }
+
+    public class SessionProperty
+    {
+        public PropertyIndex Index { get; }
+        public string Value { get; }
+        public VisibilityPropertyOptions Visibility { get; }
+        public SessionProperty(string value, VisibilityPropertyOptions visibility = VisibilityPropertyOptions.Public, PropertyIndex index = PropertyIndex.None) {}
+    }
+
+    public enum SessionState
+    {
+        Connected = 1,
+        Deleted = 3,
+        Disconnected = 2,
+        None = 0,
+    }
+
+    public enum SortField
+    {
+        AvailableSlots = 2,
+        CreationTime = 3,
+        Id = 5,
+        LastUpdated = 4,
+        MaxPlayers = 1,
+        Name = 0,
+        NumberIndex1 = 11,
+        NumberIndex2 = 12,
+        NumberIndex3 = 13,
+        NumberIndex4 = 14,
+        NumberIndex5 = 15,
+        StringIndex1 = 6,
+        StringIndex2 = 7,
+        StringIndex3 = 8,
+        StringIndex4 = 9,
+        StringIndex5 = 10,
+    }
+
+    public class SortOption
+    {
+        public SortField Field { get; set; }
+        public SortOrder Order { get; set; }
+        public SortOption() {}
+        public SortOption(SortOrder order, SortField field) {}
+    }
+
+    public enum SortOrder
+    {
+        Ascending = 0,
+        Descending = 1,
+    }
+
+    public enum VisibilityPropertyOptions
+    {
+        Member = 2,
+        Private = 3,
+        Public = 1,
+    }
+}
+
+namespace Unity.Services.Multiplayer.Components
+{
+    [UnityEngine.CreateAssetMenu(fileName = @"MultiplayerSession", menuName = @"Services/Multiplayer/Multiplayer Session", order = 4)] public sealed class MultiplayerSession : UnityEngine.ScriptableObject
+    {
+        public ISession Session { get; }
+        public SessionLifecycleEvents SessionLifecycle { get; }
+        public SessionEvents SessionLifecycleEvents { get; }
+        public SessionPlayerEvents SessionPlayerEvents { get; }
+        public string SessionType { get; set; }
+        public MultiplayerSession() {}
+    }
+
+    public sealed class SessionConnector : UnityEngine.ScriptableObject
+    {
+        public SessionConnectorType ConnectorType { get; set; }
+        public string CreateOrJoinSessionId { get; set; }
+        public SessionConnectorEvents Events { get; set; }
+        public UnityEngine.Events.UnityEvent<string> ExecutionStarted { get; }
+        public UnityEngine.Events.UnityEvent<string> FailedExecution { get; }
+        public MultiplayerSession MultiplayerSession { get; set; }
+        public UnityEngine.Events.UnityEvent<ISession> SuccessfulExecution { get; }
+        public SessionConnector() {}
+        public void Execute();
+        public void Execute(Unity.Services.Core.IUnityServices servicesRegistry = default(Unity.Services.Core.IUnityServices));
+    }
+
+    public class SessionConnectorBehaviour : Unity.Services.Core.Components.ServicesBehaviour
+    {
+        [UnityEngine.Tooltip(@"If true, executes the session operation automatically when the player signs in.")] public bool ExecuteOnSignIn;
+        [UnityEngine.Tooltip(@"The session operation to execute.")] public SessionConnector SessionConnector;
+        public SessionConnectorBehaviour() {}
+        protected override void Cleanup();
+        public void Execute();
+        protected override void OnServicesInitialized();
+        protected override void OnServicesReady();
+    }
+
+    public sealed class SessionConnectorEvents
+    {
+        [UnityEngine.Tooltip(@"Invoked when Execute() is called. Parameter is the session identifier.")] public UnityEngine.Events.UnityEvent<string> ExecutionStarted;
+        [UnityEngine.Tooltip(@"Invoked when the operation fails. Parameter is the error message.")] public UnityEngine.Events.UnityEvent<string> FailedExecution;
+        [UnityEngine.Tooltip(@"Invoked when the operation completes successfully. Parameter is the session (host or joined).")] public UnityEngine.Events.UnityEvent<ISession> SuccessfulExecution;
+        public SessionConnectorEvents() {}
+    }
+
+    public enum SessionConnectorType
+    {
+        Create = 1,
+        CreateOrJoin = 0,
+    }
+
+    public sealed class SessionEvents
+    {
+        [UnityEngine.Tooltip(@"Invoked when the session has changed. Parameter is the session.")] public UnityEngine.Events.UnityEvent<ISession> Changed;
+        [UnityEngine.Tooltip(@"Invoked when the session host has changed. First parameter is the session, second is the new host id.")] public UnityEngine.Events.UnityEvent<ISession, string> SessionHostChanged;
+        [UnityEngine.Tooltip(@"Invoked when the session has migrated (host migration). Parameter is the session.")] public UnityEngine.Events.UnityEvent<ISession> SessionMigrated;
+        [UnityEngine.Tooltip(@"Invoked when session properties have changed. Parameter is the session.")] public UnityEngine.Events.UnityEvent<ISession> SessionPropertiesChanged;
+        [UnityEngine.Tooltip(@"Invoked when the session state has changed. First parameter is the session, second is the new state.")] public UnityEngine.Events.UnityEvent<ISession, SessionState> StateChanged;
+        public SessionEvents() {}
+    }
+
+    public sealed class SessionLifecycleEvents
+    {
+        [UnityEngine.Tooltip(@"Invoked when a create or join operation for this session type has failed. First parameter is the session type, second is the error message.")] public UnityEngine.Events.UnityEvent<string, string> AddingSessionFailed;
+        [UnityEngine.Tooltip(@"Invoked when a create or join operation for this session type has started. Parameter is the session type.")] public UnityEngine.Events.UnityEvent<string> AddingSessionStarted;
+        [UnityEngine.Tooltip(@"Invoked when the session has been deleted. Parameter is the session.")] public UnityEngine.Events.UnityEvent<ISession> Deleted;
+        [UnityEngine.Tooltip(@"Invoked when the local player has been removed from the session (e.g. kicked). Parameter is the session.")] public UnityEngine.Events.UnityEvent<ISession> RemovedFromSession;
+        [UnityEngine.Tooltip(@"Invoked when a session of this type has been added (e.g. after create or join succeeds). Parameter is the session.")] public UnityEngine.Events.UnityEvent<ISession> SessionAdded;
+        public SessionLifecycleEvents() {}
+    }
+
+    public sealed class SessionPlayerEvents
+    {
+        [UnityEngine.Tooltip(@"Invoked when a player has left the session. First parameter is the session, second is the player id.")] public UnityEngine.Events.UnityEvent<ISession, string> PlayerHasLeft;
+        [UnityEngine.Tooltip(@"Invoked when a player has joined the session. First parameter is the session, second is the player id.")] public UnityEngine.Events.UnityEvent<ISession, string> PlayerJoined;
+        [UnityEngine.Tooltip(@"Invoked when a player is leaving the session. First parameter is the session, second is the player id.")] public UnityEngine.Events.UnityEvent<ISession, string> PlayerLeaving;
+        [UnityEngine.Tooltip(@"Invoked when player properties have changed. Parameter is the session.")] public UnityEngine.Events.UnityEvent<ISession> PlayerPropertiesChanged;
+        public SessionPlayerEvents() {}
+    }
+}
+
+namespace Unity.Services.Relay
+{
+    public interface IRelayService
+    {
+        public System.Threading.Tasks.Task<Models.Allocation> CreateAllocationAsync(int maxConnections, string region = default(string));
+        public System.Threading.Tasks.Task<string> GetJoinCodeAsync(System.Guid allocationId);
+        public System.Threading.Tasks.Task<Models.JoinAllocation> JoinAllocationAsync(string joinCode);
+        public System.Threading.Tasks.Task<System.Collections.Generic.List<Models.Region>> ListRegionsAsync();
+    }
+
+    public interface IRelayServiceSDK : IRelayService
+    {
+    }
+
+    public interface IRelayServiceSDKConfiguration
+    {
+        public void SetAllocationsServiceBasePath(string basePath);
+    }
+
+    public enum RelayExceptionReason
+    {
+        AllocationNotFound = 15008,
+        BadGateway = 15502,
+        Conflict = 15409,
+        EntityNotFound = 15404,
+        ExpectationFailed = 15417,
+        FailedDependency = 15424,
+        Forbidden = 15403,
+        GatewayTimeout = 15504,
+        Gone = 15410,
+        HttpVersionNotSupported = 15505,
+        InactiveProject = 15006,
+        InsufficientStorage = 15507,
+        InternalServerError = 15500,
+        InvalidArgument = 15400,
+        InvalidRequest = 15001,
+        JoinCodeNotFound = 15009,
+        LengthRequired = 15411,
+        Locked = 15423,
+        LoopDetected = 15508,
+        Max = 15999,
+        MethodNotAllowed = 15405,
+        Min = 15000,
+        Misdirected = 15421,
+        NetworkAuthenticationRequired = 15511,
+        NetworkError = 15998,
+        NoError = 15000,
+        NoSuitableRelay = 15010,
+        NotAcceptable = 15406,
+        NotExtended = 15510,
+        NotImplemented = 15501,
+        PaymentRequired = 15402,
+        PreconditionFailed = 15412,
+        PreconditionRequired = 15428,
+        ProxyAuthenticationRequired = 15407,
+        RangeNotSatisfiable = 15416,
+        RateLimited = 15429,
+        RegionNotFound = 15007,
+        RequestEntityTooLarge = 15413,
+        RequestHeaderFieldsTooLarge = 15431,
+        RequestTimeOut = 15408,
+        RequestUriTooLong = 15414,
+        ServiceUnavailable = 15503,
+        Teapot = 15418,
+        TooEarly = 15425,
+        Unauthorized = 15401,
+        UnavailableForLegalReasons = 15451,
+        Unknown = 15999,
+        UnprocessableTransaction = 15422,
+        UnsupportedMediaType = 15415,
+        UpgradeRequired = 15426,
+        VariantAlsoNegotiates = 15506,
+    }
+
+    public static class RelayService
+    {
+        public static IRelayService Instance { get; }
+    }
+
+    public class RelayServiceException : Unity.Services.Core.RequestFailedException
+    {
+        public Models.ErrorResponseBody ApiError { get; }
+        public RelayExceptionReason Reason { get; }
+        public RelayServiceException(System.Exception innerException) {}
+        public RelayServiceException(long errorCode, string message) {}
+        public RelayServiceException(RelayExceptionReason reason, string message) {}
+        public RelayServiceException(RelayExceptionReason reason, string message, System.Exception innerException) {}
+    }
+}
+
+namespace Unity.Services.Relay.Http
+{
+    public class DeserializationSettings
+    {
+        public MissingMemberHandling MissingMemberHandling = MissingMemberHandling.Error;
+        public DeserializationSettings() {}
+    }
+
+    public enum MissingMemberHandling
+    {
+        Error = 0,
+        Ignore = 1,
+    }
+}
+
+namespace Unity.Services.Relay.Models
+{
+    [System.Runtime.Serialization.DataContract(Name = @"AllocateResponseBody")] [UnityEngine.Scripting.Preserve] public class AllocateResponseBody
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"data")] [UnityEngine.Scripting.Preserve] public AllocationData Data { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"links")] [UnityEngine.Scripting.Preserve] public ResponseLinks Links { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"meta")] [UnityEngine.Scripting.Preserve] public ResponseMeta Meta { get; }
+        [UnityEngine.Scripting.Preserve] public AllocateResponseBody(ResponseMeta meta, AllocationData data, ResponseLinks links = default(ResponseLinks)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"Allocation")] [UnityEngine.Scripting.Preserve] public class Allocation
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"allocationId")] [UnityEngine.Scripting.Preserve] public System.Guid AllocationId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"allocationIdBytes")] [UnityEngine.Scripting.Preserve] public byte[] AllocationIdBytes { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"connectionData")] [UnityEngine.Scripting.Preserve] public byte[] ConnectionData { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"key")] [UnityEngine.Scripting.Preserve] public byte[] Key { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"region")] [UnityEngine.Scripting.Preserve] public string Region { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"relayServer")] [UnityEngine.Scripting.Preserve] public RelayServer RelayServer { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"serverEndpoints")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<RelayServerEndpoint> ServerEndpoints { get; }
+        [UnityEngine.Scripting.Preserve] public Allocation(System.Guid allocationId, System.Collections.Generic.List<RelayServerEndpoint> serverEndpoints, RelayServer relayServer, byte[] key, byte[] connectionData, byte[] allocationIdBytes, string region) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"AllocationData")] [UnityEngine.Scripting.Preserve] public class AllocationData
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"allocation")] [UnityEngine.Scripting.Preserve] public Allocation Allocation { get; }
+        [UnityEngine.Scripting.Preserve] public AllocationData(Allocation allocation) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"AllocationRequest")] [UnityEngine.Scripting.Preserve] public class AllocationRequest
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"maxConnections")] [UnityEngine.Scripting.Preserve] public int MaxConnections { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"region")] [UnityEngine.Scripting.Preserve] public string Region { get; }
+        [UnityEngine.Scripting.Preserve] public AllocationRequest(int maxConnections, string region = default(string)) {}
+    }
+
+    public static class AllocationUtils
+    {
+        public static Unity.Networking.Transport.Relay.RelayServerData ToRelayServerData(this Allocation allocation, string connectionType);
+        public static Unity.Networking.Transport.Relay.RelayServerData ToRelayServerData(this Allocation allocation, Unity.Services.Multiplayer.RelayProtocol connectionType);
+        public static Unity.Networking.Transport.Relay.RelayServerData ToRelayServerData(this JoinAllocation allocation, string connectionType);
+        public static Unity.Networking.Transport.Relay.RelayServerData ToRelayServerData(this JoinAllocation allocation, Unity.Services.Multiplayer.RelayProtocol connectionType);
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"ErrorResponseBody")] [UnityEngine.Scripting.Preserve] public class ErrorResponseBody
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"code")] [UnityEngine.Scripting.Preserve] public int Code { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"detail")] [UnityEngine.Scripting.Preserve] public string Detail { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"details")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<KeyValuePair> Details { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"status")] [UnityEngine.Scripting.Preserve] public int Status { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"title")] [UnityEngine.Scripting.Preserve] public string Title { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"type")] [UnityEngine.Scripting.Preserve] public string Type { get; }
+        [UnityEngine.Scripting.Preserve] public ErrorResponseBody(int status, string detail, string title, string type, int code, System.Collections.Generic.List<KeyValuePair> details = default(System.Collections.Generic.List<KeyValuePair>)) {}
+    }
+
+    public interface IOneOf
+    {
+        public System.Type Type { get; }
+        public object Value { get; }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinAllocation")] [UnityEngine.Scripting.Preserve] public class JoinAllocation
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"allocationId")] [UnityEngine.Scripting.Preserve] public System.Guid AllocationId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"allocationIdBytes")] [UnityEngine.Scripting.Preserve] public byte[] AllocationIdBytes { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"connectionData")] [UnityEngine.Scripting.Preserve] public byte[] ConnectionData { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"hostConnectionData")] [UnityEngine.Scripting.Preserve] public byte[] HostConnectionData { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"key")] [UnityEngine.Scripting.Preserve] public byte[] Key { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"region")] [UnityEngine.Scripting.Preserve] public string Region { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"relayServer")] [UnityEngine.Scripting.Preserve] public RelayServer RelayServer { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"serverEndpoints")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<RelayServerEndpoint> ServerEndpoints { get; }
+        [UnityEngine.Scripting.Preserve] public JoinAllocation(System.Guid allocationId, System.Collections.Generic.List<RelayServerEndpoint> serverEndpoints, RelayServer relayServer, byte[] key, byte[] connectionData, byte[] allocationIdBytes, string region, byte[] hostConnectionData) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinAllocation_allOf")] [UnityEngine.Scripting.Preserve] public class JoinAllocationAllOf
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"hostConnectionData")] [UnityEngine.Scripting.Preserve] public byte[] HostConnectionData { get; }
+        [UnityEngine.Scripting.Preserve] public JoinAllocationAllOf(byte[] hostConnectionData) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinCodeData")] [UnityEngine.Scripting.Preserve] public class JoinCodeData
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"joinCode")] [UnityEngine.Scripting.Preserve] public string JoinCode { get; }
+        [UnityEngine.Scripting.Preserve] public JoinCodeData(string joinCode) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinCodeRequest")] [UnityEngine.Scripting.Preserve] public class JoinCodeRequest
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"allocationId")] [UnityEngine.Scripting.Preserve] public System.Guid AllocationId { get; }
+        [UnityEngine.Scripting.Preserve] public JoinCodeRequest(System.Guid allocationId) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinCodeResponseBody")] [UnityEngine.Scripting.Preserve] public class JoinCodeResponseBody
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"data")] [UnityEngine.Scripting.Preserve] public JoinCodeData Data { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"links")] [UnityEngine.Scripting.Preserve] public ResponseLinks Links { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"meta")] [UnityEngine.Scripting.Preserve] public ResponseMeta Meta { get; }
+        [UnityEngine.Scripting.Preserve] public JoinCodeResponseBody(ResponseMeta meta, ResponseLinks links, JoinCodeData data) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinData")] [UnityEngine.Scripting.Preserve] public class JoinData
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"allocation")] [UnityEngine.Scripting.Preserve] public JoinAllocation Allocation { get; }
+        [UnityEngine.Scripting.Preserve] public JoinData(JoinAllocation allocation) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinRequest")] [UnityEngine.Scripting.Preserve] public class JoinRequest
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"joinCode")] [UnityEngine.Scripting.Preserve] public string JoinCode { get; }
+        [UnityEngine.Scripting.Preserve] public JoinRequest(string joinCode) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"JoinResponseBody")] [UnityEngine.Scripting.Preserve] public class JoinResponseBody
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"data")] [UnityEngine.Scripting.Preserve] public JoinData Data { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"meta")] [UnityEngine.Scripting.Preserve] public ResponseMeta Meta { get; }
+        [UnityEngine.Scripting.Preserve] public JoinResponseBody(ResponseMeta meta, JoinData data) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"KeyValuePair")] [UnityEngine.Scripting.Preserve] public class KeyValuePair
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"key")] [UnityEngine.Scripting.Preserve] public string Key { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"value")] [UnityEngine.Scripting.Preserve] public string Value { get; }
+        [UnityEngine.Scripting.Preserve] public KeyValuePair(string key, string value) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"Region")] [UnityEngine.Scripting.Preserve] public class Region
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"description")] [UnityEngine.Scripting.Preserve] public string Description { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"id")] [UnityEngine.Scripting.Preserve] public string Id { get; }
+        [UnityEngine.Scripting.Preserve] public Region(string id, string description) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"RegionsData")] [UnityEngine.Scripting.Preserve] public class RegionsData
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"regions")] [UnityEngine.Scripting.Preserve] public System.Collections.Generic.List<Region> Regions { get; }
+        [UnityEngine.Scripting.Preserve] public RegionsData(System.Collections.Generic.List<Region> regions) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"RegionsResponseBody")] [UnityEngine.Scripting.Preserve] public class RegionsResponseBody
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"data")] [UnityEngine.Scripting.Preserve] public RegionsData Data { get; }
+        [UnityEngine.Scripting.Preserve] public RegionsResponseBody(RegionsData data) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"RelayServer")] [UnityEngine.Scripting.Preserve] public class RelayServer
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"ipV4")] [UnityEngine.Scripting.Preserve] public string IpV4 { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"port")] [UnityEngine.Scripting.Preserve] public int Port { get; }
+        [UnityEngine.Scripting.Preserve] public RelayServer(string ipV4, int port) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"RelayServerEndpoint")] [UnityEngine.Scripting.Preserve] public class RelayServerEndpoint
+    {
+        public const string ConnectionTypeDtls = @"dtls";
+        public const string ConnectionTypeUdp = @"udp";
+        public const string ConnectionTypeWss = @"wss";
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"connectionType")] [UnityEngine.Scripting.Preserve] public string ConnectionType { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"host")] [UnityEngine.Scripting.Preserve] public string Host { get; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"network")] [UnityEngine.Scripting.Preserve] public RelayServerEndpoint.NetworkOptions Network { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"port")] [UnityEngine.Scripting.Preserve] public int Port { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"reliable")] [UnityEngine.Scripting.Preserve] public bool Reliable { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"secure")] [UnityEngine.Scripting.Preserve] public bool Secure { get; }
+        [UnityEngine.Scripting.Preserve] public RelayServerEndpoint(string connectionType, RelayServerEndpoint.NetworkOptions network, bool reliable, bool secure, string host, int port) {}
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))] [UnityEngine.Scripting.Preserve] public enum NetworkOptions
+        {
+            [System.Runtime.Serialization.EnumMember(Value = @"tcp")] Tcp = 2,
+            [System.Runtime.Serialization.EnumMember(Value = @"udp")] Udp = 1,
+        }
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"ResponseLinks")] [UnityEngine.Scripting.Preserve] public class ResponseLinks
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = false, Name = @"next")] [UnityEngine.Scripting.Preserve] public string Next { get; }
+        [UnityEngine.Scripting.Preserve] public ResponseLinks(string next = default(string)) {}
+    }
+
+    [System.Runtime.Serialization.DataContract(Name = @"ResponseMeta")] [UnityEngine.Scripting.Preserve] public class ResponseMeta
+    {
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"requestId")] [UnityEngine.Scripting.Preserve] public string RequestId { get; }
+        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"status")] [UnityEngine.Scripting.Preserve] public int Status { get; }
+        [UnityEngine.Scripting.Preserve] public ResponseMeta(string requestId, int status) {}
+    }
+}

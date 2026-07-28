@@ -1,0 +1,24 @@
+{
+    "name": "Unity.Services.Vivox",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Services.Core",
+        "Unity.Services.Core.Internal",
+        "Unity.Services.Authentication"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.authentication",
+            "expression": "2.0.0",
+            "define": "AUTH_PACKAGE_PRESENT"
+        }
+    ],
+    "noEngineReferences": false
+}

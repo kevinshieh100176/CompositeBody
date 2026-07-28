@@ -1,0 +1,19 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Foldout text="Team" style="padding-right:5px">
+        <uie:PropertyField binding-path="Name" label="Name" tooltip="The name of the team." />
+        <ui:Foldout text="Team Count">
+            <uie:PropertyField binding-path="TeamCount.Min" label="Min" tooltip="Minimum number of replicas of the team." />
+            <uie:PropertyField binding-path="TeamCount.Max" label="Max" tooltip="Maximum number of replicas of the team." />
+            <ui:Foldout text="Relaxations">
+                <ui:ListView binding-path="TeamCount.Relaxations" show-add-remove-footer="true" show-border="true" virtualization-method="DynamicHeight" show-bound-collection-size="false" show-alternating-row-backgrounds="All" binding-source-selection-mode="AutoAssign" item-template="./RelaxationRule.uxml?fileID=9197481963319205126&amp;guid=13efe53e092b4520a0bcc962a81cc33b&amp;type=3#RelaxationRule" />
+            </ui:Foldout>
+        </ui:Foldout>
+        <ui:Foldout style="margin-bottom:7px" text="Player Count">
+            <uie:PropertyField binding-path="PlayerCount.Min" label="Min" tooltip="Minimum number of players in the team." />
+            <uie:PropertyField binding-path="PlayerCount.Max" label="Max" tooltip="Maximum number of players in the team." />
+            <ui:Foldout text="Relaxations">
+                <ui:ListView class="unity-base-field__inspector-field" binding-path="PlayerCount.Relaxations" show-add-remove-footer="true" show-border="true" virtualization-method="DynamicHeight" show-bound-collection-size="false" show-alternating-row-backgrounds="All" binding-source-selection-mode="AutoAssign" item-template="./RelaxationRule.uxml?fileID=9197481963319205126&amp;guid=13efe53e092b4520a0bcc962a81cc33b&amp;type=3#RelaxationRule" />
+            </ui:Foldout>
+        </ui:Foldout>
+    </ui:Foldout>
+</ui:UXML>

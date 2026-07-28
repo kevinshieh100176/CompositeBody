@@ -1,0 +1,33 @@
+// This file is generated. Do not modify by hand.
+// XML documentation file not found. To check if public methods have XML comments,
+// make sure the XML doc file is present and located next to the scraped dll
+namespace Unity.Services.Core
+{
+    public static class UnityServicesExtensions
+    {
+        public static Unity.Services.Multiplayer.IMultiplayerServerService GetMultiplayerServerService(this IUnityServices unityServices);
+    }
+}
+
+namespace Unity.Services.Multiplayer
+{
+    public interface IMultiplayerServerService
+    {
+        public System.Threading.Tasks.Task<IServerSession> CreateMatchSessionAsync(string matchId, SessionOptions sessionOptions);
+        public System.Threading.Tasks.Task<IServerSession> CreateSessionAsync(SessionOptions sessionOptions);
+        public System.Threading.Tasks.Task<IServerSession> CreateSessionAsync(string sessionId, SessionOptions sessionOptions);
+        public System.Threading.Tasks.Task<IServerSession> GetSessionAsync(string sessionId);
+    }
+
+    public static class MatchmakerServerExtensions
+    {
+        public static System.Threading.Tasks.Task StartBackfillingAsync(this ISession session);
+        public static System.Threading.Tasks.Task StopBackfillingAsync(this ISession session);
+        public static T WithBackfillingConfiguration<T>(this T options, bool enable, bool automaticallyRemovePlayers, bool autoStart, int playerConnectionTimeout, int backfillingLoopInterval) where T : SessionOptions;
+    }
+
+    public static class MultiplayerServerService
+    {
+        public static IMultiplayerServerService Instance { get; }
+    }
+}
