@@ -62,7 +62,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_DefaultMaxPlayers: 20
-  m_SessionType: 0
+  m_SessionType: 1
   hideEditorFromLobby: 0
 --- !u!114 &3763782728091630267
 MonoBehaviour:
