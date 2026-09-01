@@ -26,9 +26,9 @@ Material:
     m_Ints: []
     m_Floats:
     - _AmbientIntensity: 0.18
-    - _BaseAlpha: 0.24
+    - _BaseAlpha: 1
     - _BaseFill: 0.55
-    - _EdgeOpacity: 1.1
+    - _EdgeOpacity: 0.78
     - _FlowSpeed: 0.4
     - _FresnelIntensity: 0.85
     - _FresnelPower: 2.6
