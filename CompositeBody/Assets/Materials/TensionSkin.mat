@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: TensionSkin
+  m_Shader: {fileID: 4800000, guid: 1ef54c262ded12b47aada22dbd3deff9, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _AmbientIntensity: 0.6
+    - _BaseThickness: 1.6
+    - _BunchScale: 60
+    - _BunchShade: 0.44
+    - _BunchStrength: 1
+    - _Density: 2.4
+    - _FresnelIntensity: 0.25
+    - _FresnelPower: 3.11
+    - _KnitRelief: 0.52
+    - _KnitScale: 420
+    - _KnitSoftness: 0.308
+    - _SheerFloor: 0.05
+    - _ShowTension: 0
+    - _SkinBleed: 0.25
+    - _Smoothness: 0
+    - _SpecIntensity: 0.9
+    - _TensionGain: 8
+    - _TensionGloss: 0.39
+    - _TensionMax: 3
+    - _YarnWidth: 0.99
+    m_Colors:
+    - _FabricColor: {r: 0.6037736, g: 0.6037736, b: 0.6037736, a: 1}
+    - _SheenColor: {r: 0.56, g: 0.55, b: 0.57, a: 1}
+    - _SkinTint: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
