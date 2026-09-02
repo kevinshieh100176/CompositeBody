@@ -6,16 +6,16 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/CompositeBody_Main.unity
+    path: Assets/_Scenes/CompositeBody_Main.unity
     guid: fa92f9b2418e79c49a2ebede4b143c68
   - enabled: 1
-    path: Assets/Scenes/CompositeBody_Experience.unity
+    path: Assets/_Scenes/CompositeBody_Experience.unity
     guid: 0f063361a8cebeb48a24894d4b0b6acb
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
+    path: Assets/_Scenes/SampleScene.unity
     guid: 13f6f87036926f94ab0417ca1b31725c
   - enabled: 0
-    path: Assets/Scenes/BasicScene.unity
+    path: Assets/_Scenes/BasicScene.unity
     guid: bc761d9a86b33554f85fd11bb1f87ba3
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: f6072b2e24b91164c80aeabeb896078a,
