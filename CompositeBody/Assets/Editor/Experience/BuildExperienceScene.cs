@@ -5,6 +5,7 @@ using Unity.Netcode;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using CompositeBody.Experience;
 using CompositeBody.Multiplayer;
 
 namespace CompositeBody.Multiplayer.EditorSetup
@@ -54,7 +55,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             var root = new GameObject("Experience");
             BuildDirector(root);
-            BuildBeatMarkers(root, unlit, font);
+            if (!BuildSharedRig(root)) return;
+            if (!BuildBeatContent(root, unlit, font)) return;
             ConfigureAmbient();
 
             Directory.CreateDirectory("Assets/_Scenes");
@@ -106,10 +108,42 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Debug.Log($"[Experience] Director authored with {defs.Length} beats.");
         }
 
-        static void BuildBeatMarkers(GameObject parent, Shader unlit, Font font)
+        /// <summary>
+        /// Things no single beat owns. <see cref="ScreenFade"/> lives here because the piece
+        /// fades between beats, so it has to outlive whichever beat is running -- a fade object
+        /// inside a beat's content root would be deactivated halfway through its own fade out.
+        /// </summary>
+        static bool BuildSharedRig(GameObject parent)
+        {
+            var fadeShader = Shader.Find("CompositeBody/ScreenFade");
+            if (fadeShader == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - shader 'CompositeBody/ScreenFade' not found.");
+                return false;
+            }
+            if (ShaderUtil.ShaderHasError(fadeShader))
+            {
+                foreach (var m in ShaderUtil.GetShaderMessages(fadeShader))
+                    Debug.LogError($"[Experience] ScreenFade {m.severity} line {m.line}: {m.message}");
+                Debug.LogError("[Experience] RESULT: FAIL - ScreenFade shader has compile errors.");
+                return false;
+            }
+
+            var go = new GameObject("ScreenFade");
+            go.transform.SetParent(parent.transform, false);
+            go.AddComponent<ScreenFade>();
+
+            Debug.Log("[Experience] Shared ScreenFade added.");
+            return true;
+        }
+
+        static bool BuildBeatContent(GameObject parent, Shader unlit, Font font)
         {
             var beatsRoot = new GameObject("Beats");
             beatsRoot.transform.SetParent(parent.transform, false);
+
+            int built = 0;
+            int placeholders = 0;
 
             foreach (var beat in StoryBeats.Ordered)
             {
@@ -121,24 +155,48 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 var content = new GameObject("Content");
                 content.transform.SetParent(holder.transform, false);
 
-                // Rotated to face back toward the spawn point; a TextMesh reads along its own +z.
-                content.transform.SetPositionAndRotation(k_MarkerPosition, Quaternion.Euler(0f, 180f, 0f));
+                if (beat == StoryBeat.O0_Arrival)
+                {
+                    // Built beats sit at the origin and fill the room; only the placeholder
+                    // markers need to be put somewhere the player will be looking.
+                    if (!BuildO0Arrival.Populate(content))
+                    {
+                        Debug.LogError("[Experience] RESULT: FAIL - could not author O-0 content.");
+                        return false;
+                    }
 
-                BuildBacking(content, unlit, beat);
-                TextMesh label = BuildLabel(content, font);
+                    var arrival = holder.AddComponent<O0ArrivalBeat>();
+                    var arrivalSo = new SerializedObject(arrival);
+                    arrivalSo.FindProperty("m_Beat").intValue = (int)beat;
+                    arrivalSo.FindProperty("m_ContentRoot").objectReferenceValue = content;
+                    arrivalSo.ApplyModifiedPropertiesWithoutUndo();
 
-                var placeholder = holder.AddComponent<PlaceholderBeat>();
-                var so = new SerializedObject(placeholder);
-                so.FindProperty("m_Beat").intValue = (int)beat;
-                so.FindProperty("m_ContentRoot").objectReferenceValue = content;
-                so.FindProperty("m_Synopsis").stringValue = Synopsis(beat);
-                so.FindProperty("m_Label").objectReferenceValue = label;
-                so.ApplyModifiedPropertiesWithoutUndo();
+                    built++;
+                }
+                else
+                {
+                    // Rotated to face back toward the spawn point; a TextMesh reads along its own +z.
+                    content.transform.SetPositionAndRotation(k_MarkerPosition, Quaternion.Euler(0f, 180f, 0f));
+
+                    BuildBacking(content, unlit, beat);
+                    TextMesh label = BuildLabel(content, font);
+
+                    var placeholder = holder.AddComponent<PlaceholderBeat>();
+                    var so = new SerializedObject(placeholder);
+                    so.FindProperty("m_Beat").intValue = (int)beat;
+                    so.FindProperty("m_ContentRoot").objectReferenceValue = content;
+                    so.FindProperty("m_Synopsis").stringValue = Synopsis(beat);
+                    so.FindProperty("m_Label").objectReferenceValue = label;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+
+                    placeholders++;
+                }
 
                 content.SetActive(false);
             }
 
-            Debug.Log($"[Experience] Built {StoryBeats.Ordered.Length} placeholder markers.");
+            Debug.Log($"[Experience] Beats: {built} built, {placeholders} still placeholders.");
+            return true;
         }
 
         static void BuildBacking(GameObject parent, Shader unlit, StoryBeat beat)
@@ -292,6 +350,108 @@ namespace CompositeBody.Multiplayer.EditorSetup
             return prop != null ? prop.uintValue : 0u;
         }
 
+        /// <summary>
+        /// Checks all five of O-0's layers actually landed. Each of these has a failure mode
+        /// that is invisible from the outside: a sea with no mesh renders nothing, a sound bed
+        /// with no clips plays silence, and a blob with no renderer simply never appears -- and
+        /// all three look identical to "the beat has not started yet" from inside a headset.
+        /// </summary>
+        static bool VerifyO0()
+        {
+            var o0 = Object.FindFirstObjectByType<O0ArrivalBeat>();
+            if (o0 == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no O0ArrivalBeat.");
+                return false;
+            }
+
+            Transform content = o0.transform.childCount > 0 ? o0.transform.GetChild(0) : null;
+            if (content == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no content root.");
+                return false;
+            }
+
+            var sea = content.GetComponentInChildren<MeshFilter>(true);
+            bool seaOk = false;
+            foreach (var mf in content.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (mf.name != "SeaSurface") continue;
+                seaOk = mf.sharedMesh != null && mf.sharedMesh.vertexCount > 1000;
+                sea = mf;
+                break;
+            }
+            if (!seaOk)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 sea surface missing or too coarse to displace " +
+                               $"(mesh={(sea != null ? sea.sharedMesh?.vertexCount.ToString() : "none")} verts).");
+                return false;
+            }
+            Debug.Log($"[Experience] OK   O-0 sea ({sea.sharedMesh.vertexCount} verts)");
+
+            var frames = content.GetComponentsInChildren<FrameDrift>(true);
+            if (frames.Length == 0)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no drifting frames.");
+                return false;
+            }
+            Debug.Log($"[Experience] OK   O-0 frames ({frames.Length})");
+
+            var motes = content.GetComponentInChildren<ParticleSystem>(true);
+            if (motes == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no motes.");
+                return false;
+            }
+            Debug.Log("[Experience] OK   O-0 motes");
+
+            var soundBed = content.GetComponentInChildren<DistantSoundBed>(true);
+            if (soundBed == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no sound bed.");
+                return false;
+            }
+
+            var soundSo = new SerializedObject(soundBed);
+            if (soundSo.FindProperty("m_Bed").objectReferenceValue == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 sound bed has no looping ambience source.");
+                return false;
+            }
+
+            int clipCount = soundSo.FindProperty("m_Clips").arraySize;
+            int sourceCount = soundSo.FindProperty("m_Sources").arraySize;
+            for (int i = 0; i < clipCount; i++)
+            {
+                if (soundSo.FindProperty("m_Clips").GetArrayElementAtIndex(i).objectReferenceValue == null)
+                {
+                    Debug.LogError($"[Experience] RESULT: FAIL - O-0 distant clip {i} is unassigned.");
+                    return false;
+                }
+            }
+            if (clipCount == 0 || sourceCount == 0)
+            {
+                Debug.LogError($"[Experience] RESULT: FAIL - O-0 sound bed has {clipCount} clips and {sourceCount} sources.");
+                return false;
+            }
+            Debug.Log($"[Experience] OK   O-0 sound ({clipCount} clips, {sourceCount} sources)");
+
+            var blob = content.GetComponentInChildren<RoleBlobPresenter>(true);
+            if (blob == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no other-player blob.");
+                return false;
+            }
+            if (new SerializedObject(blob).FindProperty("m_BlobRenderer").objectReferenceValue == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 blob has no renderer assigned.");
+                return false;
+            }
+            Debug.Log("[Experience] OK   O-0 other-player blob");
+
+            return true;
+        }
+
         static bool Verify()
         {
             var director = Object.FindFirstObjectByType<ExperienceDirector>();
@@ -308,25 +468,37 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return false;
             }
 
-            // One marker per beat, no duplicates: a beat with two markers would show both, and a
-            // beat with none would look like the show had stalled.
-            var placeholders = Object.FindObjectsByType<PlaceholderBeat>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            // Exactly one controller per beat, no duplicates: two would both run, and none would
+            // look from inside the headset like the show had stalled.
+            var controllers = Object.FindObjectsByType<BeatController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var beat in StoryBeats.Ordered)
             {
                 int found = 0;
-                foreach (var p in placeholders)
+                string kind = "?";
+                foreach (var c in controllers)
                 {
-                    if (p.beat == beat) found++;
+                    if (c.beat != beat) continue;
+                    found++;
+                    kind = c is PlaceholderBeat ? "placeholder" : c.GetType().Name;
                 }
 
                 if (found != 1)
                 {
-                    Debug.LogError($"[Experience] RESULT: FAIL - {StoryBeats.ShortCode(beat)} has {found} markers, expected 1.");
+                    Debug.LogError($"[Experience] RESULT: FAIL - {StoryBeats.ShortCode(beat)} has {found} controllers, expected 1.");
                     return false;
                 }
 
-                Debug.Log($"[Experience] OK   {StoryBeats.DisplayName(beat)}");
+                Debug.Log($"[Experience] OK   {StoryBeats.DisplayName(beat)}  ({kind})");
             }
+
+            if (!VerifyO0()) return false;
+
+            if (Object.FindFirstObjectByType<ScreenFade>() == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - no ScreenFade; beats cannot fade and S0-1 cannot happen in the dark.");
+                return false;
+            }
+            Debug.Log("[Experience] OK   ScreenFade present");
 
             foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {

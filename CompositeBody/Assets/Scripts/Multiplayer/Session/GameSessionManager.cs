@@ -113,6 +113,23 @@ namespace CompositeBody.Multiplayer
             if (Instance == this) Instance = null;
         }
 
+        /// <summary>
+        /// Also seeds the host, for the case where the server was already running by the time
+        /// this component started. <see cref="HandleServerStarted"/> is only reachable from an
+        /// event subscribed in <see cref="Start"/>, so a host brought up before that frame would
+        /// never publish its own role -- and the symptom is the staff panel reporting "role not
+        /// assigned" forever, with nothing in the log to say why.
+        ///
+        /// Seeding from here rather than from Start because the role list is a NetworkList:
+        /// it cannot be written until the object is spawned, which is exactly what this is.
+        /// Running twice is harmless -- the guid already maps to a role and the entry is
+        /// overwritten in place.
+        /// </summary>
+        public override void OnNetworkSpawn()
+        {
+            if (IsServer) HandleServerStarted();
+        }
+
         /// <summary>Host doesn't go through its own approval callback, so seed it here.</summary>
         void HandleServerStarted()
         {
@@ -312,6 +329,25 @@ namespace CompositeBody.Multiplayer
             foreach (var entry in m_PlayerRoles)
             {
                 if (entry.clientId == localId && entry.isConnected)
+                {
+                    role = entry.role;
+                    return true;
+                }
+            }
+            role = PlayerRole.Unassigned;
+            return false;
+        }
+
+        /// <summary>
+        /// Looks up the role held by a given connected client. Server-side callers use this to
+        /// check that the sender of an RPC really is the player it is acting as, rather than
+        /// trusting a role the message carried with it.
+        /// </summary>
+        public bool TryGetRoleForClient(ulong clientId, out PlayerRole role)
+        {
+            foreach (var entry in m_PlayerRoles)
+            {
+                if (entry.clientId == clientId && entry.isConnected)
                 {
                     role = entry.role;
                     return true;
