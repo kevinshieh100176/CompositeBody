@@ -31,6 +31,8 @@ namespace CompositeBody.Multiplayer
         Button m_StartButton;
         Transform m_SessionListParent;
         InputField m_IpInput;
+        GameObject m_BeatPanel;
+        Text m_BeatText;
 
         readonly List<GameObject> m_SessionRows = new();
 
@@ -95,7 +97,41 @@ namespace CompositeBody.Multiplayer
                 bool canStart = session.sessionState == SessionState.Lobby && session.connectedPlayerCount >= GameSessionManager.MaxPlayers;
                 m_StartButton.interactable = canStart;
             }
+
+            RefreshBeatPanel(isServer);
         }
+
+        /// <summary>
+        /// The beat controls only exist on the host, and only once the experience scene has
+        /// loaded -- the director lives in that scene, so there is nothing to drive until staff
+        /// have pressed Start.
+        /// </summary>
+        void RefreshBeatPanel(bool isServer)
+        {
+            var director = ExperienceDirector.Instance;
+            bool available = isServer && director != null;
+
+            m_BeatPanel.SetActive(available);
+            if (!available) return;
+
+            BeatDefinition def = director.DefinitionFor(director.currentBeat);
+
+            string endsOn;
+            if (!string.IsNullOrEmpty(def.gateTaskId))
+                endsOn = $"both players report '{def.gateTaskId}'";
+            else if (def.autoAdvanceSeconds > 0f)
+                endsOn = $"timer {director.timeInBeat:0}s / {def.autoAdvanceSeconds:0}s";
+            else
+                endsOn = "staff only";
+
+            m_BeatText.text = $"{director.beatIndex + 1}/{director.beatCount}  {StoryBeats.DisplayName(director.currentBeat)}\n" +
+                              $"ends on: {endsOn}";
+        }
+
+        void OnBeatPrevClicked() => ExperienceDirector.Instance?.GoBack();
+        void OnBeatNextClicked() => ExperienceDirector.Instance?.Advance();
+        void OnBeatRestartClicked() => ExperienceDirector.Instance?.Restart();
+        void OnBeatJumpClicked(StoryBeat beat) => ExperienceDirector.Instance?.JumpTo(beat);
 
         void HandleSessionsUpdated(IReadOnlyList<LanSessionInfo> sessions)
         {
@@ -302,8 +338,55 @@ namespace CompositeBody.Multiplayer
             m_DiagText.color = new Color(0.65f, 0.85f, 0.65f);
             m_StartButton = CreateButton(m_ConnectedPanel.transform, "Start Experience", OnStartClicked);
 
+            BuildBeatPanel(m_ConnectedPanel.transform);
+
             m_PreConnectPanel.SetActive(true);
             m_ConnectedPanel.SetActive(false);
+        }
+
+        /// <summary>
+        /// Beat transport for staff. Skip exists because a two-player gate is a hang risk in
+        /// front of an audience, and jump exists because rehearsing a late beat otherwise means
+        /// replaying the whole piece to reach it.
+        /// </summary>
+        void BuildBeatPanel(Transform parent)
+        {
+            m_BeatPanel = CreatePanel(parent, "BeatPanel", new Vector2(360, 0));
+            var layout = m_BeatPanel.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 4;
+            layout.childControlHeight = false;
+            layout.childForceExpandHeight = false;
+            m_BeatPanel.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            CreateText(m_BeatPanel.transform, "Beat", 16, FontStyle.Bold);
+            m_BeatText = CreateText(m_BeatPanel.transform, "", 14, FontStyle.Normal);
+            m_BeatText.color = new Color(0.95f, 0.85f, 0.55f);
+
+            var transport = CreateRow(m_BeatPanel.transform, "Transport");
+            CreateButton(transport, "< Prev", OnBeatPrevClicked, new Vector2(80, 28));
+            CreateButton(transport, "Next >", OnBeatNextClicked, new Vector2(80, 28));
+            CreateButton(transport, "Restart", OnBeatRestartClicked, new Vector2(80, 28));
+
+            var jumps = CreateRow(m_BeatPanel.transform, "Jump");
+            foreach (var beat in StoryBeats.Ordered)
+            {
+                // Captured per iteration on purpose; one shared variable would make every
+                // button jump to the last beat in the list.
+                StoryBeat target = beat;
+                CreateButton(jumps, StoryBeats.ShortCode(target), () => OnBeatJumpClicked(target), new Vector2(30, 24));
+            }
+
+            m_BeatPanel.SetActive(false);
+        }
+
+        static Transform CreateRow(Transform parent, string name)
+        {
+            var row = CreatePanel(parent, name, new Vector2(340, 30));
+            var layout = row.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 4;
+            layout.childControlWidth = false;
+            layout.childForceExpandWidth = false;
+            return row.transform;
         }
 
         GameObject CreateSessionRow(LanSessionInfo session)

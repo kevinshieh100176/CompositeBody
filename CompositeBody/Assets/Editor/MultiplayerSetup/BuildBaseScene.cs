@@ -19,7 +19,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// </summary>
     public static class BuildBaseScene
     {
-        public const string ScenePath = "Assets/Scenes/CompositeBody_Main.unity";
+        public const string ScenePath = "Assets/_Scenes/CompositeBody_Main.unity";
 
         // Prefab GUIDs from the VR Multiplayer template.
         const string k_NetworkManagerGuid = "3967f87296c892e40b57e37bc8601550";
@@ -53,7 +53,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             BuildStaffPanel(p1Spawn, p2Spawn);
             BuildCalibrationMarker();
 
-            Directory.CreateDirectory("Assets/Scenes");
+            Directory.CreateDirectory("Assets/_Scenes");
             EditorSceneManager.MarkAllScenesDirty();
 
             // First save: objects created purely from script have no persistent GlobalObjectId

@@ -97,6 +97,43 @@ namespace CompositeBody.Multiplayer
             var t = m_Tasks[index];
             return t.player1Done && t.player2Done;
         }
+
+        /// <summary>
+        /// Server-only. Clears both players' flags for one task so the beat it gates can be
+        /// played again. Needed because a completed task is otherwise permanent: staff jumping
+        /// back to an onboarding beat would find its gate already satisfied and the beat would
+        /// end again the instant it started.
+        /// </summary>
+        public void ResetTask(string taskId)
+        {
+            if (!IsServer) return;
+
+            int index = FindTaskIndex(taskId);
+            if (index < 0) return;
+
+            var t = m_Tasks[index];
+            if (!t.player1Done && !t.player2Done) return;
+
+            t.player1Done = false;
+            t.player2Done = false;
+            m_Tasks[index] = t;
+        }
+
+        /// <summary>Server-only. Clears every task, for restarting the piece for a new audience.</summary>
+        public void ResetAllTasks()
+        {
+            if (!IsServer) return;
+
+            for (int i = 0; i < m_Tasks.Count; i++)
+            {
+                var t = m_Tasks[i];
+                if (!t.player1Done && !t.player2Done) continue;
+
+                t.player1Done = false;
+                t.player2Done = false;
+                m_Tasks[i] = t;
+            }
+        }
     }
 
     /// <summary>

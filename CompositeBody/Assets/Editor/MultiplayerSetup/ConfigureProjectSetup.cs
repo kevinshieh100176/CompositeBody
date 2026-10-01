@@ -19,7 +19,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// </summary>
     public static class ConfigureProjectSetup
     {
-        public const string ExperienceScenePath = "Assets/Scenes/CompositeBody_Experience.unity";
+        // Single source of truth: BuildExperienceScene owns this scene and authors its contents.
+        public const string ExperienceScenePath = BuildExperienceScene.ScenePath;
 
         public static void Run()
         {
@@ -59,7 +60,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             // No camera or light here: this loads additively over the main scene, which already
             // provides both. A second camera would fight the XR rig for the display.
-            Directory.CreateDirectory("Assets/Scenes");
+            Directory.CreateDirectory("Assets/_Scenes");
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ExperienceScenePath);
             Debug.Log($"[Setup] Created {ExperienceScenePath}");

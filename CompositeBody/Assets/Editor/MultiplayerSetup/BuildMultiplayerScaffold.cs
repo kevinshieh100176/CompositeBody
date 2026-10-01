@@ -15,7 +15,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// </summary>
     public static class BuildMultiplayerScaffold
     {
-        const string k_ScenePath = "Assets/Scenes/SampleScene.unity";
+        const string k_ScenePath = "Assets/_Scenes/SampleScene.unity";
 
         public static void Run()
         {
