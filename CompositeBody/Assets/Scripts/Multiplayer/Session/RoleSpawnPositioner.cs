@@ -28,7 +28,11 @@ namespace CompositeBody.Multiplayer
         [SerializeField, Tooltip("Disable when physical calibration defines the shared origin instead.")]
         bool m_ApplyOnRoleAssigned = true;
 
+        [SerializeField, Tooltip("Skip the per-role offset whenever a headset is actually running. Leave this on: these offsets are a desktop-testing device, and applying them in the venue is what puts the two players in different places in the virtual room than they are in the real one.")]
+        bool m_DesktopOnly = true;
+
         bool m_Applied;
+        bool m_SkipReported;
 
         void OnEnable() => StartCoroutine(WaitAndBind());
 
@@ -51,6 +55,23 @@ namespace CompositeBody.Multiplayer
         void TryApply()
         {
             if (m_Applied || !m_ApplyOnRoleAssigned) return;
+
+            // With a headset attached, the shared origin comes from each player calibrating to
+            // the same physical marker. Offsetting the two rigs on top of that is what makes the
+            // virtual room disagree with the real one, and makes the two players disagree with
+            // each other -- each rig moved by a different amount from an origin that was already
+            // correct.
+            if (m_DesktopOnly && DesktopXrFallback.xrRuntimeActive)
+            {
+                if (!m_SkipReported)
+                {
+                    m_SkipReported = true;
+                    Utils.Log("[RoleSpawnPositioner] XR runtime active; leaving the rig where tracking put it " +
+                              "so physical calibration owns the shared origin.");
+                }
+                return;
+            }
+
             if (!GameSessionManager.Instance.TryGetLocalRole(out PlayerRole role)) return;
 
             Transform target = role switch

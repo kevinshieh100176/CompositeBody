@@ -33,6 +33,9 @@ namespace CompositeBody.Multiplayer
         InputField m_IpInput;
         GameObject m_BeatPanel;
         Text m_BeatText;
+        GameObject m_CalibrationPanel;
+        Text m_CalibrationText;
+        HandPinchCalibrator m_PinchCalibrator;
 
         readonly List<GameObject> m_SessionRows = new();
 
@@ -99,6 +102,35 @@ namespace CompositeBody.Multiplayer
             }
 
             RefreshBeatPanel(isServer);
+            RefreshCalibrationPanel();
+        }
+
+        /// <summary>
+        /// Calibration is per-headset and entirely local, so this panel reports and arms only
+        /// the machine it is running on. In the venue each PC has its own mirror window, so
+        /// whoever is standing with a player arms that player's headset.
+        /// </summary>
+        void RefreshCalibrationPanel()
+        {
+            if (m_PinchCalibrator == null) m_PinchCalibrator = FindFirstObjectByType<HandPinchCalibrator>();
+
+            bool available = m_PinchCalibrator != null;
+            m_CalibrationPanel.SetActive(available);
+            if (!available) return;
+
+            string state = m_PinchCalibrator.hasCalibrated ? "calibrated" : "NOT calibrated";
+            string armed = m_PinchCalibrator.isArmed ? "armed" : "not armed";
+
+            float progress = m_PinchCalibrator.holdProgress;
+            string holding = progress > 0f ? $"  holding {progress * 100f:0}%" : string.Empty;
+
+            m_CalibrationText.text = $"This headset: {state} ({armed}){holding}\n" +
+                                     "Pinch right index+thumb on the marker and hold.";
+        }
+
+        void OnArmCalibrationClicked()
+        {
+            if (m_PinchCalibrator != null) m_PinchCalibrator.Arm();
         }
 
         /// <summary>
@@ -339,9 +371,31 @@ namespace CompositeBody.Multiplayer
             m_StartButton = CreateButton(m_ConnectedPanel.transform, "Start Experience", OnStartClicked);
 
             BuildBeatPanel(m_ConnectedPanel.transform);
+            BuildCalibrationPanel(m_ConnectedPanel.transform);
 
             m_PreConnectPanel.SetActive(true);
             m_ConnectedPanel.SetActive(false);
+        }
+
+        void BuildCalibrationPanel(Transform parent)
+        {
+            m_CalibrationPanel = CreatePanel(parent, "CalibrationPanel", new Vector2(360, 0));
+            var layout = m_CalibrationPanel.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 4;
+            layout.childControlHeight = false;
+            layout.childForceExpandHeight = false;
+            m_CalibrationPanel.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            CreateText(m_CalibrationPanel.transform, "Calibration", 16, FontStyle.Bold);
+            m_CalibrationText = CreateText(m_CalibrationPanel.transform, "", 13, FontStyle.Normal);
+            m_CalibrationText.color = new Color(0.62f, 0.84f, 0.98f);
+
+            // Needed because a pinch is only accepted in the lobby by default: once the piece is
+            // running, a player whose tracking has drifted can only be realigned if staff let
+            // them pinch again.
+            CreateButton(m_CalibrationPanel.transform, "Arm Re-calibration", OnArmCalibrationClicked);
+
+            m_CalibrationPanel.SetActive(false);
         }
 
         /// <summary>

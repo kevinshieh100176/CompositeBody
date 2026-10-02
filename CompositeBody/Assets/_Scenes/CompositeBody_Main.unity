@@ -476,6 +476,7 @@ MonoBehaviour:
   m_Player1Spawn: {fileID: 1078429790}
   m_Player2Spawn: {fileID: 114624667}
   m_ApplyOnRoleAssigned: 1
+  m_DesktopOnly: 1
 --- !u!114 &490486573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -551,6 +552,7 @@ GameObject:
   m_Component:
   - component: {fileID: 502097547}
   - component: {fileID: 502097546}
+  - component: {fileID: 502097548}
   m_Layer: 0
   m_Name: CalibrationMarker
   m_TagString: Untagged
@@ -571,6 +573,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Multiplayer.CalibrationPoint
   m_TestCalibrateKey: 17
+  m_AlignHeight: 0
 --- !u!4 &502097547
 Transform:
   m_ObjectHideFlags: 0
@@ -586,6 +589,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &502097548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 502097545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 702638d7b2909e14a8f7a85d9113b6a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Multiplayer.HandPinchCalibrator
+  m_Marker: {fileID: 502097546}
+  m_Hand: 2
+  m_PinchEnter: 0.022
+  m_PinchExit: 0.038
+  m_HoldSeconds: 0.6
+  m_ArmedInLobbyOnly: 1
 --- !u!1 &544923176
 GameObject:
   m_ObjectHideFlags: 0
