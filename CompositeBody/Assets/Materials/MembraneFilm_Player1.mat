@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MembraneFilm_Player1
+  m_Shader: {fileID: 4800000, guid: b86db89ac6d2a3c448fdfb0c96d9c687, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _AmbientIntensity: 0.55
+    - _ClearAlpha: 0.12
+    - _ContactFloor: 0.007
+    - _ContactRange: 0.02
+    - _ContactSharpness: 1.3
+    - _CreaseScale: 22
+    - _CreaseSharpness: 3.2
+    - _CreaseStrength: 0.55
+    - _CreaseStretch: 6
+    - _EdgeOpacity: 0.55
+    - _FresnelIntensity: 1
+    - _FresnelPower: 2.6
+    - _FrostAlpha: 0.66
+    - _ShowContact: 0
+    - _Smoothness: 0.93
+    - _SpecIntensity: 4
+    - _TautClarity: 0.6
+    - _Translucency: 1.1
+    - _TranslucencyPower: 4
+    m_Colors:
+    - _FilmColor: {r: 0.495, g: 0.825, b: 0.79999995, a: 1}
+    - _FrostColor: {r: 0.7788, g: 0.89460003, b: 0.92039996, a: 1}
+    - _SpecColor2: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

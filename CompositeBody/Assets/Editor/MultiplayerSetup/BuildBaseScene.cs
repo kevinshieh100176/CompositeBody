@@ -22,10 +22,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
         public const string ScenePath = "Assets/_Scenes/CompositeBody_Main.unity";
 
         // Prefab GUIDs from the VR Multiplayer template.
-        const string k_NetworkManagerGuid = "3967f87296c892e40b57e37bc8601550";
-        const string k_GameManagerGuid = "0267a1d338db2bf4c9625e450bbaaad0";
-        const string k_XrOriginGuid = "eaa382d4bb6a20948a05d43247d66508";
-        const string k_NotificationUiGuid = "124729d69b3904f678772dd7681f3a87";
+        internal const string NetworkManagerGuid = "3967f87296c892e40b57e37bc8601550";
+        internal const string GameManagerGuid = "0267a1d338db2bf4c9625e450bbaaad0";
+        internal const string XrOriginGuid = "eaa382d4bb6a20948a05d43247d66508";
+        internal const string NotificationUiGuid = "124729d69b3904f678772dd7681f3a87";
 
         public static void Run()
         {
@@ -34,13 +34,13 @@ namespace CompositeBody.Multiplayer.EditorSetup
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             var missing = new List<string>();
-            var networkManager = Instantiate(k_NetworkManagerGuid, "Network Manager", missing);
-            var gameManager = Instantiate(k_GameManagerGuid, "XRI Network Game Manager", missing);
-            var xrOrigin = Instantiate(k_XrOriginGuid, "XR Origin", missing);
+            var networkManager = Instantiate(NetworkManagerGuid, "Network Manager", missing);
+            var gameManager = Instantiate(GameManagerGuid, "XRI Network Game Manager", missing);
+            var xrOrigin = Instantiate(XrOriginGuid, "XR Origin", missing);
 
             // Required: XRINetworkGameManager calls PlayerHudNotification.Instance directly when
             // a client connects, with no null check, so a scene without this throws on connect.
-            var notificationUi = Instantiate(k_NotificationUiGuid, "Player Notification UI", missing);
+            var notificationUi = Instantiate(NotificationUiGuid, "Player Notification UI", missing);
 
             if (missing.Count > 0)
             {

@@ -42,6 +42,7 @@ Shader "CompositeBody/SeaSurface"
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 3.0
+            #pragma multi_compile_instancing
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -62,6 +63,7 @@ Shader "CompositeBody/SeaSurface"
             struct Attributes
             {
                 float4 positionOS : POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -70,6 +72,7 @@ Shader "CompositeBody/SeaSurface"
                 float3 positionWS  : TEXCOORD0;
                 float3 normalWS    : TEXCOORD1;
                 float  fogCoord    : TEXCOORD2;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             // Three crossing swells. Deliberately analytic rather than textured: the
@@ -92,6 +95,8 @@ Shader "CompositeBody/SeaSurface"
             Varyings vert (Attributes input)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 float t = _Time.y * _WaveSpeed;
@@ -117,6 +122,7 @@ Shader "CompositeBody/SeaSurface"
 
             half4 frag (Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float3 N = normalize(input.normalWS);
                 float3 V = normalize(GetCameraPositionWS() - input.positionWS);
 

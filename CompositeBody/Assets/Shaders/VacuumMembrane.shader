@@ -63,6 +63,7 @@ Shader "CompositeBody/VacuumMembrane"
             #pragma fragment frag
             #pragma target 3.0
 
+            #pragma multi_compile_instancing
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fog
@@ -153,6 +154,7 @@ Shader "CompositeBody/VacuumMembrane"
                 float2 uv         : TEXCOORD0;
                 float2 filmData   : TEXCOORD1;  // x = gap between film and body, from the builder
                 float3 restPos    : TEXCOORD2;  // the film's own bind pose, anchors the creases
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -164,11 +166,14 @@ Shader "CompositeBody/VacuumMembrane"
                 float3 restWS      : TEXCOORD3;
                 float  gap         : TEXCOORD4;
                 float  fogCoord    : TEXCOORD5;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
 
                 OUT.positionHCS = posInputs.positionCS;
@@ -183,6 +188,7 @@ Shader "CompositeBody/VacuumMembrane"
 
             half4 frag(Varyings IN, FRONT_FACE_TYPE facing : FRONT_FACE_SEMANTIC) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float3 N = normalize(IN.normalWS) * IS_FRONT_VFACE(facing, 1.0, -1.0);
                 float3 V = GetWorldSpaceNormalizeViewDir(IN.positionWS);
 

@@ -53,6 +53,7 @@ Shader "CompositeBody/GooJelly"
             #pragma fragment frag
             #pragma target 3.0
 
+            #pragma multi_compile_instancing
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fog
@@ -132,6 +133,7 @@ Shader "CompositeBody/GooJelly"
                 float2 uv         : TEXCOORD0;
                 float2 shellData  : TEXCOORD1;  // x = available goo thickness at this vertex
                 float3 restPos    : TEXCOORD2;  // bind-pose body position, anchors the noise
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -143,11 +145,14 @@ Shader "CompositeBody/GooJelly"
                 float3 restPos     : TEXCOORD3;
                 float  fillRatio   : TEXCOORD4; // 0 = squashed onto body, 1 = fully swollen
                 float  fogCoord    : TEXCOORD5;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
                 float thickness = max(IN.shellData.x, 1e-5);
                 float3 n = normalize(IN.normalOS);
@@ -201,6 +206,7 @@ Shader "CompositeBody/GooJelly"
 
             half4 frag(Varyings IN) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float3 N = normalize(IN.normalWS);
                 float3 V = GetWorldSpaceNormalizeViewDir(IN.positionWS);
 

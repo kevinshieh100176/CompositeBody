@@ -37,6 +37,7 @@ Shader "CompositeBody/TraceParticle"
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 3.0
+            #pragma multi_compile_instancing
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -54,6 +55,7 @@ Shader "CompositeBody/TraceParticle"
                 float4 positionOS : POSITION;
                 float2 uv         : TEXCOORD0;
                 float4 color      : COLOR;      // particle colour-over-lifetime
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -62,11 +64,14 @@ Shader "CompositeBody/TraceParticle"
                 float2 uv          : TEXCOORD0;
                 float4 color       : COLOR;
                 float  fogCoord    : TEXCOORD1;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
                 OUT.positionHCS = posInputs.positionCS;
                 OUT.uv = IN.uv;
@@ -77,6 +82,7 @@ Shader "CompositeBody/TraceParticle"
 
             half4 frag(Varyings IN) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float2 d = IN.uv - 0.5;
 
                 float shape;

@@ -338,6 +338,7 @@ Shader "CompositeBody/ClothDrape"
             #pragma fragment frag
             #pragma target 3.0
 
+            #pragma multi_compile_instancing
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
@@ -350,6 +351,7 @@ Shader "CompositeBody/ClothDrape"
                 float3 normalOS   : NORMAL;
                 float4 tangentOS  : TANGENT;
                 float2 uv         : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -362,11 +364,14 @@ Shader "CompositeBody/ClothDrape"
                 float4 uvWrap      : TEXCOORD4; // xy = uv, zw = U as a unit vector (see ClothTearUV)
                 float  fogCoord    : TEXCOORD5;
                 float3 positionOS  : TEXCOORD6;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
                 VertexNormalInputs nrmInputs = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
 
@@ -383,6 +388,7 @@ Shader "CompositeBody/ClothDrape"
 
             half4 frag(Varyings IN, FRONT_FACE_TYPE facing : FRONT_FACE_SEMANTIC) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float3 N = normalize(IN.normalWS);
                 float3 T = normalize(IN.tangentWS);
                 float3 B = normalize(IN.bitangentWS);
@@ -558,6 +564,7 @@ Shader "CompositeBody/ClothDrape"
             #pragma fragment ShadowFrag
             #pragma target 3.0
 
+            #pragma multi_compile_instancing
             float3 _LightDirection;
 
             struct ShadowAttributes
@@ -565,17 +572,21 @@ Shader "CompositeBody/ClothDrape"
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float2 uv         : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct ShadowVaryings
             {
                 float4 positionHCS : SV_POSITION;
                 float4 uvWrap      : TEXCOORD0;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             ShadowVaryings ShadowVert(ShadowAttributes IN)
             {
                 ShadowVaryings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 float3 positionWS = TransformObjectToWorld(IN.positionOS.xyz);
                 float3 normalWS = TransformObjectToWorldNormal(IN.normalOS);
                 positionWS = ApplyShadowBias(positionWS, normalWS, _LightDirection);
@@ -586,6 +597,7 @@ Shader "CompositeBody/ClothDrape"
 
             half4 ShadowFrag(ShadowVaryings IN) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 ClothClipTear(ClothTearUV(IN.uvWrap.xy, IN.uvWrap.zw));
                 return 0;
             }
@@ -608,21 +620,26 @@ Shader "CompositeBody/ClothDrape"
             #pragma fragment DepthFrag
             #pragma target 3.0
 
+            #pragma multi_compile_instancing
             struct DepthAttributes
             {
                 float4 positionOS : POSITION;
                 float2 uv         : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct DepthVaryings
             {
                 float4 positionHCS : SV_POSITION;
                 float4 uvWrap      : TEXCOORD0;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             DepthVaryings DepthVert(DepthAttributes IN)
             {
                 DepthVaryings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
                 OUT.uvWrap = float4(IN.uv, cos(IN.uv.x * 2.0 * PI), sin(IN.uv.x * 2.0 * PI));
                 return OUT;
@@ -630,6 +647,7 @@ Shader "CompositeBody/ClothDrape"
 
             half4 DepthFrag(DepthVaryings IN) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 ClothClipTear(ClothTearUV(IN.uvWrap.xy, IN.uvWrap.zw));
                 return 0;
             }

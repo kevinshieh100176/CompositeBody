@@ -38,6 +38,7 @@ Shader "CompositeBody/GhostHalf"
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 3.0
+            #pragma multi_compile_instancing
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -54,6 +55,7 @@ Shader "CompositeBody/GhostHalf"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -62,11 +64,14 @@ Shader "CompositeBody/GhostHalf"
                 float3 normalWS    : TEXCOORD0;
                 float3 viewDirWS   : TEXCOORD1;
                 float  fogCoord    : TEXCOORD2;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
                 VertexNormalInputs nrmInputs = GetVertexNormalInputs(IN.normalOS);
 
@@ -79,6 +84,7 @@ Shader "CompositeBody/GhostHalf"
 
             half4 frag(Varyings IN) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float3 N = normalize(IN.normalWS);
                 float3 V = normalize(IN.viewDirWS);
 

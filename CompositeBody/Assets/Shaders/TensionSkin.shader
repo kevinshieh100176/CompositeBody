@@ -60,6 +60,7 @@ Shader "CompositeBody/TensionSkin"
             #pragma fragment frag
             #pragma target 3.0
 
+            #pragma multi_compile_instancing
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fog
@@ -132,6 +133,7 @@ Shader "CompositeBody/TensionSkin"
                 float4 tangentOS  : TANGENT;
                 float2 uv         : TEXCOORD0;
                 float3 restPos    : TEXCOORD2;  // the garment's own bind pose, from TensionSkinBuilder
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -144,11 +146,14 @@ Shader "CompositeBody/TensionSkin"
                 float2 uv          : TEXCOORD4;
                 float3 restWS      : TEXCOORD5; // bind pose through the same object matrix
                 float  fogCoord    : TEXCOORD6;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
                 VertexNormalInputs nrmInputs = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
 
@@ -170,6 +175,7 @@ Shader "CompositeBody/TensionSkin"
 
             half4 frag(Varyings IN) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float3 N = normalize(IN.normalWS);
                 float3 T = normalize(IN.tangentWS);
                 float3 B = normalize(IN.bitangentWS);
