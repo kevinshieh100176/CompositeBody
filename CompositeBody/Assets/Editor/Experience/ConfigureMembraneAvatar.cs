@@ -59,6 +59,41 @@ namespace CompositeBody.Multiplayer.EditorSetup
             baseOffset = 0.005f, minOffset = 0.0018f, smoothIterations = 90, smoothLambda = 0.35f
         };
 
+        const string k_RigPrefabPath = "Assets/VRMPAssets/Prefabs/PlayerPrefabs/XRMPT_XR_Origin_Setup.prefab";
+
+        /// <summary>
+        /// Read-only dump of the local XR rig's skinned renderers. The networked avatar's hands
+        /// are hidden for their own player -- your own hands are drawn by the rig, not by your
+        /// avatar -- so these are the renderers that decide whether you can see your own hands.
+        /// </summary>
+        public static void ProbeLocalRig()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(k_RigPrefabPath);
+            if (prefab == null)
+            {
+                Debug.LogError($"[MembraneRig] RESULT: FAIL - prefab not found at {k_RigPrefabPath}");
+                return;
+            }
+
+            int count = 0;
+            foreach (var smr in prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                Mesh mesh = smr.sharedMesh;
+                string chain = smr.name;
+                for (Transform t = smr.transform.parent; t != null && chain.Length < 90; t = t.parent)
+                    chain = t.name + "/" + chain;
+
+                Debug.Log($"[MembraneRig] SMR '{chain}' mesh='{(mesh != null ? mesh.name : "null")}' " +
+                          $"verts={(mesh != null ? mesh.vertexCount : 0)} bones={smr.bones.Length} " +
+                          $"root='{(smr.rootBone != null ? smr.rootBone.name : "null")}' " +
+                          $"enabled={smr.enabled} active={smr.gameObject.activeSelf}");
+                count++;
+            }
+
+            Debug.Log($"[MembraneRig] {count} skinned renderer(s) on the local rig.");
+            Debug.Log("[MembraneRig] RESULT: PASS");
+        }
+
         /// <summary>Read-only dump of what the avatar prefab actually contains.</summary>
         public static void Probe()
         {
@@ -112,35 +147,101 @@ namespace CompositeBody.Multiplayer.EditorSetup
             }
 
             Material filmMat = LoadOrCreateMaterial(shader);
+
+            if (!WrapPrefab(k_PrefabPath, "MembraneAvatar", filmMat, SkipOnAvatar, out int wrapped)) return;
+            if (!Verify(k_PrefabPath, "MembraneAvatar", wrapped)) return;
+
+            Debug.Log("[MembraneAvatar] RESULT: PASS");
+        }
+
+        /// <summary>
+        /// Wraps the local rig's own hands, which is what the player sees of themselves. Their
+        /// avatar's hands are hidden for them -- it is there for everyone else -- so without
+        /// this the membrane is something only other people see you wearing.
+        /// </summary>
+        public static void RunLocalRig()
+        {
+            Debug.Log("[MembraneRig] Starting...");
+
+            var shader = Shader.Find("CompositeBody/VacuumMembrane");
+            if (shader == null)
+            {
+                Debug.LogError("[MembraneRig] RESULT: FAIL - shader 'CompositeBody/VacuumMembrane' not found.");
+                return;
+            }
+
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(k_RigPrefabPath) == null)
+            {
+                Debug.LogError($"[MembraneRig] RESULT: FAIL - prefab not found at {k_RigPrefabPath}");
+                return;
+            }
+
+            // The same material as the avatar: your own hands and the hands other people see
+            // are the same hands, and two materials would be two things to keep in step.
+            Material filmMat = LoadOrCreateMaterial(shader);
+
+            if (!WrapPrefab(k_RigPrefabPath, "MembraneRig", filmMat, SkipOnRig, out int wrapped)) return;
+            if (!Verify(k_RigPrefabPath, "MembraneRig", wrapped)) return;
+
+            Debug.Log("[MembraneRig] RESULT: PASS");
+        }
+
+        /// <summary>Returns why this renderer should be left alone, or null to wrap it.</summary>
+        delegate string SkipReason(SkinnedMeshRenderer smr, string owner);
+
+        /// <summary>
+        /// The prefab carries two hand rigs -- Quest and AndroidXR_Simplified -- and enables one
+        /// at runtime by platform. This project ships PCVR against Quest over Link, so wrapping
+        /// the AndroidXR set would be two more films that are never switched on.
+        /// </summary>
+        static string SkipOnAvatar(SkinnedMeshRenderer smr, string owner) =>
+            owner.Contains("AndroidXR") ? "AndroidXR rig, and the target is PCVR" : null;
+
+        /// <summary>
+        /// On the rig only the hand visuals are wrapped. The pinch pointer is an unskinned
+        /// gizmo, and the offline-mode head has no mesh at all -- a film needs bones to skin to
+        /// and geometry to be relaxed against.
+        /// </summary>
+        static string SkipOnRig(SkinnedMeshRenderer smr, string owner)
+        {
+            if (smr.bones == null || smr.bones.Length == 0) return "no bones to skin a film to";
+            if (!smr.name.ToLowerInvariant().Contains("hand")) return "not a hand visual";
+            return null;
+        }
+
+        /// <summary>
+        /// Adds a membrane film beside every skinned renderer in a prefab that the predicate
+        /// does not skip. Edited through a prefab contents scope, so the whole edit either lands
+        /// and is saved or is thrown away intact.
+        /// </summary>
+        static bool WrapPrefab(string prefabPath, string tag, Material filmMat, SkipReason skip, out int wrapped)
+        {
             Directory.CreateDirectory(k_MeshDir);
 
-            // Edited through a prefab contents scope rather than on the asset directly, so the
-            // whole edit either lands and is saved or is thrown away intact.
-            GameObject root = PrefabUtility.LoadPrefabContents(k_PrefabPath);
-            int wrapped = 0;
+            GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
+            wrapped = 0;
 
             try
             {
-                RemoveExistingFilms(root);
+                RemoveExistingFilms(root, tag);
 
                 foreach (var smr in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
                 {
                     if (smr.name.EndsWith(k_FilmSuffix)) continue;
 
+                    string owner = smr.transform.parent != null ? smr.transform.parent.name : "(root)";
+
                     Mesh source = smr.sharedMesh;
                     if (source == null)
                     {
-                        Debug.LogWarning($"[MembraneAvatar] '{smr.name}' has no mesh; skipped.");
+                        Debug.Log($"[{tag}] Skipping '{owner}/{smr.name}': no mesh.");
                         continue;
                     }
-                    // The prefab carries two hand rigs -- Quest and AndroidXR_Simplified -- and
-                    // enables one at runtime by platform. This project ships PCVR against Quest
-                    // over Link, so wrapping the AndroidXR set would be two more films that are
-                    // never switched on.
-                    string owner = smr.transform.parent != null ? smr.transform.parent.name : "(root)";
-                    if (owner.Contains("AndroidXR"))
+
+                    string reason = skip?.Invoke(smr, owner);
+                    if (reason != null)
                     {
-                        Debug.Log($"[MembraneAvatar] Skipping '{owner}/{smr.name}': AndroidXR rig, and the target is PCVR.");
+                        Debug.Log($"[{tag}] Skipping '{owner}/{smr.name}': {reason}.");
                         continue;
                     }
 
@@ -157,20 +258,21 @@ namespace CompositeBody.Multiplayer.EditorSetup
                     }
                     catch (System.Exception e)
                     {
-                        Debug.LogError($"[MembraneAvatar] RESULT: FAIL - could not relax a film against " +
+                        Debug.LogError($"[{tag}] RESULT: FAIL - could not relax a film against " +
                                        $"'{source.name}' ({smr.name}): {e.Message}");
-                        return;
+                        return false;
                     }
 
                     if (film == null || film.vertexCount == 0)
                     {
-                        Debug.LogError($"[MembraneAvatar] RESULT: FAIL - the film built against '{source.name}' is empty.");
-                        return;
+                        Debug.LogError($"[{tag}] RESULT: FAIL - the film built against '{source.name}' is empty.");
+                        return false;
                     }
 
-                    // Named after the object that owns it: both hand rigs call their renderers
-                    // 'LeftHand', so the mesh assets would overwrite each other.
-                    film.name = $"{owner}_{smr.name}{k_FilmSuffix}";
+                    // Named after the object that owns it and the prefab it came from: several
+                    // rigs call their renderers 'LeftHand', so the mesh assets would otherwise
+                    // overwrite each other.
+                    film.name = $"{tag}_{owner}_{smr.name}{k_FilmSuffix}";
 
                     string meshPath = $"{k_MeshDir}/{film.name}.asset";
                     if (AssetDatabase.LoadAssetAtPath<Mesh>(meshPath) != null) AssetDatabase.DeleteAsset(meshPath);
@@ -179,8 +281,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
                     var filmGO = new GameObject(film.name);
 
                     // A sibling, not a child: parented under the source renderer it would inherit
-                    // that object's scale twice over, and the template enables and disables these
-                    // objects per local/remote player, which a child would silently follow.
+                    // that object's scale twice over.
                     filmGO.transform.SetParent(smr.transform.parent, false);
                     filmGO.transform.SetLocalPositionAndRotation(smr.transform.localPosition, smr.transform.localRotation);
                     filmGO.transform.localScale = smr.transform.localScale;
@@ -198,9 +299,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
                     filmSmr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                     filmSmr.receiveShadows = false;
 
-                    // Tied to the renderer it wraps, so it inherits the avatar's own local/remote
-                    // hiding. Without this the head film renders for the local player, who is
-                    // inside that head.
+                    // Tied to the renderer it wraps, so it inherits whatever hiding the rig or
+                    // the avatar applies. Without this the head film renders for the local
+                    // player, who is inside that head, and a hand film stays on after hand
+                    // tracking has dropped out.
                     var link = filmGO.AddComponent<MembraneFilmLink>();
                     var linkSo = new SerializedObject(link);
                     linkSo.FindProperty("m_Source").objectReferenceValue = smr;
@@ -208,17 +310,17 @@ namespace CompositeBody.Multiplayer.EditorSetup
                     linkSo.ApplyModifiedPropertiesWithoutUndo();
 
                     wrapped++;
-                    Debug.Log($"[MembraneAvatar] Wrapped '{owner}/{smr.name}' ({source.vertexCount} -> {film.vertexCount} verts, " +
+                    Debug.Log($"[{tag}] Wrapped '{owner}/{smr.name}' ({source.vertexCount} -> {film.vertexCount} verts, " +
                               $"{(isHand ? "hand" : "head")} settings, {smr.bones.Length} bones).");
                 }
 
                 if (wrapped == 0)
                 {
-                    Debug.LogError("[MembraneAvatar] RESULT: FAIL - nothing was wrapped.");
-                    return;
+                    Debug.LogError($"[{tag}] RESULT: FAIL - nothing was wrapped.");
+                    return false;
                 }
 
-                PrefabUtility.SaveAsPrefabAsset(root, k_PrefabPath);
+                PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             }
             finally
             {
@@ -226,14 +328,11 @@ namespace CompositeBody.Multiplayer.EditorSetup
             }
 
             AssetDatabase.SaveAssets();
-            Debug.Log($"[MembraneAvatar] Saved prefab with {wrapped} film(s).");
-
-            if (!Verify(wrapped)) return;
-
-            Debug.Log("[MembraneAvatar] RESULT: PASS");
+            Debug.Log($"[{tag}] Saved prefab with {wrapped} film(s).");
+            return true;
         }
 
-        static void RemoveExistingFilms(GameObject root)
+        static void RemoveExistingFilms(GameObject root, string tag)
         {
             var stale = new List<GameObject>();
             foreach (var t in root.GetComponentsInChildren<Transform>(true))
@@ -242,7 +341,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             }
             foreach (var go in stale)
             {
-                Debug.Log($"[MembraneAvatar] Removing previous film '{go.name}'.");
+                Debug.Log($"[{tag}] Removing previous film '{go.name}'.");
                 Object.DestroyImmediate(go);
             }
         }
@@ -274,14 +373,14 @@ namespace CompositeBody.Multiplayer.EditorSetup
             return mat;
         }
 
-        static bool Verify(int expected)
+        static bool Verify(string prefabPath, string tag, int expected)
         {
             // Re-loaded from disk, so this checks what was actually saved rather than what the
             // in-memory copy happened to hold.
-            var saved = AssetDatabase.LoadAssetAtPath<GameObject>(k_PrefabPath);
+            var saved = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (saved == null)
             {
-                Debug.LogError("[MembraneAvatar] RESULT: FAIL - could not reload the saved prefab.");
+                Debug.LogError($"[{tag}] RESULT: FAIL - could not reload the saved prefab.");
                 return false;
             }
 
@@ -293,41 +392,41 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 if (smr.sharedMesh == null || smr.sharedMesh.vertexCount == 0)
                 {
-                    Debug.LogError($"[MembraneAvatar] RESULT: FAIL - '{smr.name}' has no film mesh.");
+                    Debug.LogError($"[{tag}] RESULT: FAIL - '{smr.name}' has no film mesh.");
                     return false;
                 }
                 if (smr.bones == null || smr.bones.Length == 0 || smr.rootBone == null)
                 {
-                    Debug.LogError($"[MembraneAvatar] RESULT: FAIL - '{smr.name}' is not bound to bones, so it " +
+                    Debug.LogError($"[{tag}] RESULT: FAIL - '{smr.name}' is not bound to bones, so it " +
                                    "would not follow the head or the fingers.");
                     return false;
                 }
                 if (smr.sharedMaterial == null || smr.sharedMaterial.shader == null ||
                     smr.sharedMaterial.shader.name != "CompositeBody/VacuumMembrane")
                 {
-                    Debug.LogError($"[MembraneAvatar] RESULT: FAIL - '{smr.name}' is not using the membrane shader.");
+                    Debug.LogError($"[{tag}] RESULT: FAIL - '{smr.name}' is not using the membrane shader.");
                     return false;
                 }
                 if (!smr.updateWhenOffscreen)
                 {
-                    Debug.LogError($"[MembraneAvatar] RESULT: FAIL - '{smr.name}' would cull on bind-pose bounds.");
+                    Debug.LogError($"[{tag}] RESULT: FAIL - '{smr.name}' would cull on bind-pose bounds.");
                     return false;
                 }
 
                 var link = smr.GetComponent<MembraneFilmLink>();
                 if (link == null || new SerializedObject(link).FindProperty("m_Source").objectReferenceValue == null)
                 {
-                    Debug.LogError($"[MembraneAvatar] RESULT: FAIL - '{smr.name}' has no MembraneFilmLink back to the " +
+                    Debug.LogError($"[{tag}] RESULT: FAIL - '{smr.name}' has no MembraneFilmLink back to the " +
                                    "renderer it wraps, so it would not follow the avatar's local/remote hiding.");
                     return false;
                 }
 
-                Debug.Log($"[MembraneAvatar] OK   {smr.name} ({smr.sharedMesh.vertexCount} verts, {smr.bones.Length} bones)");
+                Debug.Log($"[{tag}] OK   {smr.name} ({smr.sharedMesh.vertexCount} verts, {smr.bones.Length} bones)");
             }
 
             if (found != expected)
             {
-                Debug.LogError($"[MembraneAvatar] RESULT: FAIL - saved prefab has {found} film(s), expected {expected}.");
+                Debug.LogError($"[{tag}] RESULT: FAIL - saved prefab has {found} film(s), expected {expected}.");
                 return false;
             }
 

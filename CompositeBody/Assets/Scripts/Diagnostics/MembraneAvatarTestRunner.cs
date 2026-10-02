@@ -115,8 +115,8 @@ namespace CompositeBody.Diagnostics
                 var link = film.GetComponent<MembraneFilmLink>();
                 if (!Check(link != null, $"{film.name} has a MembraneFilmLink")) continue;
 
-                Renderer source = FindSourceFor(player, film);
-                if (!Check(source != null, $"{film.name} resolves the renderer it wraps")) continue;
+                Renderer source = link.source;
+                if (!Check(source != null, $"{film.name} is linked to the renderer it wraps")) continue;
 
                 bool sourceShown = source.enabled && source.gameObject.activeInHierarchy;
                 bool filmShown = film.enabled && film.gameObject.activeInHierarchy;
@@ -127,6 +127,45 @@ namespace CompositeBody.Diagnostics
 
                 Log($"film {film.name}: film active={film.gameObject.activeInHierarchy} enabled={film.enabled} | " +
                     $"source '{source.name}' active={source.gameObject.activeInHierarchy} enabled={source.enabled}");
+            }
+
+            // --- the local rig's own hands ---
+            // A separate prefab from the avatar, and the one that decides whether a player can
+            // see their own hands: their avatar's hands are hidden for them, because the avatar
+            // is what everyone else sees. Checked here because the avatar films above are a
+            // different set of objects entirely, so passing those says nothing about these.
+            var origin = Object.FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
+            if (Check(origin != null, "XR Origin present"))
+            {
+                var rigFilms = new List<MembraneFilmLink>();
+                foreach (var link in origin.GetComponentsInChildren<MembraneFilmLink>(true))
+                    rigFilms.Add(link);
+
+                Check(rigFilms.Count == 2, $"local rig has 2 hand films (found {rigFilms.Count})");
+
+                foreach (var link in rigFilms)
+                {
+                    Renderer film = link.film;
+                    Renderer source = link.source;
+
+                    if (!Check(film != null && source != null, $"{link.name} is linked both ways")) continue;
+
+                    Check(film.sharedMaterial != null && film.sharedMaterial.shader != null &&
+                          film.sharedMaterial.shader.name == "CompositeBody/VacuumMembrane",
+                        $"{link.name} uses the membrane shader");
+
+                    // The invariant, not a fixed expectation: with no headset attached the rig's
+                    // hand visuals are off, so asserting the film is visible would be asserting
+                    // that this run has hand tracking.
+                    bool sourceShown = source.enabled && source.gameObject.activeInHierarchy;
+                    bool filmShown = film.enabled && film.gameObject.activeInHierarchy;
+                    Check(filmShown == sourceShown,
+                        $"{link.name} matches its source ({(sourceShown ? "source shown" : "source hidden")})");
+
+                    Log($"rig film {link.name}: film active={film.gameObject.activeInHierarchy} " +
+                        $"enabled={film.enabled} | source '{source.name}' " +
+                        $"active={source.gameObject.activeInHierarchy} enabled={source.enabled}");
+                }
             }
 
             // --- the assembly pair ---
@@ -153,24 +192,6 @@ namespace CompositeBody.Diagnostics
 
             foreach (var half in halves)
                 Check(!half.isAssembled, $"{half.name} still unassembled with one player present");
-        }
-
-        /// <summary>
-        /// The body renderer a film wraps. Matched by name, since the film is named after the
-        /// object that owns the source plus the source's own name.
-        /// </summary>
-        static Renderer FindSourceFor(XRINetworkPlayer player, SkinnedMeshRenderer film)
-        {
-            string stem = film.name.Replace("_MembraneFilm", string.Empty);
-
-            foreach (var smr in player.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-            {
-                if (smr.name.EndsWith("_MembraneFilm")) continue;
-
-                string owner = smr.transform.parent != null ? smr.transform.parent.name : "(root)";
-                if ($"{owner}_{smr.name}" == stem) return smr;
-            }
-            return null;
         }
 
         IEnumerator WaitUntil(System.Func<bool> condition, string what)

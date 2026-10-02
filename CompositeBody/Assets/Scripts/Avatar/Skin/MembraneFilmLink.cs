@@ -23,6 +23,12 @@ namespace CompositeBody.Avatar.Skin
         [SerializeField, Tooltip("The film's own renderer. Found on this object if left empty.")]
         Renderer m_Film;
 
+        /// <summary>The body renderer this film tracks. Exposed so tooling can check the pairing
+        /// without having to guess it back from object names.</summary>
+        public Renderer source => m_Source;
+
+        public Renderer film => m_Film;
+
         void Awake()
         {
             if (m_Film == null) m_Film = GetComponent<Renderer>();

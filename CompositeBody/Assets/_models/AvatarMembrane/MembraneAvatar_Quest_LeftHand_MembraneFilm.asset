@@ -6,7 +6,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Quest_LeftHand_MembraneFilm
+  m_Name: MembraneAvatar_Quest_LeftHand_MembraneFilm
   serializedVersion: 12
   m_SubMeshes:
   - serializedVersion: 2
