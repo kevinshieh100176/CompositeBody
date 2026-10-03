@@ -46,7 +46,7 @@ Material:
     - _TensionMax: 3
     - _YarnWidth: 0.99
     m_Colors:
-    - _FabricColor: {r: 0.6037736, g: 0.6037736, b: 0.6037736, a: 1}
+    - _FabricColor: {r: 1, g: 1, b: 1, a: 1}
     - _SheenColor: {r: 0.56, g: 0.55, b: 0.57, a: 1}
     - _SkinTint: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

@@ -33,14 +33,14 @@ Material:
     - _CreaseScale: 30
     - _CreaseSharpness: 3.5
     - _CreaseStrength: 0.7
-    - _CreaseStretch: 7
+    - _CreaseStretch: 6.18
     - _EdgeOpacity: 0.42
     - _FresnelIntensity: 1
     - _FresnelPower: 2.6
     - _FrostAlpha: 0.6
     - _ShowContact: 0
     - _Smoothness: 0.93
-    - _SpecIntensity: 4
+    - _SpecIntensity: 3.79
     - _TautClarity: 0.6
     - _Translucency: 0.55
     - _TranslucencyPower: 4

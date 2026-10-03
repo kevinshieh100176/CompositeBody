@@ -42,7 +42,7 @@ Material:
     - _SheenRoughness: 0.48
     - _Smoothness: 0.5
     - _SpecIntensity: 1.43
-    - _TearAmount: 0.467
+    - _TearAmount: 0.45
     - _TearCurl: 0.201
     - _TearElongation: 6.01
     - _TearOrigin: 0.507
