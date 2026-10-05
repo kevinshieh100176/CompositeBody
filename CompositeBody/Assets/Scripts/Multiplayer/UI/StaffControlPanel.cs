@@ -114,7 +114,10 @@ namespace CompositeBody.Multiplayer
         {
             if (m_PinchCalibrator == null) m_PinchCalibrator = FindFirstObjectByType<HandPinchCalibrator>();
 
-            bool available = m_PinchCalibrator != null;
+            // A disabled calibrator counts as absent. Arm() only sets a flag that the component's
+            // own Update acts on, so a switched-off one would give staff a button that reports
+            // "armed" and then never calibrates anything.
+            bool available = m_PinchCalibrator != null && m_PinchCalibrator.enabled;
             m_CalibrationPanel.SetActive(available);
             if (!available) return;
 

@@ -82,7 +82,13 @@ namespace CompositeBody.Multiplayer.EditorSetup
             so.FindProperty("m_Marker").objectReferenceValue = marker;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            Debug.Log("[Calib] Added HandPinchCalibrator to the marker (right hand, held pinch).");
+            // Added wired but switched off. The piece is hand-tracked throughout and a pinch is
+            // already the grab gesture, so the headset's own floor and room setup stand in for
+            // this until a shared origin is actually needed.
+            calibrator.enabled = false;
+
+            Debug.Log("[Calib] Added HandPinchCalibrator to the marker (right hand, held pinch), " +
+                      "switched off -- enable the component to put the gesture back.");
         }
 
         /// <summary>
@@ -141,7 +147,11 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 Debug.LogError("[Calib] RESULT: FAIL - HandPinchCalibrator has no marker assigned.");
                 return false;
             }
-            Debug.Log("[Calib] OK   HandPinchCalibrator wired to the marker");
+            // Reported rather than asserted either way. Whether the gesture should be live is a
+            // decision about the piece, not something a scene can be wrong about -- but a log
+            // that said only "wired" would read as "armed".
+            Debug.Log($"[Calib] OK   HandPinchCalibrator wired to the marker " +
+                      $"({(calibrator.enabled ? "ENABLED -- a held pinch will recalibrate" : "switched off")})");
 
             if (positioner != null)
             {

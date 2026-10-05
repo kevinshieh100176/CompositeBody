@@ -248,6 +248,12 @@ namespace CompositeBody.Multiplayer.EditorSetup
             var pinchSo = new SerializedObject(pinch);
             pinchSo.FindProperty("m_Marker").objectReferenceValue = marker;
             pinchSo.ApplyModifiedPropertiesWithoutUndo();
+
+            // Off for now: the experience is hand-tracked throughout, and a pinch is also how a
+            // half is picked up, so the gesture that confirms the origin is the gesture that
+            // grabs. Height comes from the headset's own floor level either way. Left wired up
+            // rather than removed -- re-enabling the component is the whole of putting it back.
+            pinch.enabled = false;
         }
 
         #endregion
