@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using CompositeBody.Avatar.Body;
 using CompositeBody.Avatar.Skin;
 using CompositeBody.Multiplayer;
 using XRMultiplayer;
@@ -10,8 +11,9 @@ namespace CompositeBody.Diagnostics
 {
     /// <summary>
     /// Starts a host in the membrane/combine sample scene and checks that the things being
-    /// tested actually came up: the player avatar spawned with its membrane films, and the
-    /// assembly pair spawned with everything the server needs to weld it.
+    /// tested actually came up: the player avatar spawned as the Ch36 membrane figure, solved
+    /// against its tracked poses, and the assembly pair spawned with everything the server needs
+    /// to weld it.
     ///
     /// The membrane check exists because of a specific trap. The template switches avatar
     /// renderers on and off depending on whether a player is local or remote -- you are not
@@ -42,7 +44,11 @@ namespace CompositeBody.Diagnostics
             yield return null;
 
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.Exit(m_Failures.Count == 0 ? 0 : 1);
+            // Exiting is for the batch run, where the status code is the result. In an editor
+            // somebody is sitting in front of, the same exit would close their editor out from
+            // under them, so that run just leaves play mode with the report in the console.
+            if (Application.isBatchMode) UnityEditor.EditorApplication.Exit(m_Failures.Count == 0 ? 0 : 1);
+            else UnityEditor.EditorApplication.isPlaying = false;
 #else
             Application.Quit(m_Failures.Count == 0 ? 0 : 1);
 #endif
@@ -85,7 +91,8 @@ namespace CompositeBody.Diagnostics
                 if (smr.name.EndsWith("_MembraneFilm")) films.Add(smr);
             }
 
-            Check(films.Count == 3, $"avatar carries 3 membrane films (found {films.Count})");
+            // Four: the head, the two tracked hands, and the Ch36 body.
+            Check(films.Count == 4, $"avatar carries 4 membrane films (found {films.Count})");
 
             foreach (var film in films)
             {
@@ -127,6 +134,65 @@ namespace CompositeBody.Diagnostics
 
                 Log($"film {film.name}: film active={film.gameObject.activeInHierarchy} enabled={film.enabled} | " +
                     $"source '{source.name}' active={source.gameObject.activeInHierarchy} enabled={source.enabled}");
+            }
+
+            // --- the Ch36 body ---
+            // The body is the avatar now, and it is solved rather than authored: nothing about it
+            // is visible in the prefab beyond a figure standing in its bind pose. These checks are
+            // about whether the solve actually ran against the three tracked poses, which cannot
+            // be known until a player has spawned and a frame has passed.
+            var rig = player.GetComponentInChildren<MembraneBodyRig>(true);
+            if (Check(rig != null, "avatar carries a MembraneBodyRig"))
+            {
+                Check(rig.bonesResolved, "the body rig is wired to every bone it solves");
+                Check(rig.chainsCaptured, "the body rig measured its bind pose");
+
+                // The hands are drawn by the tracked hand visuals and by the local rig, so the
+                // body's own hands have to be out of the way or the player wears two pairs.
+                Check(rig.leftHandBone != null && rig.leftHandBone.localScale.x < 0.5f,
+                    "the body's left hand is collapsed");
+                Check(rig.rightHandBone != null && rig.rightHandBone.localScale.x < 0.5f,
+                    "the body's right hand is collapsed");
+
+                // The wrists are the seam that shows: the hand is a separate mesh, so a wrist
+                // that did not land on the tracked hand reads as a hand floating off a forearm.
+                CheckWrist(rig.leftHandBone, rig.leftHandTarget, "left");
+                CheckWrist(rig.rightHandBone, rig.rightHandTarget, "right");
+
+                Log($"body: ownerView={rig.ownerView} scale={rig.transform.localScale.x:0.000} " +
+                    $"position={rig.transform.position}");
+            }
+
+            // Ch36 brought its own head, so the template's has to be off. Checked at runtime as
+            // well as in the prefab builder, because the template switches avatar renderers on
+            // for the local player -- a head re-enabled on spawn would put two heads in one place.
+            foreach (var renderer in player.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer.name != "Head" && renderer.name != "HMD") continue;
+                Check(!renderer.enabled, $"the template's '{renderer.name}' is off, so the body has one head");
+            }
+
+            // Nothing floats over the head. Checked at runtime because the crown is switched on
+            // when a player spawns and again whenever the session host changes, so a prefab that
+            // looks clean can still put one back.
+            foreach (var renderer in player.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer.name != "Host_Crown") continue;
+                Check(!renderer.enabled || !renderer.gameObject.activeInHierarchy,
+                    "the host crown is not drawn");
+            }
+
+            foreach (var canvas in player.GetComponentsInChildren<Canvas>(true))
+            {
+                Check(!canvas.enabled || !canvas.gameObject.activeInHierarchy,
+                    $"the '{canvas.name}' name tag is not drawn");
+
+                // The voice particles are not UI, so switching the canvas off does not cover them.
+                foreach (var renderer in canvas.GetComponentsInChildren<Renderer>(true))
+                {
+                    Check(!renderer.enabled || !renderer.gameObject.activeInHierarchy,
+                        $"'{renderer.name}' under the name tag is not drawn");
+                }
             }
 
             // --- the local rig's own hands ---
@@ -192,6 +258,20 @@ namespace CompositeBody.Diagnostics
 
             foreach (var half in halves)
                 Check(!half.isAssembled, $"{half.name} still unassembled with one player present");
+        }
+
+        /// <summary>
+        /// A solved wrist sits on the hand it belongs to. The tolerance is generous on purpose:
+        /// where the hands are in a headless run depends on the rig, and the failure this is
+        /// looking for is an arm left in its bind pose -- which puts the wrist half a metre out
+        /// sideways, not a centimetre or two off.
+        /// </summary>
+        void CheckWrist(Transform wrist, Transform target, string side)
+        {
+            if (!Check(wrist != null && target != null, $"the {side} arm has a wrist and a target")) return;
+
+            float error = Vector3.Distance(wrist.position, target.position);
+            Check(error < 0.25f, $"the {side} wrist is solved onto its tracked hand ({error * 100f:0.0}cm off)");
         }
 
         IEnumerator WaitUntil(System.Func<bool> condition, string what)

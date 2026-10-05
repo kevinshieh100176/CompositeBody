@@ -193,9 +193,23 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// The prefab carries two hand rigs -- Quest and AndroidXR_Simplified -- and enables one
         /// at runtime by platform. This project ships PCVR against Quest over Link, so wrapping
         /// the AndroidXR set would be two more films that are never switched on.
+        ///
+        /// The Ch36 body is skipped as well. It arrives with its own film, relaxed at the
+        /// settings the look was tuned at rather than at the head settings this script would pick
+        /// for it, and a second film over the same mesh would be two sheets fighting each other.
         /// </summary>
-        static string SkipOnAvatar(SkinnedMeshRenderer smr, string owner) =>
-            owner.Contains("AndroidXR") ? "AndroidXR rig, and the target is PCVR" : null;
+        static string SkipOnAvatar(SkinnedMeshRenderer smr, string owner)
+        {
+            if (owner.Contains("AndroidXR")) return "AndroidXR rig, and the target is PCVR";
+
+            for (Transform t = smr.transform; t != null; t = t.parent)
+            {
+                if (t.name == ConfigureMembraneBody.BodyRootName)
+                    return "part of the Ch36 body, which brings its own film";
+            }
+
+            return null;
+        }
 
         /// <summary>
         /// On the rig only the hand visuals are wrapped. The pinch pointer is an unskinned
