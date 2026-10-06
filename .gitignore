@@ -107,3 +107,6 @@ InitTestScene*.unity*
 
 # Stray folder created by a '>/dev/null' redirect on Windows (contains Git LFS hooks).
 /dev/null/
+
+# PureRef reference boards
+*.pur
