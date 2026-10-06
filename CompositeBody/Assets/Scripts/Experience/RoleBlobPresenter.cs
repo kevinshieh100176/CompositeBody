@@ -118,7 +118,7 @@ namespace CompositeBody.Experience
 
         static XRINetworkPlayer FindRemotePlayer()
         {
-            var players = Object.FindObjectsByType<XRINetworkPlayer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            var players = Object.FindObjectsByType<XRINetworkPlayer>(FindObjectsInactive.Exclude);
             foreach (var player in players)
             {
                 if (player != XRINetworkPlayer.LocalPlayer) return player;

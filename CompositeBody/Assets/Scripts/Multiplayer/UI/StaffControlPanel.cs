@@ -112,7 +112,7 @@ namespace CompositeBody.Multiplayer
         /// </summary>
         void RefreshCalibrationPanel()
         {
-            if (m_PinchCalibrator == null) m_PinchCalibrator = FindFirstObjectByType<HandPinchCalibrator>();
+            if (m_PinchCalibrator == null) m_PinchCalibrator = FindAnyObjectByType<HandPinchCalibrator>();
 
             // A disabled calibrator counts as absent. Arm() only sets a flag that the component's
             // own Update acts on, so a switched-off one would give staff a button that reports
@@ -294,7 +294,7 @@ namespace CompositeBody.Multiplayer
 
         static void EnsureEventSystem()
         {
-            if (FindFirstObjectByType<EventSystem>() != null) return;
+            if (FindAnyObjectByType<EventSystem>() != null) return;
 
             var go = new GameObject("EventSystem (Staff Panel Fallback)");
             go.AddComponent<EventSystem>();

@@ -24,7 +24,7 @@ namespace CompositeBody.Multiplayer
 
         void Start()
         {
-            m_XROrigin = FindFirstObjectByType<XROrigin>();
+            m_XROrigin = FindAnyObjectByType<XROrigin>();
             if (m_XROrigin == null)
                 Utils.LogWarning("[CalibrationPoint] No XROrigin found in scene yet.");
         }
@@ -43,7 +43,7 @@ namespace CompositeBody.Multiplayer
         {
             if (m_XROrigin == null)
             {
-                m_XROrigin = FindFirstObjectByType<XROrigin>();
+                m_XROrigin = FindAnyObjectByType<XROrigin>();
                 if (m_XROrigin == null)
                 {
                     Utils.LogError("[CalibrationPoint] Cannot calibrate: no XROrigin in scene.");
@@ -82,7 +82,7 @@ namespace CompositeBody.Multiplayer
         {
             if (m_XROrigin == null)
             {
-                m_XROrigin = FindFirstObjectByType<XROrigin>();
+                m_XROrigin = FindAnyObjectByType<XROrigin>();
                 if (m_XROrigin == null)
                 {
                     Utils.LogError("[CalibrationPoint] Cannot calibrate: no XROrigin in scene.");

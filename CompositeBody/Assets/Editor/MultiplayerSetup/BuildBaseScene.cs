@@ -240,7 +240,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return;
             }
 
-            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include))
             {
                 onValidate.Invoke(netObj, null);
                 EditorUtility.SetDirty(netObj);
@@ -267,15 +267,15 @@ namespace CompositeBody.Multiplayer.EditorSetup
         {
             var required = new (string name, bool present)[]
             {
-                ("NetworkManager", Object.FindFirstObjectByType<NetworkManager>() != null),
-                ("XRINetworkGameManager", Object.FindFirstObjectByType<XRMultiplayer.XRINetworkGameManager>() != null),
-                ("PlayerHudNotification", Object.FindFirstObjectByType<XRMultiplayer.PlayerHudNotification>() != null),
-                ("GameSessionManager", Object.FindFirstObjectByType<GameSessionManager>() != null),
-                ("StoryProgressManager", Object.FindFirstObjectByType<StoryProgressManager>() != null),
-                ("StaffControlPanel", Object.FindFirstObjectByType<StaffControlPanel>() != null),
-                ("LanSessionBroadcaster", Object.FindFirstObjectByType<LanSessionBroadcaster>() != null),
-                ("LanSessionDiscovery", Object.FindFirstObjectByType<LanSessionDiscovery>() != null),
-                ("XROrigin", Object.FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>() != null),
+                ("NetworkManager", Object.FindAnyObjectByType<NetworkManager>() != null),
+                ("XRINetworkGameManager", Object.FindAnyObjectByType<XRMultiplayer.XRINetworkGameManager>() != null),
+                ("PlayerHudNotification", Object.FindAnyObjectByType<XRMultiplayer.PlayerHudNotification>() != null),
+                ("GameSessionManager", Object.FindAnyObjectByType<GameSessionManager>() != null),
+                ("StoryProgressManager", Object.FindAnyObjectByType<StoryProgressManager>() != null),
+                ("StaffControlPanel", Object.FindAnyObjectByType<StaffControlPanel>() != null),
+                ("LanSessionBroadcaster", Object.FindAnyObjectByType<LanSessionBroadcaster>() != null),
+                ("LanSessionDiscovery", Object.FindAnyObjectByType<LanSessionDiscovery>() != null),
+                ("XROrigin", Object.FindAnyObjectByType<Unity.XR.CoreUtils.XROrigin>() != null),
             };
 
             foreach (var (name, present) in required)
@@ -283,13 +283,13 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             // A zero hash means the object can never synchronize to clients. The field is
             // internal to Netcode, so it has to be read through SerializedObject.
-            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include))
             {
                 uint hash = ReadGlobalObjectIdHash(netObj);
                 Debug.Log($"[BaseScene] {(hash != 0 ? "OK  " : "MISS")} NetworkObject '{netObj.name}' GlobalObjectIdHash={hash}");
             }
 
-            var nm = Object.FindFirstObjectByType<NetworkManager>();
+            var nm = Object.FindAnyObjectByType<NetworkManager>();
             if (nm != null)
             {
                 // Read the serialized m_NetworkConfig, not NetworkConfig: NetworkManagerVRMultiplayer

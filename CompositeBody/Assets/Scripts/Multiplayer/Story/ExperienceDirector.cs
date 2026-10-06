@@ -70,9 +70,10 @@ namespace CompositeBody.Multiplayer
 
         void Reset() => m_Beats = DefaultBeats();
 
-        void OnDestroy()
+        public override void OnDestroy()
         {
             if (Instance == this) Instance = null;
+            base.OnDestroy();
         }
 
         public override void OnNetworkSpawn()

@@ -50,7 +50,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
         static CalibrationPoint EnsureMarker()
         {
-            var existing = Object.FindFirstObjectByType<CalibrationPoint>();
+            var existing = Object.FindAnyObjectByType<CalibrationPoint>();
             if (existing != null)
             {
                 Debug.Log($"[Calib] Found existing marker '{existing.name}' at {existing.transform.position} " +
@@ -68,7 +68,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
         static void EnsurePinchCalibrator(CalibrationPoint marker)
         {
-            var existing = Object.FindFirstObjectByType<HandPinchCalibrator>();
+            var existing = Object.FindAnyObjectByType<HandPinchCalibrator>();
             if (existing != null)
             {
                 Debug.Log("[Calib] HandPinchCalibrator already present; leaving its settings alone.");
@@ -99,7 +99,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// </summary>
         static void DisableVenueSpawnOffsets()
         {
-            var positioner = Object.FindFirstObjectByType<RoleSpawnPositioner>();
+            var positioner = Object.FindAnyObjectByType<RoleSpawnPositioner>();
             if (positioner == null)
             {
                 Debug.Log("[Calib] No RoleSpawnPositioner in the scene; nothing to gate.");
@@ -124,9 +124,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
         static bool Verify()
         {
-            var marker = Object.FindFirstObjectByType<CalibrationPoint>();
-            var calibrator = Object.FindFirstObjectByType<HandPinchCalibrator>();
-            var positioner = Object.FindFirstObjectByType<RoleSpawnPositioner>();
+            var marker = Object.FindAnyObjectByType<CalibrationPoint>();
+            var calibrator = Object.FindAnyObjectByType<HandPinchCalibrator>();
+            var positioner = Object.FindAnyObjectByType<RoleSpawnPositioner>();
 
             if (marker == null)
             {

@@ -337,7 +337,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return;
             }
 
-            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include))
             {
                 onValidate.Invoke(netObj, null);
                 EditorUtility.SetDirty(netObj);
@@ -358,7 +358,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// </summary>
         static bool VerifyO0()
         {
-            var o0 = Object.FindFirstObjectByType<O0ArrivalBeat>();
+            var o0 = Object.FindAnyObjectByType<O0ArrivalBeat>();
             if (o0 == null)
             {
                 Debug.LogError("[Experience] RESULT: FAIL - O-0 has no O0ArrivalBeat.");
@@ -454,7 +454,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
         static bool Verify()
         {
-            var director = Object.FindFirstObjectByType<ExperienceDirector>();
+            var director = Object.FindAnyObjectByType<ExperienceDirector>();
             if (director == null)
             {
                 Debug.LogError("[Experience] RESULT: FAIL - no ExperienceDirector in the saved scene.");
@@ -470,7 +470,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             // Exactly one controller per beat, no duplicates: two would both run, and none would
             // look from inside the headset like the show had stalled.
-            var controllers = Object.FindObjectsByType<BeatController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var controllers = Object.FindObjectsByType<BeatController>(FindObjectsInactive.Include);
             foreach (var beat in StoryBeats.Ordered)
             {
                 int found = 0;
@@ -493,14 +493,14 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             if (!VerifyO0()) return false;
 
-            if (Object.FindFirstObjectByType<ScreenFade>() == null)
+            if (Object.FindAnyObjectByType<ScreenFade>() == null)
             {
                 Debug.LogError("[Experience] RESULT: FAIL - no ScreenFade; beats cannot fade and S0-1 cannot happen in the dark.");
                 return false;
             }
             Debug.Log("[Experience] OK   ScreenFade present");
 
-            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include))
             {
                 uint hash = ReadGlobalObjectIdHash(netObj);
                 if (hash == 0)
