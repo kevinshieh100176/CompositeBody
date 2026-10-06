@@ -3,3 +3,8 @@
 *.a filter=lfs diff=lfs merge=lfs -text
 *.dylib filter=lfs diff=lfs merge=lfs -text
 CompositeBody/Library/ArtifactDB filter=lfs diff=lfs merge=lfs -text
+*.fbx filter=lfs diff=lfs merge=lfs -text
+# FBX files committed before LFS tracking stay as regular git blobs
+CompositeBody/Assets/Samples/**/*.fbx !filter !diff !merge text=auto
+CompositeBody/Assets/VRMPAssets/**/*.fbx !filter !diff !merge text=auto
+CompositeBody/Assets/_models/Ch36_nonPBR*.fbx !filter !diff !merge text=auto

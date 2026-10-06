@@ -3,6 +3,7 @@
     "com.meta.xr.sdk.all": "205.0.0",
     "com.unity.burst": "1.8.29",
     "com.unity.feature.development": "1.0.2",
+    "com.unity.formats.fbx": "5.1.6",
     "com.unity.ide.rider": "3.0.38",
     "com.unity.inputsystem": "1.19.0",
     "com.unity.learn.iet-framework": "5.0.4",
@@ -11,6 +12,8 @@
     "com.unity.multiplayer.playmode": "2.0.2",
     "com.unity.multiplayer.tools": "2.2.9",
     "com.unity.netcode.gameobjects": "2.13.0",
+    "com.unity.pipeline": "0.8.0-exp.1",
+    "com.unity.probuilder": "6.1.2",
     "com.unity.render-pipelines.universal": "17.5.0",
     "com.unity.services.authentication": "3.7.3",
     "com.unity.services.multiplayer": "2.2.4",
@@ -58,7 +61,6 @@
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0",
-    "com.unity.pipeline": "0.8.0-exp.1"
+    "com.unity.modules.xr": "1.0.0"
   }
 }
