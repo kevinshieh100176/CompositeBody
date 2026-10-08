@@ -8,3 +8,7 @@ CompositeBody/Library/ArtifactDB filter=lfs diff=lfs merge=lfs -text
 CompositeBody/Assets/Samples/**/*.fbx !filter !diff !merge text=auto
 CompositeBody/Assets/VRMPAssets/**/*.fbx !filter !diff !merge text=auto
 CompositeBody/Assets/_models/Ch36_nonPBR*.fbx !filter !diff !merge text=auto
+*.png filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.exr filter=lfs diff=lfs merge=lfs -text
