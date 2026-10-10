@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: f8654d6ca62166643871abdc0a643aa4
+guid: db9456526efbfe24abfd826afb1d1536
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -14,4 +14,8 @@ ScriptedImporter:
   recenter: 0
   maxPoints: 0
   convertColorSpace: 1
+  computeDensity: 0
+  densityRadius: 0.01
+  estimateNormals: 0
+  normalRadius: 0.015
   shader: {instanceID: 0}

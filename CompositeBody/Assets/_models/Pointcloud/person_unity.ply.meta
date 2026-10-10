@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: cdc4f97688b771e499e9c084b9c4c503
+guid: b8c261e788d4a0944b12436dff5760c8
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -8,14 +8,14 @@ ScriptedImporter:
   assetBundleName: 
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 58aa88295104d584683a6d4c58a4e1d4, type: 3}
-  topology: 1
+  topology: 0
   scale: 1
   flipZ: 0
   recenter: 0
-  maxPoints: 250000
+  maxPoints: 0
   convertColorSpace: 1
-  computeDensity: 1
+  computeDensity: 0
   densityRadius: 0.01
-  estimateNormals: 1
+  estimateNormals: 0
   normalRadius: 0.015
   shader: {instanceID: 0}
