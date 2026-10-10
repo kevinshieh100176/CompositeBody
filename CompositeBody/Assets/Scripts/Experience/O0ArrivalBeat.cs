@@ -190,8 +190,17 @@ namespace CompositeBody.Experience
                 // different moments, however carefully it was authored. Setting the time from
                 // ExperienceClock makes the Timeline the authoring surface and the shared clock
                 // the time source, which is the only arrangement where both are true at once.
-                m_Director.time = Mathf.Max(t, 0f);
-                m_Director.Evaluate();
+                //
+                // UNLESS THE MASTER TIMELINE OWNS IT. When Main.playable nests this cue as a
+                // Control clip it is already setting this director's time, from the same shared
+                // clock -- and two writes on one frame means whichever ran second wins, which
+                // shows up as the cross-fade stuttering. The fixtures are still read back below,
+                // because the Timeline is still what moved them.
+                if (!ShowTimelineDriver.ownsSubTimelines)
+                {
+                    m_Director.time = Mathf.Max(t, 0f);
+                    m_Director.Evaluate();
+                }
 
                 // Read back rather than recomputed: the slab has to follow whatever the curve
                 // actually does, including after someone drags the keys about.
