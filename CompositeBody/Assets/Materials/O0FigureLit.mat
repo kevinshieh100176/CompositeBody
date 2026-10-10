@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: O0FigureLit
+  m_Shader: {fileID: 4800000, guid: 93442f84c37ba5245adbf0b1dfee42e4, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _ROUND_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _AmbientBoost: 0.4
+    - _Dissolve: 0
+    - _DissolveDrift: 0.6
+    - _DissolveRadius: 1.8
+    - _DissolveScatter: 0.35
+    - _DissolveShrink: 1
+    - _DissolveSpread: 0.08
+    - _Exposure: 0.7
+    - _Glitch: 0
+    - _GlitchDropout: 0.25
+    - _GlitchRate: 11
+    - _GlitchScatter: 0.18
+    - _GlitchSeed: 3
+    - _GlitchShift: 0.05
+    - _GlitchSlabs: 48
+    - _KeepScanColor: 0
+    - _MinPixels: 1.5
+    - _Phase: 0
+    - _PointSize: 0.0045
+    - _Reveal: 1
+    - _RevealRadius: 0
+    - _Round: 1
+    - _ScanColorMix: 0.2
+    - _Smoothness: 0.35
+    - _Softness: 0.3
+    - _Specular: 0.25
+    - _Turbulence: 0.003
+    - _TurbulenceScale: 6
+    - _TurbulenceSpeed: 0.9
+    - _Wrap: 0.4
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _DissolveDir: {r: 0, g: 1, b: 0, a: 0}
+    - _DissolveFrom: {r: 0, g: 1, b: 0, a: 0}
+    - _RevealFrom: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

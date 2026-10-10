@@ -46,6 +46,7 @@ Shader "CompositeBody/SeaSurface"
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "CompositeFog.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _DeepColor;
@@ -137,7 +138,7 @@ Shader "CompositeBody/SeaSurface"
                 float spec = pow(saturate(dot(N, H)), _SpecSharpness) * _SpecStrength;
                 col += _SpecColor2.rgb * spec;
 
-                col = MixFog(col, input.fogCoord);
+                col = CompositeFogMix(col, input.positionWS, input.fogCoord);
                 return half4(col, 1.0);
             }
             ENDHLSL

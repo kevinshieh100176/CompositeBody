@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PointCloudFro
+  m_Shader: {fileID: 4800000, guid: 3ed14d8c0cffe41448f9cf506f216bda, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _ApproachCurve: 1.6
+    - _ApproachFar: 2.6
+    - _ApproachNear: 0.45
+    - _Burn: 2.6
+    - _BurnSharp: 2
+    - _Cascade: 0
+    - _CascadeJitter: 0.45
+    - _DensityLead: 0.7
+    - _DepthFade: 14
+    - _FallDistance: 1.1
+    - _FallSpread: 0.22
+    - _Intensity: 1.4
+    - _LumiLead: 0.55
+    - _MinPixels: 1.2
+    - _NearFade: 0.18
+    - _Phase: 0
+    - _PointSize: 0.0045
+    - _Reveal: 1
+    - _RevealRadius: 0
+    - _Softness: 0.6
+    - _Turbulence: 0.002
+    - _TurbulenceScale: 6
+    - _TurbulenceSpeed: 0.7
+    m_Colors:
+    - _BurnColor: {r: 1, g: 0.72, b: 0.41999996, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _RevealFrom: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

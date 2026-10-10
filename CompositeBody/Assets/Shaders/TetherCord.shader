@@ -46,6 +46,7 @@ Shader "CompositeBody/TetherCord"
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "CompositeFog.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _CordColor;
@@ -71,6 +72,7 @@ Shader "CompositeBody/TetherCord"
                 float2 uv          : TEXCOORD0;
                 float4 color       : COLOR;
                 float  fogCoord    : TEXCOORD1;
+                float3 positionWS  : TEXCOORD2;   // height fog needs to know where this is
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -83,6 +85,7 @@ Shader "CompositeBody/TetherCord"
                 OUT.positionHCS = posInputs.positionCS;
                 OUT.uv = IN.uv;
                 OUT.color = IN.color;
+                OUT.positionWS = posInputs.positionWS;
                 OUT.fogCoord = ComputeFogFactor(posInputs.positionCS.z);
                 return OUT;
             }
@@ -105,7 +108,7 @@ Shader "CompositeBody/TetherCord"
 
                 float alpha = saturate(body * _CordColor.a * IN.color.a);
 
-                col = MixFog(col, IN.fogCoord);
+                col = CompositeFogMix(col, IN.positionWS, IN.fogCoord);
                 return half4(col, alpha);
             }
             ENDHLSL

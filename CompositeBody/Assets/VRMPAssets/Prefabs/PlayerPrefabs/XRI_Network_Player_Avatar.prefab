@@ -626,6 +626,7 @@ GameObject:
   - component: {fileID: 5461973636097210905}
   - component: {fileID: 5331261163416317105}
   - component: {fileID: 541269302861796555}
+  - component: {fileID: 1186533498307660461}
   m_Layer: 0
   m_Name: MembraneBody_Ch36_MembraneFilm
   m_TagString: Untagged
@@ -673,7 +674,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ae191b24299ed6642ab645840bf895c1, type: 2}
+  - {fileID: 2100000, guid: 6b38e0b335018804d802c39fc414ae57, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -774,6 +775,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneFilmLink
   m_Source: {fileID: 183949485512285324}
   m_Film: {fileID: 5331261163416317105}
+--- !u!114 &1186533498307660461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2370920530348353694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 908621b7fc2bd1948b896daf647d0ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneReveal
+  m_Film: {fileID: 5331261163416317105}
+  m_Reveal: 1
+  m_GrowFrom: {fileID: 0}
+  m_GrowFromLocal: {x: 0.00000020861626, y: -0.006354809, z: 0.02664122}
+  m_GrowRadius: 0
+  m_AutoRadius: 1
+  m_FadeInSeconds: 3.5
+  m_FadeOutSeconds: 2
+  m_Shape:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_GrowOnEnable: 0
 --- !u!1 &2371515319874769169
 GameObject:
   m_ObjectHideFlags: 0

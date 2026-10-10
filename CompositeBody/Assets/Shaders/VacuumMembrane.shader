@@ -69,6 +69,7 @@ Shader "CompositeBody/VacuumMembrane"
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "CompositeFog.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -281,7 +282,7 @@ Shader "CompositeBody/VacuumMembrane"
                 outRGB += spec;
                 outRGB += _SpecColor2.rgb * fresnel * _FresnelIntensity * alpha;
 
-                outRGB = MixFog(outRGB, IN.fogCoord);
+                outRGB = CompositeFogMix(outRGB, IN.positionWS, IN.fogCoord);
                 return half4(outRGB, alpha);
             }
             ENDHLSL

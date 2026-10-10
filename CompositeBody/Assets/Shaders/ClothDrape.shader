@@ -65,6 +65,7 @@ Shader "CompositeBody/ClothDrape"
         HLSLINCLUDE
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "CompositeFog.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
@@ -541,7 +542,7 @@ Shader "CompositeBody/ClothDrape"
                 float fresnel = pow(1.0 - s.NoV, _FresnelPower);
                 color += _FresnelColor.rgb * fresnel * _FresnelIntensity * interior;
 
-                color = MixFog(color, IN.fogCoord);
+                color = CompositeFogMix(color, IN.positionWS, IN.fogCoord);
                 return half4(color, 1.0);
             }
             ENDHLSL

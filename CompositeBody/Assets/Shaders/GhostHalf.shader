@@ -42,6 +42,7 @@ Shader "CompositeBody/GhostHalf"
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "CompositeFog.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _GhostColor;
@@ -64,6 +65,7 @@ Shader "CompositeBody/GhostHalf"
                 float3 normalWS    : TEXCOORD0;
                 float3 viewDirWS   : TEXCOORD1;
                 float  fogCoord    : TEXCOORD2;
+                float3 positionWS  : TEXCOORD3;   // height fog needs to know where this is
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -78,6 +80,7 @@ Shader "CompositeBody/GhostHalf"
                 OUT.positionHCS = posInputs.positionCS;
                 OUT.normalWS = nrmInputs.normalWS;
                 OUT.viewDirWS = GetWorldSpaceViewDir(posInputs.positionWS);
+                OUT.positionWS = posInputs.positionWS;
                 OUT.fogCoord = ComputeFogFactor(posInputs.positionCS.z);
                 return OUT;
             }
@@ -108,7 +111,7 @@ Shader "CompositeBody/GhostHalf"
                 // stay near-invisible for the edge to be the thing you see.
                 float alpha = saturate(_FillAlpha + rim * _EdgeAlpha) * _GhostColor.a;
 
-                col = MixFog(col, IN.fogCoord);
+                col = CompositeFogMix(col, IN.positionWS, IN.fogCoord);
                 return half4(col, alpha);
             }
             ENDHLSL

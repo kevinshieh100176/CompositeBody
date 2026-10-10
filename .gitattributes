@@ -3,3 +3,7 @@
 *.a filter=lfs diff=lfs merge=lfs -text
 *.dylib filter=lfs diff=lfs merge=lfs -text
 CompositeBody/Library/ArtifactDB filter=lfs diff=lfs merge=lfs -text
+*.ply filter=lfs diff=lfs merge=lfs -text
+*.pcache filter=lfs diff=lfs merge=lfs -text
+*.exr filter=lfs diff=lfs merge=lfs -text
+CompositeBody/Assets/_models/**/*.asset filter=lfs diff=lfs merge=lfs -text
