@@ -15,7 +15,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 105
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &877232688338970512
 Transform:
@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14346fe6681524742bfad5020e8d0b1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  placed: 0
+  placed: 1
   category: Doors
   prefab: Door_parent_C_R
   variation: Door_parent_C_R
@@ -84,7 +84,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &2055388093758189703
 Transform:
@@ -183,7 +183,7 @@ PrefabInstance:
     - target: {fileID: -2560625966669127129, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 104
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: -1504981713932161579, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
@@ -218,7 +218,7 @@ PrefabInstance:
     - target: {fileID: -927199367670048503, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 104
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 368306517909472271, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
@@ -344,12 +344,12 @@ PrefabInstance:
     - target: {fileID: -2560625966669127129, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 104
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: -1504981713932161579, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
       propertyPath: m_ReceiveGI
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -1504981713932161579, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
@@ -379,12 +379,12 @@ PrefabInstance:
     - target: {fileID: -927199367670048503, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 104
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8010167729746722735, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
       propertyPath: m_ReceiveGI
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8010167729746722735, guid: 8063e3e21056c2d468922fd63d5542c4,
         type: 3}
