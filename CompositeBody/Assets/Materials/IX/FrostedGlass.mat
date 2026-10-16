@@ -25,17 +25,34 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _BlurRadius: 0.0348
-    - _Coverage: 0.161
+    - _AreaScale: 6
+    - _AreaSoftness: 0.415
+    - _AreaStrength: 0.717
+    - _AreaThreshold: 0.283
+    - _BlurRadius: 0.03
+    - _Condensation: 1
+    - _Coverage: 0.85
+    - _DoodleAmount: 0.384
+    - _DoodleClarity: 1
+    - _DoodleSize: 0.729
+    - _DoodleWidth: 0.0213
+    - _DropRefraction: 0.1
+    - _DropScaleLarge: 35.4
+    - _DropScaleSmall: 56.6
     - _FresnelBrightness: 1.088
     - _FresnelPower: 3
     - _FrostDistortion: 0.00277
     - _FrostNoiseScale: 500
-    - _Opacity: 1
+    - _Opacity: 0.6
     - _Smoothness: 0.6
+    - _Sparkle: 0.41
     - _SpecIntensity: 0.4
-    - _TintStrength: 0.25
+    - _StreakClarity: 0.754
+    - _StreakDensity: 60
+    - _StreakLength: 0.88
+    - _TintStrength: 1
     m_Colors:
-    - _TintColor: {r: 0.85, g: 0.93, b: 1, a: 1}
+    - _FogColor: {r: 1, g: 0.5943395, b: 0.5943395, a: 1}
+    - _TintColor: {r: 1, g: 0.62, b: 0.45, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
