@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEngine;
@@ -120,6 +121,118 @@ namespace CompositeBody.Tests
 
             manager.Shutdown();
             yield return null;
+        }
+
+        /// <summary>
+        /// The show must NOT start on its own.
+        ///
+        /// It used to: ShowTimelineDriver.OnNetworkSpawn set Held to false and ResumedAt to now,
+        /// so show time began advancing the instant the server spawned it and the whole running
+        /// order played itself with nobody pressing anything.
+        ///
+        /// Only half of the behaviour can be asserted from here, and it is the half that broke:
+        /// StartExperience requires both players, so a single host cannot legally start the show
+        /// and this test cannot prove that it resumes afterwards. It proves it does not start by
+        /// itself, which is the regression.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ShowDoesNotStartUntilStaffDo()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            yield return LoadMainScene();
+            yield return StartHostAndWait();
+
+            Component driver = FindByTypeName("ShowTimelineDriver");
+            Assert.IsNotNull(driver, "No ShowTimelineDriver in " + k_Scene + ".");
+
+            PropertyInfo showTime = driver.GetType().GetProperty("showTime");
+            Assert.IsNotNull(showTime, "ShowTimelineDriver has no showTime property.");
+
+            // Long enough that a show running at wall-clock speed would be unmistakably past
+            // zero, short enough not to slow the suite down.
+            float deadline = Time.realtimeSinceStartup + 2f;
+            float highest = 0f;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                highest = Mathf.Max(highest, (float)showTime.GetValue(driver));
+                yield return null;
+            }
+
+            Debug.Log($"[ShowTest] highest show time over 2s of lobby: {highest:0.000}s");
+
+            Assert.Less(highest, 0.1f,
+                        $"The show advanced to {highest:0.00}s while still in the lobby. It is " +
+                        "starting itself again -- check the pre-start hold in ServerStep, and " +
+                        "remember that setting Held alone does not work because GateAt(0) " +
+                        "returns null and the resume path reads that as cleared.");
+        }
+
+        /// <summary>
+        /// The spawned avatar carries the component that replicates the touch. Without it a
+        /// player's body forms only on their own machine and the other person never sees it --
+        /// and the failure is silent, because everything still works locally.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator SpawnedAvatarCarriesFormationSync()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            yield return LoadMainScene();
+            yield return StartHostAndWait();
+
+            NetworkManager manager = NetworkManager.Singleton;
+            Assert.IsNotNull(manager.LocalClient?.PlayerObject, "No player object spawned.");
+
+            GameObject avatar = manager.LocalClient.PlayerObject.gameObject;
+
+            Component sync = null;
+            foreach (Component c in avatar.GetComponentsInChildren<Component>(true))
+            {
+                if (c != null && c.GetType().Name == "AvatarFormationSync") { sync = c; break; }
+            }
+
+            Assert.IsNotNull(sync,
+                             $"'{avatar.name}' has no AvatarFormationSync, so touching a 真人 " +
+                             "would never reach the other machine. Re-run " +
+                             "Tools > Onboarding > Wire Formation Sync.");
+
+            Debug.Log($"[ShowTest] PASS: AvatarFormationSync on '{sync.gameObject.name}'.");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            // Each test starts its own host, so one left listening would make the next fail for
+            // a reason that has nothing to do with what it is testing.
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager != null && manager.IsListening) manager.Shutdown();
+        }
+
+        static Component FindByTypeName(string typeName)
+        {
+            foreach (Component c in Object.FindObjectsByType<Component>(
+                         FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (c != null && c.GetType().Name == typeName) return c;
+            }
+            return null;
+        }
+
+        static IEnumerator StartHostAndWait()
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            Assert.IsNotNull(manager, "No NetworkManager in " + k_Scene + ".");
+            Assert.IsTrue(manager.StartHost(), "StartHost() returned false.");
+
+            float deadline = Time.realtimeSinceStartup + k_Timeout;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                if (manager.IsListening && manager.LocalClient is { PlayerObject: not null }) break;
+                yield return null;
+            }
+
+            Assert.IsTrue(manager.IsListening, "The host never started listening.");
         }
 
         static IEnumerator LoadMainScene()

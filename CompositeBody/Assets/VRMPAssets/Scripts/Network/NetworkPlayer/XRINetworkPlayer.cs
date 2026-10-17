@@ -214,6 +214,14 @@ namespace XRMultiplayer
         {
             if (!IsOwner) return;
 
+            // MODIFIED: retry the rig lookup. OnNetworkSpawn looks for the XROrigin exactly once
+            // and gives up with a log line if it is not there yet, which leaves m_HeadOrigin null
+            // for the rest of the session -- the owner's `head` then never moves, and the OTHER
+            // player sees this avatar parked at the world origin forever. FindFirstObjectByType
+            // also skips inactive objects, so a rig that is enabled a frame later loses the race.
+            // The symptom appears on the remote machine, which is the last place anyone looks.
+            if (m_HeadOrigin == null) RetryHeadOrigin();
+
             if (m_HeadOrigin != null)
                 head.SetPositionAndRotation(m_HeadOrigin.position, m_HeadOrigin.rotation);
 
@@ -222,6 +230,28 @@ namespace XRMultiplayer
 
             if (m_RightHandOrigin != null)
                 rightHand.SetPositionAndRotation(m_RightHandOrigin.position, m_RightHandOrigin.rotation);
+        }
+
+        // MODIFIED: see the note in LateUpdate.
+        float m_NextOriginRetry;
+
+        /// <summary>
+        /// Look for the XR rig again, twice a second, including rigs that were inactive when the
+        /// player spawned. Cheap at that rate, and it stops a one-frame ordering difference from
+        /// costing the whole session.
+        /// </summary>
+        void RetryHeadOrigin()
+        {
+            if (Time.unscaledTime < m_NextOriginRetry) return;
+            m_NextOriginRetry = Time.unscaledTime + 0.5f;
+
+            if (m_XROrigin == null)
+                m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
+
+            if (m_XROrigin == null || m_XROrigin.Camera == null) return;
+
+            m_HeadOrigin = m_XROrigin.Camera.transform;
+            Utils.Log("XRINetworkPlayer: found the XR rig on a retry; head will now replicate.");
         }
 
         ///<inheritdoc/>

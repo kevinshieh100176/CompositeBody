@@ -61,6 +61,11 @@ namespace CompositeBody.Experience
                                  "order; noisy in the venue.")]
         bool m_LogTransitions = true;
 
+        [SerializeField, Tooltip("Hold the show at 0 until staff press start, rather than " +
+                                 "running the moment a session spawns. Off only to replay the " +
+                                 "running order on a desk without the lobby.")]
+        bool m_WaitForStart = true;
+
         PlayableDirector m_Director;
         TimelineAsset m_Timeline;
 
@@ -151,8 +156,10 @@ namespace CompositeBody.Experience
             // starting a session does not snap the show back to zero.
             if (IsServer)
             {
-                m_Banked.Value = m_LocalBanked;
-                m_Held.Value = m_LocalHeld;
+                bool started = experienceStarted;
+
+                m_Banked.Value = started ? m_LocalBanked : 0f;
+                m_Held.Value = started ? m_LocalHeld : true;
                 m_ResumedAt.Value = ServerNow;
             }
         }
@@ -208,9 +215,45 @@ namespace CompositeBody.Experience
             m_Director.Evaluate();
         }
 
+        /// <summary>
+        /// Whether staff have started the show. With no session manager at all -- a desk test --
+        /// this is true, so a single machine still runs the show through.
+        /// </summary>
+        bool experienceStarted
+        {
+            get
+            {
+                if (!m_WaitForStart) return true;
+                GameSessionManager session = GameSessionManager.Instance;
+                return session == null || session.sessionState != SessionState.Lobby;
+            }
+        }
+
         void ServerStep()
         {
             double now = ServerNow;
+
+            // THE SHOW DOES NOT BEGIN UNTIL STAFF PRESS START. Before that it is pinned at zero
+            // rather than merely "held", because the hold mechanism is keyed to authored gate
+            // markers: at time zero GateAt returns null, and the resume path below reads a null
+            // gate as one that has been cleared. Setting m_Held alone would therefore unhold
+            // itself on the very next step, which is exactly how the show came to start on its
+            // own the moment the session spawned.
+            if (!experienceStarted)
+            {
+                if (!m_Held.Value || m_Banked.Value != 0f)
+                {
+                    m_Banked.Value = 0f;
+                    m_Held.Value = true;
+                    if (m_LogTransitions)
+                        Utils.Log("[ShowTimeline] waiting at 0.00s for staff to start.");
+                }
+
+                // Kept level with now, so the first frame after the start button does not credit
+                // the show with all the time spent sitting in the lobby.
+                m_ResumedAt.Value = now;
+                return;
+            }
 
             if (m_Held.Value)
             {
