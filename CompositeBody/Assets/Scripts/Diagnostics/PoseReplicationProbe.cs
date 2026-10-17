@@ -84,31 +84,42 @@ namespace CompositeBody.Diagnostics
                               $" isOwner={(netObject != null && netObject.IsOwner)}" +
                               $" spawned={(netObject != null && netObject.IsSpawned)}");
 
-                if (head == null)
-                {
-                    m_Line.Append("  head=<UNASSIGNED>");
-                    continue;
-                }
-
-                m_Line.Append($"\n      headWorld={Fmt(head.position)}" +
-                              $" headLocal={Fmt(head.localPosition)}");
-
-                // Whether this machine's NetworkTransform thinks it may send. On the owner this
-                // must be true or nothing is transmitted; on the other machine it must be false
-                // or the two ends are both writing and the newer value loses.
-                var transform = head.GetComponent<NetworkTransform>();
-                if (transform == null)
-                {
-                    m_Line.Append("  <NO NetworkTransform ON HEAD>");
-                }
-                else
-                {
-                    m_Line.Append($" commit={transform.CanCommitToTransform}" +
-                                  $" serverAuth={transform.IsServerAuthoritative()}");
-                }
+                Report("head", head);
+                Report("leftHand", player.leftHand);
+                Report("rightHand", player.rightHand);
             }
 
             Debug.Log(m_Line.ToString());
+        }
+
+        /// <summary>
+        /// One limb. All three are reported, because the head and the hands get their poses from
+        /// different components and have failed independently -- reporting only the head is how
+        /// the hands went unnoticed once the head was fixed.
+        /// </summary>
+        void Report(string label, Transform limb)
+        {
+            if (limb == null)
+            {
+                m_Line.Append($"\n      {label,-10} <UNASSIGNED>");
+                return;
+            }
+
+            m_Line.Append($"\n      {label,-10} world={Fmt(limb.position)}" +
+                          $" active={limb.gameObject.activeInHierarchy}");
+
+            // Whether this machine's NetworkTransform thinks it may send. On the owner this must
+            // be true or nothing is transmitted; on the other machine it must be false, or both
+            // ends are writing and whichever ran last wins.
+            var netTransform = limb.GetComponent<NetworkTransform>();
+            if (netTransform == null)
+            {
+                m_Line.Append("  <NO NetworkTransform>");
+                return;
+            }
+
+            m_Line.Append($" commit={netTransform.CanCommitToTransform}" +
+                          $" serverAuth={netTransform.IsServerAuthoritative()}");
         }
 
         static string Fmt(Vector3 v) => $"({v.x:0.00},{v.y:0.00},{v.z:0.00})";

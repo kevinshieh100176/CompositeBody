@@ -125,13 +125,36 @@ namespace CompositeBody.Diagnostics
                     yield break;
                 }
 
-                Debug.Log($"[Harness] CLIENT walking camera '{rig.name}'.");
+                // The hands come from the modality manager's controller transforms, not from the
+                // camera, so walking the camera alone leaves them static -- which looks exactly
+                // like hands that fail to replicate. Both have to move for this to prove
+                // anything.
+                var modality = Object.FindFirstObjectByType<
+                    UnityEngine.XR.Interaction.Toolkit.Inputs.XRInputModalityManager>();
+
+                Transform left = modality != null && modality.leftController != null
+                    ? modality.leftController.transform : null;
+                Transform right = modality != null && modality.rightController != null
+                    ? modality.rightController.transform : null;
+
+                Debug.Log($"[Harness] CLIENT walking camera '{rig.name}'" +
+                          $", leftController={(left != null ? left.name : "NONE")}" +
+                          $", rightController={(right != null ? right.name : "NONE")}");
 
                 float t = 0f;
                 while (true)
                 {
                     t += Time.unscaledDeltaTime;
-                    rig.transform.position = new Vector3(Mathf.Sin(t) * 2f, 1.6f, Mathf.Cos(t) * 2f);
+                    var centre = new Vector3(Mathf.Sin(t) * 2f, 1.6f, Mathf.Cos(t) * 2f);
+                    rig.transform.position = centre;
+
+                    // Offset to either side and bobbing, so a hand that merely copies the head
+                    // is distinguishable from one carrying its own pose.
+                    if (left != null)
+                        left.position = centre + new Vector3(-0.25f, Mathf.Sin(t * 3f) * 0.2f, 0f);
+                    if (right != null)
+                        right.position = centre + new Vector3(0.25f, Mathf.Cos(t * 3f) * 0.2f, 0f);
+
                     yield return null;
                 }
             }

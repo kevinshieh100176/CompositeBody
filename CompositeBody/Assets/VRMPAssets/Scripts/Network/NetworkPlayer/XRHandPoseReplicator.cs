@@ -99,8 +99,52 @@ namespace XRMultiplayer
             }
         }
 
+        // MODIFIED: see RetryLocalHandSetup.
+        bool m_ModalityListenersAdded;
+        bool m_HandOriginsReady;
+        float m_NextHandSetupRetry;
+
+        /// <summary>
+        /// MODIFIED. Keeps looking for the rig and the hand references until the owner actually
+        /// has something to copy from.
+        ///
+        /// SetupLocalHands ran exactly once, from OnNetworkSpawn, behind three one-shot
+        /// conditions: the XROrigin being findable, it carrying an XRInputModalityManager, and a
+        /// hand skeleton existing on it. XR devices routinely finish coming up a moment AFTER the
+        /// player spawns, so any of the three can miss -- and then m_LeftHandOrigin stays null for
+        /// the whole session. XRINetworkPlayer.LateUpdate skips a null origin silently, so the
+        /// owner looks fine to itself while the other machine shows hands parked at the origin.
+        ///
+        /// This is the same failure the head had, in a second component with its own copy of the
+        /// same one-shot lookup.
+        /// </summary>
+        void RetryLocalHandSetup()
+        {
+            if (!IsOwner || m_HandOriginsReady) return;
+            if (Time.unscaledTime < m_NextHandSetupRetry) return;
+            m_NextHandSetupRetry = Time.unscaledTime + 0.5f;
+
+            if (m_XROrigin == null)
+                m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
+            if (m_XROrigin == null) return;
+
+            if (m_XRModalityManager == null && !m_XROrigin.TryGetComponent(out m_XRModalityManager))
+                return;
+
+            SetupLocalHands();
+
+            if (m_LeftHandOrigin == null || m_RightHandOrigin == null) return;
+
+            m_HandOriginsReady = true;
+            Utils.Log("XRHandPoseReplicator: hand origins resolved; hands will now replicate.");
+        }
+
         private void Update()
         {
+            // MODIFIED: before the early-out below, which is gated on m_IsInitialized and would
+            // otherwise keep the retry from ever running.
+            RetryLocalHandSetup();
+
             if (!m_IsInitialized.Value || !NetworkManager.IsConnectedClient || NetworkManager.ShutdownInProgress) return;
 
             if (trackingType == XRInputModalityManager.InputMode.TrackedHand)
@@ -130,8 +174,12 @@ namespace XRMultiplayer
 
             if (IsOwner)
             {
+                // MODIFIED: null-guarded. FindFirstObjectByType returns null when the rig is not
+                // in the scene yet, and the original went straight into m_XROrigin.TryGetComponent
+                // -- a NullReferenceException inside OnNetworkSpawn, which also skipped
+                // SetupLocalFingerReferences below it. RetryLocalHandSetup picks it up later.
                 m_XROrigin = FindFirstObjectByType<XROrigin>();
-                if (m_XROrigin.TryGetComponent(out m_XRModalityManager))
+                if (m_XROrigin != null && m_XROrigin.TryGetComponent(out m_XRModalityManager))
                 {
                     SetupLocalHands();
                 }
@@ -178,8 +226,26 @@ namespace XRMultiplayer
                 {
                     SetTrackingType(XRInputModalityManager.currentInputMode.Value);
 
-                    m_XRModalityManager.trackedHandModeStarted.AddListener(SwapToHands);
-                    m_XRModalityManager.motionControllerModeStarted.AddListener(SwapToControllers);
+                    // MODIFIED: guarded. This method is now retried until the origins resolve,
+                    // and UnityEvent.AddListener happily registers the same callback twice.
+                    if (!m_ModalityListenersAdded)
+                    {
+                        m_ModalityListenersAdded = true;
+                        m_XRModalityManager.trackedHandModeStarted.AddListener(SwapToHands);
+                        m_XRModalityManager.motionControllerModeStarted.AddListener(SwapToControllers);
+                    }
+                }
+                else
+                {
+                    // MODIFIED: the hole this fell through. The rig reports hands, but neither
+                    // carries an XRHandSkeletonDriver -- which is simply what it looks like a
+                    // moment before hand tracking comes up, and permanently when the player is
+                    // using controllers on a rig that also declares hands. The original did
+                    // nothing here: no origins, and no listeners either, so switching to
+                    // controllers later could never recover it. The owner then wrote nothing to
+                    // leftHand/rightHand and the other machine saw hands fixed at the origin,
+                    // with no error on either side.
+                    SetTrackingType(XRInputModalityManager.InputMode.MotionController);
                 }
             }
         }
@@ -582,7 +648,11 @@ namespace XRMultiplayer
                 m_RightHandOrigin = m_RightHandTransformReference;
             }
 
-            XRINetworkPlayer.LocalPlayer.SetHandOrigins(m_LeftHandOrigin, m_RightHandOrigin);
+            // MODIFIED: guarded. This is now reached from a retry that can run before
+            // XRINetworkPlayer has registered itself as LocalPlayer, and an unguarded dereference
+            // there would throw twice a second for as long as it took to come up.
+            if (XRINetworkPlayer.LocalPlayer != null)
+                XRINetworkPlayer.LocalPlayer.SetHandOrigins(m_LeftHandOrigin, m_RightHandOrigin);
         }
 
         void ResetHandsToStart()
