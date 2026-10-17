@@ -32,6 +32,63 @@ namespace CompositeBody.Multiplayer
         [SerializeField, Tooltip("Lobby geometry hidden once the experience begins. Optional.")]
         GameObject m_LobbyEnvironmentRoot;
 
+        [Header("Debug")]
+        [SerializeField, Tooltip("Let the show start and run through with one player. Every gate " +
+                                 "then asks only the roles actually present, so a beat waiting " +
+                                 "on the absent player clears on its own. Leave OFF for the " +
+                                 "venue: in a real run a gate that clears by itself is a bug.")]
+        bool m_AllowSolo;
+
+        /// <summary>
+        /// Replicated so a client's gates relax the same way the server's do. Decided once, when
+        /// the show starts, rather than tracked live -- a player dropping mid-show should not
+        /// silently turn a two-person piece into a one-person one without anyone noticing.
+        /// </summary>
+        readonly NetworkVariable<bool> m_Solo =
+            new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+        /// <summary>True when this run is being played by one person.</summary>
+        public bool solo => m_Solo.Value;
+
+        /// <summary>
+        /// Whether a connected player holds this role. Gates ask this rather than counting
+        /// players, because what a gate needs to know is "is there anyone who still has to do
+        /// this", not how many people are in the room.
+        /// </summary>
+        public bool IsRoleOccupied(PlayerRole role)
+        {
+            foreach (var entry in m_PlayerRoles)
+            {
+                if (entry.role == role && entry.isConnected) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Solo is allowed by the inspector flag, or by -solo on the command line so a built
+        /// player can be run through without rebuilding.
+        /// </summary>
+        bool soloAllowed
+        {
+            get
+            {
+                if (m_AllowSolo) return true;
+
+                // Always allowed in the editor, because that is where someone is working alone
+                // and there is no command line to pass. A BUILD stays strict unless told
+                // otherwise, so the thing that runs in the venue cannot quietly start a
+                // one-person show -- which is the failure this convenience could otherwise
+                // cause. Starting solo logs a warning either way.
+                if (Application.isEditor) return true;
+
+                foreach (string arg in Environment.GetCommandLineArgs())
+                {
+                    if (arg == "-solo") return true;
+                }
+                return false;
+            }
+        }
+
         readonly NetworkList<PlayerRoleEntry> m_PlayerRoles = new();
         public NetworkList<PlayerRoleEntry> playerRoles => m_PlayerRoles;
 
@@ -377,12 +434,33 @@ namespace CompositeBody.Multiplayer
             }
         }
 
+        /// <summary>
+        /// Whether starting would succeed right now. The staff panel asks this to decide whether
+        /// its button is live, so the button and the action cannot disagree.
+        /// </summary>
+        public bool CanStart()
+        {
+            if (m_SessionState.Value != SessionState.Lobby) return false;
+            int present = connectedPlayerCount;
+            return present >= 1 && (present >= MaxPlayers || soloAllowed);
+        }
+
         /// <summary>Called locally on the host machine by the staff control panel.</summary>
         public bool StartExperience()
         {
             if (!IsServer) return false;
             if (m_SessionState.Value != SessionState.Lobby) return false;
-            if (connectedPlayerCount < MaxPlayers) return false;
+
+            int present = connectedPlayerCount;
+            if (present < MaxPlayers && !soloAllowed) return false;
+            if (present < 1) return false;
+
+            // Recorded at the moment of starting, and replicated, so every machine's gates agree
+            // about how many people this run is waiting on.
+            m_Solo.Value = present < MaxPlayers;
+            if (m_Solo.Value)
+                Utils.LogWarning($"[GameSessionManager] Starting SOLO with {present} player. " +
+                                 "Gates will clear without the absent player -- debug only.");
 
             m_SessionState.Value = SessionState.InProgress;
 

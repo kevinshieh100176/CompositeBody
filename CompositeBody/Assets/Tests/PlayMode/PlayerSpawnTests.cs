@@ -243,6 +243,59 @@ namespace CompositeBody.Tests
             Debug.Log($"[ShowTest] PASS: AvatarFormationSync on '{sync.gameObject.name}'.");
         }
 
+        /// <summary>
+        /// One player can start the show and it actually runs.
+        ///
+        /// This is also the first test that can prove the timeline RESUMES. The others can only
+        /// show it does not start by itself, because StartExperience normally refuses with fewer
+        /// than two players -- so there was no way to press start from a test. Solo mode is what
+        /// makes the other half reachable.
+        ///
+        /// Needs -solo on the command line, which is how the suite is run.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator SoloRunStartsAndAdvances()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            yield return LoadMainScene();
+            yield return StartHostAndWait();
+
+            Component session = FindByTypeName("GameSessionManager");
+            Assert.IsNotNull(session, "No GameSessionManager in " + k_Scene + ".");
+
+            MethodInfo start = session.GetType().GetMethod("StartExperience");
+            Assert.IsNotNull(start, "GameSessionManager has no StartExperience.");
+
+            // A couple of frames so the host's own role entry lands in the NetworkList before
+            // the count is read.
+            for (int i = 0; i < 10; i++) yield return null;
+
+            bool started = (bool)start.Invoke(session, null);
+            Assert.IsTrue(started,
+                          "StartExperience refused with one player even with -solo. Check " +
+                          "soloAllowed and that the host has been given a role entry.");
+
+            Component driver = FindByTypeName("ShowTimelineDriver");
+            Assert.IsNotNull(driver, "No ShowTimelineDriver in " + k_Scene + ".");
+            PropertyInfo showTime = driver.GetType().GetProperty("showTime");
+
+            float deadline = Time.realtimeSinceStartup + 2f;
+            float highest = 0f;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                highest = Mathf.Max(highest, (float)showTime.GetValue(driver));
+                yield return null;
+            }
+
+            Debug.Log($"[ShowTest] solo run reached {highest:0.000}s of show time.");
+
+            Assert.Greater(highest, 0.3f,
+                           $"The show only reached {highest:0.00}s after starting. It is held " +
+                           "when it should be running -- either the pre-start gate is not " +
+                           "clearing on InProgress, or a gate marker at 0 is blocking.");
+        }
+
         [TearDown]
         public void TearDown()
         {

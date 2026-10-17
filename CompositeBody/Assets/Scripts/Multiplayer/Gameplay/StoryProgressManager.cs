@@ -95,7 +95,20 @@ namespace CompositeBody.Multiplayer
             int index = FindTaskIndex(taskId);
             if (index < 0) return false;
             var t = m_Tasks[index];
-            return t.player1Done && t.player2Done;
+
+            // Normally a task needs both players, which is the whole point of the piece.
+            //
+            // In a solo run it asks only the roles that are actually present. Phrased as
+            // occupancy rather than as "if solo, skip player 2" because which role the single
+            // player holds is not fixed -- they may be either -- and because the question a gate
+            // really has is "is there anyone left who still has to do this".
+            GameSessionManager session = GameSessionManager.Instance;
+            if (session == null || !session.solo) return t.player1Done && t.player2Done;
+
+            bool needsPlayer1 = session.IsRoleOccupied(PlayerRole.Player1);
+            bool needsPlayer2 = session.IsRoleOccupied(PlayerRole.Player2);
+
+            return (!needsPlayer1 || t.player1Done) && (!needsPlayer2 || t.player2Done);
         }
 
         /// <summary>

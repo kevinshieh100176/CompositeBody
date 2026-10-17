@@ -97,7 +97,10 @@ namespace CompositeBody.Multiplayer
             m_StartButton.gameObject.SetActive(isServer);
             if (isServer)
             {
-                bool canStart = session.sessionState == SessionState.Lobby && session.connectedPlayerCount >= GameSessionManager.MaxPlayers;
+                // StartExperience is the authority on whether a solo run is allowed, so the
+                // button asks it rather than re-deciding here -- two places deciding the same
+                // thing is how a button comes to be greyed out for a start that would succeed.
+                bool canStart = session.sessionState == SessionState.Lobby && session.CanStart();
                 m_StartButton.interactable = canStart;
             }
 
