@@ -223,10 +223,30 @@ namespace CompositeBody.Experience
         {
             get
             {
-                if (!m_WaitForStart) return true;
+                if (!m_WaitForStart || m_Begun) return true;
+
+                // No session at all -- a solo editor test -- is NOT treated as started. An
+                // earlier version did, which meant pressing Play in the editor still played the
+                // whole running order to itself. Use Begin() for that instead, so "has the show
+                // started" has one answer rather than one per code path.
                 GameSessionManager session = GameSessionManager.Instance;
-                return session == null || session.sessionState != SessionState.Lobby;
+                return session != null && session.sessionState != SessionState.Lobby;
             }
+        }
+
+        bool m_Begun;
+
+        /// <summary>
+        /// Start the show without a session, for a desk test. The staff panel does not need this
+        /// -- StartExperience moves the session out of Lobby and the driver follows that.
+        /// </summary>
+        [ContextMenu("Begin Show")]
+        public void Begin()
+        {
+            m_Begun = true;
+            m_LocalResumedAt = Time.time;
+            if (IsSpawned && IsServer) m_ResumedAt.Value = ServerNow;
+            Utils.Log("[ShowTimeline] begun manually.");
         }
 
         void ServerStep()
@@ -283,6 +303,17 @@ namespace CompositeBody.Experience
         /// <summary>The same step, on one machine's own clock, so a desk test runs the show.</summary>
         void LocalStep()
         {
+            // The same pre-start hold as ServerStep. Missing here is why pressing Play in the
+            // editor still ran the show: with no session `shared` is false, so ServerStep -- and
+            // the gate that had been added only to it -- never ran at all.
+            if (!experienceStarted)
+            {
+                m_LocalBanked = 0f;
+                m_LocalHeld = true;
+                m_LocalResumedAt = Time.time;
+                return;
+            }
+
             if (m_LocalHeld)
             {
                 string gate = GateAt(m_LocalBanked);

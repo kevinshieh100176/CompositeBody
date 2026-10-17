@@ -169,6 +169,49 @@ namespace CompositeBody.Tests
         }
 
         /// <summary>
+        /// Pressing Play with no session must not run the show either.
+        ///
+        /// This is the case the first fix missed. With no session the driver is not spawned, so
+        /// `shared` is false and ServerStep -- where the pre-start hold had been added -- never
+        /// runs at all; LocalStep handled it instead and had no gate. The editor therefore went
+        /// on playing the whole running order to itself, which is what the test above could not
+        /// see, because it hosts.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ShowDoesNotStartWithoutASession()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            yield return LoadMainScene();
+
+            // Deliberately no StartHost here.
+            NetworkManager manager = NetworkManager.Singleton;
+            Assert.IsFalse(manager != null && manager.IsListening,
+                           "A session is already running; this test needs none.");
+
+            Component driver = FindByTypeName("ShowTimelineDriver");
+            Assert.IsNotNull(driver, "No ShowTimelineDriver in " + k_Scene + ".");
+
+            PropertyInfo showTime = driver.GetType().GetProperty("showTime");
+            Assert.IsNotNull(showTime, "ShowTimelineDriver has no showTime property.");
+
+            float deadline = Time.realtimeSinceStartup + 2f;
+            float highest = 0f;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                highest = Mathf.Max(highest, (float)showTime.GetValue(driver));
+                yield return null;
+            }
+
+            Debug.Log($"[ShowTest] highest show time over 2s with no session: {highest:0.000}s");
+
+            Assert.Less(highest, 0.1f,
+                        $"The show ran to {highest:0.00}s with no session. LocalStep is missing " +
+                        "the pre-start hold -- gating ServerStep alone does not cover pressing " +
+                        "Play in the editor.");
+        }
+
+        /// <summary>
         /// The spawned avatar carries the component that replicates the touch. Without it a
         /// player's body forms only on their own machine and the other person never sees it --
         /// and the failure is silent, because everything still works locally.

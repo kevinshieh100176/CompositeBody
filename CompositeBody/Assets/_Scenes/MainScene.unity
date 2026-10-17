@@ -1660,7 +1660,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Multiplayer.GameSessionManager
   ShowTopMostFoldoutHeaderGroup: 1
-  m_ExperienceSceneName: CompositeBody_Experience
+  m_ExperienceSceneName: 
   m_LobbyEnvironmentRoot: {fileID: 2051611641}
 --- !u!114 &544923179
 MonoBehaviour:
