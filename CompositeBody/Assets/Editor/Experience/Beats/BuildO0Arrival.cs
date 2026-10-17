@@ -39,7 +39,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_SpotWhitePath = "Assets/Materials/O0SpotWhite.mat";
         const string k_SpotColourPath = "Assets/Materials/O0SpotColour.mat";
         const string k_AudioDir = "Assets/Audio/Placeholder";
-        const string k_FigureMeshPath = "Assets/_models/PointCloud/Figure_A.ply";
+        const string k_FigureMeshPath = "Assets/_models/Pointcloud/Figure_A.ply";
         const string k_FigureMaterialPath = "Assets/Materials/O0FigureLit.mat";
 
         /// <summary>

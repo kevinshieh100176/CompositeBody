@@ -26,7 +26,8 @@ MonoBehaviour:
     probeSamplingDebugMesh: {fileID: 0}
     probeSamplingDebugTexture: {fileID: 0}
     probeVolumeBlendStatesCS: {fileID: 0}
-  m_RendererFeatures: []
+  m_RendererFeatures:
+  - {fileID: 3508228607871970512}
   m_RendererFeatureMap: 
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   postProcessData: {fileID: 0}
@@ -56,3 +57,18 @@ MonoBehaviour:
   m_AccurateGbufferNormals: 0
   m_IntermediateTextureMode: 0
   m_TileOnlyMode: 0
+--- !u!114 &3508228607871970512
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cc70a8037c1b70499f4123cdac0f2fa, type: 3}
+  m_Name: AERO Volumetric Fog
+  m_EditorClassIdentifier: Assembly-CSharp::Mirza.AERO.FullscreenCustomLightingFeature
+  m_Active: 0
+  renderPassEvent: 500
+  material: {fileID: 2100000, guid: c3cc0b2fb494c5246ae4b9e6fcb6b0bf, type: 2}

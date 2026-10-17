@@ -3828,6 +3828,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2444084226035034569}
   - component: {fileID: 6275865685450385522}
+  - component: {fileID: 8941991562588737810}
+  - component: {fileID: 3909170383556945597}
   m_Layer: 2
   m_Name: Locomotion System
   m_TagString: Untagged
@@ -3869,6 +3871,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Timeout: 10
   m_XROrigin: {fileID: 5860045060629643873}
+--- !u!114 &8941991562588737810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482112822171250502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a26c941eb8a46f7b6d00416227ab8c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Locomotion.XRBodyTransformer
+  m_XROrigin: {fileID: 0}
+  m_BodyPositionEvaluatorObject: {fileID: 0}
+  m_ConstrainedBodyManipulatorObject: {fileID: 0}
+  m_UseCharacterControllerIfExists: 1
+--- !u!114 &3909170383556945597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482112822171250502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fa7b4195685c3846be746c74f0ab2f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Locomotion.LocomotionMediator
 --- !u!1 &491498708884898122
 GameObject:
   m_ObjectHideFlags: 0
@@ -7545,6 +7575,8 @@ GameObject:
   - component: {fileID: 6825564742780980551}
   - component: {fileID: 489700569620628494}
   - component: {fileID: 5084940154991535489}
+  - component: {fileID: 5341342683101386623}
+  - component: {fileID: 7579619410640319953}
   m_Layer: 0
   m_Name: MembraneRig_Right Hand Interaction Visual_RightHand_MembraneFilm
   m_TagString: Untagged
@@ -7667,6 +7699,63 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneFilmLink
   m_Source: {fileID: 7419622897914438350}
   m_Film: {fileID: 489700569620628494}
+--- !u!114 &5341342683101386623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 921768971252173889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 908621b7fc2bd1948b896daf647d0ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneReveal
+  m_Film: {fileID: 489700569620628494}
+  m_Reveal: 1
+  m_GrowFrom: {fileID: 0}
+  m_GrowFromLocal: {x: 0, y: 0, z: 0}
+  m_GrowRadius: 0
+  m_AutoRadius: 1
+  m_FadeInSeconds: 6
+  m_FadeOutSeconds: 4
+  m_Shape:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_GrowOnEnable: 0
+--- !u!114 &7579619410640319953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 921768971252173889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abfbcff7baf7428479017926f909657a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.RigHandFilm
 --- !u!1 &936393186411648842
 GameObject:
   m_ObjectHideFlags: 0
@@ -22413,7 +22502,7 @@ SkinnedMeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 455ef821a5429de4baeed61fa958acbc, type: 2}
-  - {fileID: 2100000, guid: 0b91f81225004e24ca905a5f32567d5d, type: 2}
+  - {fileID: 2100000, guid: 6c61080b36edb1d42b530555f94d0b12, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -71017,6 +71106,8 @@ GameObject:
   - component: {fileID: 3302041714472127469}
   - component: {fileID: 4687474273731078828}
   - component: {fileID: 8595444314147170167}
+  - component: {fileID: 1996259706150874241}
+  - component: {fileID: 2622669305274418779}
   m_Layer: 0
   m_Name: MembraneRig_Left Hand Interaction Visual_LeftHand_MembraneFilm
   m_TagString: Untagged
@@ -71139,6 +71230,63 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneFilmLink
   m_Source: {fileID: 7793817268224290789}
   m_Film: {fileID: 4687474273731078828}
+--- !u!114 &1996259706150874241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8507005033894852912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 908621b7fc2bd1948b896daf647d0ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneReveal
+  m_Film: {fileID: 4687474273731078828}
+  m_Reveal: 1
+  m_GrowFrom: {fileID: 0}
+  m_GrowFromLocal: {x: 0, y: 0, z: 0}
+  m_GrowRadius: 0
+  m_AutoRadius: 1
+  m_FadeInSeconds: 6
+  m_FadeOutSeconds: 4
+  m_Shape:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_GrowOnEnable: 0
+--- !u!114 &2622669305274418779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8507005033894852912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abfbcff7baf7428479017926f909657a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.RigHandFilm
 --- !u!1 &8507078429228135765
 GameObject:
   m_ObjectHideFlags: 0
@@ -73509,7 +73657,7 @@ SkinnedMeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 455ef821a5429de4baeed61fa958acbc, type: 2}
-  - {fileID: 2100000, guid: 0b91f81225004e24ca905a5f32567d5d, type: 2}
+  - {fileID: 2100000, guid: 6c61080b36edb1d42b530555f94d0b12, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

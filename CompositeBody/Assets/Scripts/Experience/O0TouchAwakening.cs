@@ -139,6 +139,9 @@ namespace CompositeBody.Experience
                 {
                     Station station = m_Stations[i];
                     if (station?.figure == null) continue;
+                    // A station hidden because it belongs to the other player cannot be
+                    // touched -- you should not be able to reach what you cannot see.
+                    if (!station.figure.gameObject.activeInHierarchy) continue;
                     if (!Touching(station.figure, tip)) continue;
 
                     station.touched = true;
@@ -149,6 +152,10 @@ namespace CompositeBody.Experience
                     // the body they just put their hand on.
                     station.figure.DriftToward(tip);
                     station.figure.GlitchBurst(0.55f, 0.5f);
+
+                    // 「同時觀眾的手開始成形」 -- the player's own body starts arriving on the
+                    // same touch. Local only: this is what they see of themselves.
+                    if (AvatarFormation.local != null) AvatarFormation.local.Form();
                     return;
                 }
             }

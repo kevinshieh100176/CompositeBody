@@ -10,14 +10,20 @@ namespace CompositeBody.Multiplayer
     /// silhouette in O-0, the colour seeping out of an owned object in O-2, the mixing light
     /// zone in O-3 and the per-role particles in S0-2. Two hues that sit opposite each other
     /// also means O-3's mix reads as a third colour rather than as a muddier version of either.
+    ///
+    /// THESE ARE O-0'S 光圈 COLOURS. The two lamps standing over the 真人 were authored directly
+    /// on the lights as purple and yellow and did not read from here, so this file drifted to a
+    /// teal and orange that nothing in the built scene used -- two sources of truth for the one
+    /// thing the script says must never vary ("玩家 A、B 身上的代表色仍然保留"). The beams are what
+    /// the audience has already been looking at, so the beams won.
     /// </summary>
     public static class PlayerRoleColors
     {
         /// <summary>Player A, 提分手者／內疚方. Cool and withdrawing.</summary>
-        public static readonly Color Player1 = new(0.42f, 0.84f, 0.78f);
+        public static readonly Color Player1 = new(0.62f, 0.22f, 1.00f);
 
         /// <summary>Player B, 被分手者／不甘方. Warm and holding on.</summary>
-        public static readonly Color Player2 = new(0.93f, 0.63f, 0.29f);
+        public static readonly Color Player2 = new(1.00f, 0.78f, 0.12f);
 
         public static Color For(PlayerRole role) => role switch
         {

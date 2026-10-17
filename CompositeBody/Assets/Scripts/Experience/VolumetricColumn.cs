@@ -110,9 +110,10 @@ namespace CompositeBody.Experience
         void ApplyOcclusionMode()
         {
             if (m_Renderer == null) return;
-            Material material = Application.isPlaying
-                ? m_Renderer.material
-                : m_Renderer.sharedMaterial;
+            // sharedMaterial in play mode too: reading .material swaps in a runtime clone, and a
+            // clone cannot be serialised -- anything that saves the object afterwards writes a
+            // null material and the volume comes back as a magenta box. See VolumetricSpot.
+            Material material = m_Renderer.sharedMaterial;
             if (material == null) return;
 
             const string k_Keyword = "_SCENE_DEPTH_CLAMP";

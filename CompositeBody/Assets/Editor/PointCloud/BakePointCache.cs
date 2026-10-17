@@ -29,8 +29,8 @@ namespace CompositeBody.PointClouds.EditorTools
     ///
     /// Unity.exe -batchmode -quit -projectPath &lt;path&gt;
     ///   -executeMethod CompositeBody.PointClouds.EditorTools.BakePointCache.Run
-    ///   -source "Assets/_models/PointCloud/figure.ply"
-    ///   [-out "Assets/_models/PointCloud/figure.pcache"] [-maxPoints 300000] [-noCenter] [-ascii]
+    ///   -source "Assets/_models/Pointcloud/figure.ply"
+    ///   [-out "Assets/_models/Pointcloud/figure.pcache"] [-maxPoints 300000] [-noCenter] [-ascii]
     /// </summary>
     public static class BakePointCache
     {

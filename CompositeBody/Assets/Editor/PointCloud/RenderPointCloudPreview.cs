@@ -20,7 +20,7 @@ namespace CompositeBody.PointClouds.EditorTools
     ///
     /// Unity.exe -batchmode -quit -projectPath &lt;path&gt;
     ///   -executeMethod CompositeBody.PointClouds.EditorTools.RenderPointCloudPreview.Run
-    ///   -cloud "Assets/_models/PointCloud/Figure_A.ply" -outDir "C:/out" [-pointSize 0.004]
+    ///   -cloud "Assets/_models/Pointcloud/Figure_A.ply" -outDir "C:/out" [-pointSize 0.004]
     /// </summary>
     public static class RenderPointCloudPreview
     {

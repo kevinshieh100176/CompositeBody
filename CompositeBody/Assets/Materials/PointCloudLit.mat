@@ -27,7 +27,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _AmbientBoost: 0.35
-    - _Dissolve: 0
+    - _Dissolve: 0.06
     - _DissolveDrift: 0.6
     - _DissolveRadius: 1.8
     - _DissolveScatter: 0.35

@@ -36,7 +36,7 @@ namespace CompositeBody.PointClouds.EditorTools
     public static class BuildPointCloudTestScene
     {
         const string k_ScenePath = "Assets/_Scenes/PointCloudTest.unity";
-        const string k_CloudDir = "Assets/_models/PointCloud";
+        const string k_CloudDir = "Assets/_models/Pointcloud";
 
         const string k_MainCloud = k_CloudDir + "/Figure_A.ply";
         const string k_SparseCloud = k_CloudDir + "/person_unity.ply";

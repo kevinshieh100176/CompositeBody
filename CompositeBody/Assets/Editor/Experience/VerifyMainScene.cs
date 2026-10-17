@@ -79,9 +79,21 @@ namespace CompositeBody.Multiplayer.EditorSetup
             var manager = Object.FindFirstObjectByType<NetworkManager>(FindObjectsInactive.Include);
             if (!Require(manager != null, "NetworkManager present")) return;
 
-            // Without a player prefab, hosting succeeds and no one ever appears.
-            Require(manager.NetworkConfig != null && manager.NetworkConfig.PlayerPrefab != null,
-                    "NetworkManager has a player prefab");
+            // READ THE SUBCLASS'S FIELD, NOT THE BASE ONE. The project uses
+            // NetworkManagerVRMultiplayer, which carries its own serialized `m_NetworkConfig`
+            // and copies it over the base `NetworkConfig` in Awake. Outside play mode the base
+            // field is therefore empty BY DESIGN, and checking it reported a missing player
+            // prefab on a project that spawns players perfectly well -- a false alarm that cost
+            // a long detour and, acted on, broke the thing it claimed was broken.
+            SerializedObject so = new(manager);
+            SerializedProperty config = so.FindProperty("m_NetworkConfig") ?? so.FindProperty("NetworkConfig");
+            SerializedProperty playerPrefab = config?.FindPropertyRelative("PlayerPrefab");
+            SerializedProperty transport = config?.FindPropertyRelative("NetworkTransport");
+
+            Require(playerPrefab != null && playerPrefab.objectReferenceValue != null,
+                    "NetworkManager has a player prefab (m_NetworkConfig)");
+            Require(transport != null && transport.objectReferenceValue != null,
+                    "NetworkManager has a transport (m_NetworkConfig)");
 
             Require(HasComponentNamed("XRINetworkGameManager"),
                     "XRINetworkGameManager present (the Host button calls it)");

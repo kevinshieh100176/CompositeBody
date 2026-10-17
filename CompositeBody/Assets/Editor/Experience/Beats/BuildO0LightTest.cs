@@ -33,7 +33,7 @@ namespace CompositeBody.Experience.EditorTools
     public static class BuildO0LightTest
     {
         const string k_ScenePath = "Assets/_Scenes/O0LightTest.unity";
-        const string k_Cloud = "Assets/_models/PointCloud/Figure_A.ply";
+        const string k_Cloud = "Assets/_models/Pointcloud/Figure_A.ply";
         const string k_MatSpot = "Assets/Materials/VolumetricSpot.mat";
         const string k_MatFigure = "Assets/Materials/O0FigureLit.mat";
 

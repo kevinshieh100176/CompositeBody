@@ -215,14 +215,25 @@ namespace CompositeBody.Experience
         /// Set on the shared material rather than a property block: keywords are not per
         /// renderer, and ZTest is pipeline state a block cannot reach. Fixtures that disagree
         /// about this need their own materials.
+        ///
+        /// ALWAYS sharedMaterial, never Renderer.material -- not even in play mode, where it
+        /// would otherwise be the safer-looking choice. Reading .material replaces the renderer's
+        /// reference with a runtime clone, and a clone is not an asset: if anything then saves
+        /// the object -- a prefab apply, an editor tool loading prefab contents while play mode
+        /// is running -- the slot serialises as a null material and every beam comes back as a
+        /// magenta box. That happened. The clone also leaks one material per fixture per run and
+        /// quietly breaks the property-block path this class is built on.
         /// </summary>
         void ApplyOcclusionMode()
         {
             if (m_Renderer == null) return;
-            Material material = Application.isPlaying
-                ? m_Renderer.material
-                : m_Renderer.sharedMaterial;
-            if (material == null) return;
+            Material material = m_Renderer.sharedMaterial;
+            if (material == null)
+            {
+                Debug.LogWarning($"[VolumetricSpot] '{name}' has no material, so it will draw as " +
+                                 "a magenta box. Assign O0SpotColour or O0SpotWhite.", this);
+                return;
+            }
 
             const string k_Keyword = "_SCENE_DEPTH_CLAMP";
             if (m_SceneDepthOcclusion)
