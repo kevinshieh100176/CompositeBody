@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using NUnit.Framework;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -294,6 +295,139 @@ namespace CompositeBody.Tests
                            $"The show only reached {highest:0.00}s after starting. It is held " +
                            "when it should be running -- either the pre-start gate is not " +
                            "clearing on InProgress, or a gate marker at 0 is blocking.");
+        }
+
+        /// <summary>
+        /// The owner's `head` must follow the XR camera.
+        ///
+        /// This is the SOURCE half of the chain that ends with the other player seeing you move.
+        /// XRINetworkPlayer.LateUpdate copies the XR rig's camera onto `head`, and `head` is what
+        /// ClientNetworkTransform replicates -- so if this does not happen, nothing is sent and
+        /// the remote machine shows an avatar standing at the world origin, with no error
+        /// anywhere. The failure is invisible on the machine that causes it, which is why it is
+        /// worth a test rather than an eyeball.
+        ///
+        /// It also exercises the rig-lookup retry: OnNetworkSpawn used to search once and give
+        /// up, leaving m_HeadOrigin null for the session.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator OwnerHeadFollowsTheCamera()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            yield return LoadMainScene();
+            yield return StartHostAndWait();
+
+            NetworkManager manager = NetworkManager.Singleton;
+            Assert.IsNotNull(manager.LocalClient?.PlayerObject, "No player object spawned.");
+
+            Component player = null;
+            foreach (Component c in manager.LocalClient.PlayerObject
+                         .GetComponentsInChildren<Component>(true))
+            {
+                if (c != null && c.GetType().Name == "XRINetworkPlayer") { player = c; break; }
+            }
+            Assert.IsNotNull(player, "The spawned avatar has no XRINetworkPlayer.");
+
+            FieldInfo headField = player.GetType().GetField("head");
+            Assert.IsNotNull(headField, "XRINetworkPlayer has no public head field.");
+
+            var head = (Transform)headField.GetValue(player);
+            Assert.IsNotNull(head, "XRINetworkPlayer.head is not assigned on the prefab.");
+
+            Component origin = FindByTypeName("XROrigin");
+            Assert.IsNotNull(origin, "No XROrigin in " + k_Scene + ", so there is no rig to track.");
+
+            var cameraProperty = origin.GetType().GetProperty("Camera");
+            var rigCamera = (Camera)cameraProperty.GetValue(origin);
+            Assert.IsNotNull(rigCamera, "XROrigin has no Camera.");
+
+            // Somewhere no default could sit, so a head that simply never moved cannot pass.
+            var target = new Vector3(3.17f, 1.62f, -2.45f);
+            rigCamera.transform.position = target;
+
+            // A few frames: LateUpdate does the copy, and the retry only runs twice a second.
+            float deadline = Time.realtimeSinceStartup + 2f;
+            while (Time.realtimeSinceStartup < deadline &&
+                   Vector3.Distance(head.position, target) > 0.01f)
+            {
+                rigCamera.transform.position = target;
+                yield return null;
+            }
+
+            float error = Vector3.Distance(head.position, target);
+            Debug.Log($"[HeadTest] camera at {target}, head at {head.position}, error {error:0.000} m");
+
+            Assert.Less(error, 0.01f,
+                        $"head is {error:0.00} m from the camera -- it is not following. " +
+                        "m_HeadOrigin is null, which means the XROrigin was never found and the " +
+                        "retry did not recover it. Nothing is being replicated, so the other " +
+                        "player sees this avatar at the origin.");
+        }
+
+        /// <summary>
+        /// The owner's head must be allowed to TRANSMIT, not merely to move.
+        ///
+        /// This is the one that was missed. Head was inactive in the player prefab, so its
+        /// NetworkBehaviour never received OnNetworkSpawn, NetworkTransform never initialised and
+        /// CanCommitToTransform stayed false -- the owner sent nothing for the entire session.
+        /// Writing to a Transform works fine on an inactive object, so the owner saw its own head
+        /// tracking perfectly while the other machine showed the avatar at the world origin, with
+        /// no error on either side.
+        ///
+        /// OwnerHeadFollowsTheCamera passes either way, because it only checks that the transform
+        /// moves. Movement was never the problem. This checks the flag that decides whether the
+        /// movement leaves the machine, which is false in exactly the broken case and does not
+        /// need a second process to see.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator OwnerHeadIsAllowedToTransmit()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            yield return LoadMainScene();
+            yield return StartHostAndWait();
+
+            NetworkManager manager = NetworkManager.Singleton;
+            Assert.IsNotNull(manager.LocalClient?.PlayerObject, "No player object spawned.");
+
+            Component player = null;
+            foreach (Component c in manager.LocalClient.PlayerObject
+                         .GetComponentsInChildren<Component>(true))
+            {
+                if (c != null && c.GetType().Name == "XRINetworkPlayer") { player = c; break; }
+            }
+            Assert.IsNotNull(player, "The spawned avatar has no XRINetworkPlayer.");
+
+            foreach (string limb in new[] { "head", "leftHand", "rightHand" })
+            {
+                FieldInfo field = player.GetType().GetField(limb);
+                Assert.IsNotNull(field, $"XRINetworkPlayer has no public {limb} field.");
+
+                var target = (Transform)field.GetValue(player);
+                Assert.IsNotNull(target, $"XRINetworkPlayer.{limb} is not assigned.");
+
+                Assert.IsTrue(target.gameObject.activeInHierarchy,
+                              $"'{target.name}' ({limb}) is inactive, so its NetworkTransform " +
+                              "never spawns and the pose is never sent. The owner will look " +
+                              "correct to itself and stand at the origin on every other machine.");
+
+                var netTransform = target.GetComponent<NetworkTransform>();
+                Assert.IsNotNull(netTransform, $"'{target.name}' has no NetworkTransform.");
+
+                // Give it a few frames to initialise after spawn.
+                float deadline = Time.realtimeSinceStartup + 3f;
+                while (Time.realtimeSinceStartup < deadline && !netTransform.CanCommitToTransform)
+                    yield return null;
+
+                Assert.IsTrue(netTransform.CanCommitToTransform,
+                              $"'{target.name}' ({limb}) cannot commit, so the owner transmits " +
+                              "nothing for it. CanCommitToTransform is set in " +
+                              "InternalInitialization, which only runs once the behaviour has " +
+                              "actually spawned.");
+
+                Debug.Log($"[CommitTest] {limb} '{target.name}' active and committing.");
+            }
         }
 
         [TearDown]

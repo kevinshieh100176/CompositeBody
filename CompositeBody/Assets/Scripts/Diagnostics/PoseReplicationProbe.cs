@@ -1,0 +1,116 @@
+using System.Text;
+using Unity.Netcode;
+using Unity.Netcode.Components;
+using UnityEngine;
+using XRMultiplayer;
+
+namespace CompositeBody.Diagnostics
+{
+    /// <summary>
+    /// Reports, once a second on every machine, what each player's head is doing and who is
+    /// allowed to move it.
+    ///
+    /// WHY THIS EXISTS. An avatar standing at the world origin on the other machine has at least
+    /// four possible causes that look identical from the outside: the owner never found its XR
+    /// rig, so nothing is being sent; the owner is sending but is not allowed to, so the server
+    /// discards it; the pose arrives and something local overwrites it; or the pose arrives and
+    /// only the visible body fails to follow. Reading the project cannot separate those, and
+    /// neither can a single-process test -- when the host owns the only player, replication is
+    /// never exercised at all.
+    ///
+    /// So this prints the four facts that do separate them, from both ends at once:
+    ///   owner      -- is this machine allowed to move this avatar
+    ///   commit     -- does its NetworkTransform believe it may send
+    ///   headLocal  -- where the head is in the avatar's own space
+    ///   headWorld  -- where it ends up
+    ///
+    /// Inert unless -posedebug is on the command line, so it costs nothing in the venue.
+    ///
+    ///   CompositeBody.exe -posedebug
+    /// </summary>
+    public class PoseReplicationProbe : MonoBehaviour
+    {
+        const string k_Flag = "-posedebug";
+        const float k_Interval = 1f;
+
+        float m_Next;
+        readonly StringBuilder m_Line = new();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        static void Install()
+        {
+            bool wanted = false;
+            foreach (string arg in System.Environment.GetCommandLineArgs())
+            {
+                if (arg == k_Flag) { wanted = true; break; }
+            }
+
+            if (!wanted) return;
+
+            var go = new GameObject("~PoseReplicationProbe");
+            go.AddComponent<PoseReplicationProbe>();
+            DontDestroyOnLoad(go);
+            Debug.Log("[PoseProbe] installed; reporting every second.");
+        }
+
+        void Update()
+        {
+            if (Time.unscaledTime < m_Next) return;
+            m_Next = Time.unscaledTime + k_Interval;
+
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null || !nm.IsListening)
+            {
+                Debug.Log("[PoseProbe] no session.");
+                return;
+            }
+
+            m_Line.Clear();
+            m_Line.Append($"[PoseProbe] thisMachine={(nm.IsServer ? "SERVER" : "CLIENT")} " +
+                          $"localClientId={nm.LocalClientId}");
+
+            XRINetworkPlayer[] players =
+                Object.FindObjectsByType<XRINetworkPlayer>(FindObjectsInactive.Include,
+                                                           FindObjectsSortMode.None);
+
+            if (players.Length == 0) m_Line.Append("\n  (no players found)");
+
+            foreach (XRINetworkPlayer player in players)
+            {
+                NetworkObject netObject = player.GetComponent<NetworkObject>();
+                Transform head = player.head;
+
+                m_Line.Append($"\n  player owner={(netObject != null ? netObject.OwnerClientId : 0)}" +
+                              $" isOwner={(netObject != null && netObject.IsOwner)}" +
+                              $" spawned={(netObject != null && netObject.IsSpawned)}");
+
+                if (head == null)
+                {
+                    m_Line.Append("  head=<UNASSIGNED>");
+                    continue;
+                }
+
+                m_Line.Append($"\n      headWorld={Fmt(head.position)}" +
+                              $" headLocal={Fmt(head.localPosition)}");
+
+                // Whether this machine's NetworkTransform thinks it may send. On the owner this
+                // must be true or nothing is transmitted; on the other machine it must be false
+                // or the two ends are both writing and the newer value loses.
+                var transform = head.GetComponent<NetworkTransform>();
+                if (transform == null)
+                {
+                    m_Line.Append("  <NO NetworkTransform ON HEAD>");
+                }
+                else
+                {
+                    m_Line.Append($" commit={transform.CanCommitToTransform}" +
+                                  $" serverAuth={transform.IsServerAuthoritative()}");
+                }
+            }
+
+            Debug.Log(m_Line.ToString());
+        }
+
+        static string Fmt(Vector3 v) => $"({v.x:0.00},{v.y:0.00},{v.z:0.00})";
+    }
+}
