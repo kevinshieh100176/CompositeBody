@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using XRMultiplayer;
+using CompositeBody.Multiplayer;
 
 namespace CompositeBody.Experience
 {
@@ -43,7 +44,7 @@ namespace CompositeBody.Experience
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Owner);
 
-        float m_SpawnedAt;
+        float m_StartedAt = -1f;
 
         /// <summary>True once this player has touched, on every machine.</summary>
         public bool formed => m_FormedAt.Value >= 0f;
@@ -53,7 +54,7 @@ namespace CompositeBody.Experience
 
         public override void OnNetworkSpawn()
         {
-            m_SpawnedAt = ExperienceClock.now;
+            m_StartedAt = -1f;
         }
 
         /// <summary>
@@ -70,11 +71,31 @@ namespace CompositeBody.Experience
         void Update()
         {
             if (m_Timeout <= 0f || !IsSpawned || !IsOwner || formed) return;
-            if (ExperienceClock.now - m_SpawnedAt < m_Timeout) return;
 
-            Debug.LogWarning($"[FormationSync] no touch after {m_Timeout}s; forming anyway so " +
-                             "the other player is not left waiting.", this);
+            // COUNTED FROM THE START OF THE SHOW, NOT FROM SPAWN. Measured from spawn it fired
+            // while a machine sat in the lobby -- so a host left idle formed itself, and the
+            // player who joined later was met by a fully grown membrane standing at the origin
+            // before anyone had touched anything. The fallback is meant to protect a player
+            // whose partner will not touch during the beat, which cannot begin before the beat
+            // does.
+            if (!ExperienceStarted()) { m_StartedAt = -1f; return; }
+
+            if (m_StartedAt < 0f) m_StartedAt = ExperienceClock.now;
+            if (ExperienceClock.now - m_StartedAt < m_Timeout) return;
+
+            Debug.LogWarning($"[FormationSync] no touch {m_Timeout}s after the show started; " +
+                             "forming anyway so the other player is not left waiting.", this);
             MarkFormed();
+        }
+
+        /// <summary>
+        /// With no session manager at all -- a desk test -- the show is treated as running, so a
+        /// single machine still reaches the fallback rather than waiting forever.
+        /// </summary>
+        static bool ExperienceStarted()
+        {
+            GameSessionManager session = GameSessionManager.Instance;
+            return session == null || session.sessionState != SessionState.Lobby;
         }
 
         /// <summary>

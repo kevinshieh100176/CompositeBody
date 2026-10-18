@@ -2968,6 +2968,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5708979721171982362}
   - component: {fileID: 6418384102226439632}
+  - component: {fileID: 1813618676075704016}
   m_Layer: 0
   m_Name: MembraneBody
   m_TagString: Untagged
@@ -3038,10 +3039,31 @@ MonoBehaviour:
   m_ElbowHint: {x: 0.25, y: -0.85, z: -0.5}
   m_KneeHint: {x: 0, y: 0, z: 1}
   m_MaxArmStretch: 1.25
-  m_CollapseHands: 1
+  m_CollapseHands: 0
   m_CollapseHeadForOwner: 1
   m_CollapsedBoneScale: 0.01
   m_ShowReach: 0
+--- !u!114 &1813618676075704016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6098846344955154017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e4847f22ca3da2478c58a671ca01ad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Body.MembraneHandRetarget
+  m_Left:
+    driverRoot: {fileID: 1523342480417178809}
+    targetRoot: {fileID: 6465782884306784970}
+    hideDriverMesh: 1
+  m_Right:
+    driverRoot: {fileID: 908897919254213233}
+    targetRoot: {fileID: 4721948435793617482}
+    hideDriverMesh: 1
+  m_LogPairing: 1
 --- !u!1 &6207178478933732955
 GameObject:
   m_ObjectHideFlags: 0

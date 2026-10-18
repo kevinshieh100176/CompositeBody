@@ -102,6 +102,7 @@ namespace XRMultiplayer
         // MODIFIED: see RetryLocalHandSetup.
         bool m_ModalityListenersAdded;
         bool m_HandOriginsReady;
+        bool m_HandSkeletonFound;
         float m_NextHandSetupRetry;
 
         /// <summary>
@@ -135,8 +136,22 @@ namespace XRMultiplayer
 
             if (m_LeftHandOrigin == null || m_RightHandOrigin == null) return;
 
+            // Settled only when the origins can actually be trusted to move: either a hand
+            // skeleton was found, or the rig really is on controllers. Resolving to a controller
+            // transform while hand tracking is what is live gives origins that are non-null and
+            // permanently stationary -- hands and, because the Ch36 arms solve onto them, arms
+            // that never follow. That is indistinguishable from the bug this was meant to fix,
+            // so it must not end the search.
+            bool trustworthy = m_HandSkeletonFound ||
+                               XRInputModalityManager.currentInputMode.Value ==
+                               XRInputModalityManager.InputMode.MotionController;
+
+            if (!trustworthy) return;
+
             m_HandOriginsReady = true;
-            Utils.Log("XRHandPoseReplicator: hand origins resolved; hands will now replicate.");
+            Utils.Log($"XRHandPoseReplicator: hand origins resolved " +
+                      $"({(m_HandSkeletonFound ? "hand skeleton" : "controllers")}); " +
+                      "hands will now replicate.");
         }
 
         private void Update()
@@ -221,30 +236,31 @@ namespace XRMultiplayer
                 if (rightHandSkeleton != null)
                     m_RightHandTransformReference = rightHandSkeleton.rootTransform;
 
-                // Setup tracking listening if either hand is tracked (hopefully to slightly future proof synchronous multimodality)
+                // MODIFIED: the listeners are registered whatever happened above. The original
+                // only added them when a skeleton already existed, so a rig that had not brought
+                // hand tracking up yet got no origins AND no way to be told later. Guarded
+                // because this method is now retried and AddListener will happily register the
+                // same callback twice.
+                if (!m_ModalityListenersAdded)
+                {
+                    m_ModalityListenersAdded = true;
+                    m_XRModalityManager.trackedHandModeStarted.AddListener(SwapToHands);
+                    m_XRModalityManager.motionControllerModeStarted.AddListener(SwapToControllers);
+                }
+
                 if (rightHandSkeleton != null || leftHandSkeleton != null)
                 {
                     SetTrackingType(XRInputModalityManager.currentInputMode.Value);
-
-                    // MODIFIED: guarded. This method is now retried until the origins resolve,
-                    // and UnityEvent.AddListener happily registers the same callback twice.
-                    if (!m_ModalityListenersAdded)
-                    {
-                        m_ModalityListenersAdded = true;
-                        m_XRModalityManager.trackedHandModeStarted.AddListener(SwapToHands);
-                        m_XRModalityManager.motionControllerModeStarted.AddListener(SwapToControllers);
-                    }
+                    m_HandSkeletonFound = true;
                 }
                 else
                 {
-                    // MODIFIED: the hole this fell through. The rig reports hands, but neither
-                    // carries an XRHandSkeletonDriver -- which is simply what it looks like a
-                    // moment before hand tracking comes up, and permanently when the player is
-                    // using controllers on a rig that also declares hands. The original did
-                    // nothing here: no origins, and no listeners either, so switching to
-                    // controllers later could never recover it. The owner then wrote nothing to
-                    // leftHand/rightHand and the other machine saw hands fixed at the origin,
-                    // with no error on either side.
+                    // No skeleton yet. Fall back to the controllers so the hands are not frozen
+                    // in the meantime -- but do NOT treat this as settled. A controller transform
+                    // on a rig that is actually running hand tracking never moves, so latching
+                    // here would swap one kind of stuck hand for another. RetryLocalHandSetup
+                    // keeps looking, and the listeners above will swap modes if that happens
+                    // first.
                     SetTrackingType(XRInputModalityManager.InputMode.MotionController);
                 }
             }

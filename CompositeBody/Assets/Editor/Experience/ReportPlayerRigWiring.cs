@@ -101,6 +101,11 @@ namespace CompositeBody.Multiplayer.EditorSetup
                     }
                 }
 
+                // The Ch36 body solves its arms onto the networked hands. XRAvatarIK only drives
+                // head, neck and torso -- it never touches an arm -- so if the arms do not
+                // follow, these three references are where to look first.
+                ReportBodyRig(root, limbs, report);
+
                 Debug.Log(report.ToString());
                 Debug.Log("[RigWiring] RESULT: PASS");
             }
@@ -108,6 +113,60 @@ namespace CompositeBody.Multiplayer.EditorSetup
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+
+        /// <summary>
+        /// Reports every MembraneBodyRig in the prefab and whether its head and hand targets
+        /// actually point at the networked limbs. A target left empty, or pointing at a local
+        /// rig transform rather than the networked one, gives arms that never follow -- and
+        /// nothing logs a complaint about it.
+        /// </summary>
+        static void ReportBodyRig(GameObject root, (string name, Transform t)[] limbs,
+                                  StringBuilder report)
+        {
+            Component[] rigs = root.GetComponentsInChildren<Component>(true);
+            bool found = false;
+
+            foreach (Component c in rigs)
+            {
+                if (c == null || c.GetType().Name != "MembraneBodyRig") continue;
+                found = true;
+
+                report.AppendLine($"[RigWiring] MembraneBodyRig on '{c.gameObject.name}' " +
+                                  $"(active={c.gameObject.activeInHierarchy})");
+
+                foreach (string fieldName in new[]
+                             { "m_HeadTarget", "m_LeftHandTarget", "m_RightHandTarget" })
+                {
+                    FieldInfo field = c.GetType().GetField(
+                        fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+
+                    if (field == null)
+                    {
+                        report.AppendLine($"[RigWiring]   {fieldName}: NO SUCH FIELD");
+                        continue;
+                    }
+
+                    var target = field.GetValue(c) as Transform;
+                    if (target == null)
+                    {
+                        report.AppendLine($"[RigWiring]   {fieldName}: *** NOT ASSIGNED -- the " +
+                                          "limb it drives cannot follow anything ***");
+                        continue;
+                    }
+
+                    string matches = "does NOT match any networked limb";
+                    foreach (var (name, t) in limbs)
+                        if (t == target) matches = $"== networked {name}";
+
+                    report.AppendLine($"[RigWiring]   {fieldName}: '{target.name}' " +
+                                      $"path={Path(root.transform, target)}  {matches}");
+                }
+            }
+
+            if (!found)
+                report.AppendLine("[RigWiring] no MembraneBodyRig in the player prefab -- the " +
+                                  "Ch36 body is driven from somewhere else, or not at all.");
         }
 
         static string Path(Transform root, Transform t)
