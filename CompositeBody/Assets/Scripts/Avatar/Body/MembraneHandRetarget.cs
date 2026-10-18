@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 namespace CompositeBody.Avatar.Body
@@ -117,6 +118,9 @@ namespace CompositeBody.Avatar.Body
         }
 
         readonly List<Pair> m_Pairs = new();
+
+        /// <summary>Wrist pairs, applied before the fingers.</summary>
+        readonly List<Pair> m_WristPairs = new();
         bool m_Captured;
 
         float m_NextRecaptureCheck;
@@ -167,6 +171,19 @@ namespace CompositeBody.Avatar.Body
                 }
             }
 
+            // The wrists first, because every finger below is expressed relative to them.
+            //
+            // MembraneBodyRig solves the arm onto the hand's POSITION only -- Solve takes
+            // m_LeftHandTarget.position and nothing else -- so Ch36's wrist ends up wherever the
+            // two-bone IK leaves it and never turns with the hand. Retargeted the same way as a
+            // finger: whatever the two skeletons disagree about is in the offset.
+            for (int i = 0; i < m_WristPairs.Count; i++)
+            {
+                Pair w = m_WristPairs[i];
+                if (w.source == null || w.target == null) continue;
+                w.target.rotation = w.source.rotation * w.offset;
+            }
+
             for (int i = 0; i < m_Pairs.Count; i++)
             {
                 Pair p = m_Pairs[i];
@@ -201,6 +218,7 @@ namespace CompositeBody.Avatar.Body
         public void Capture()
         {
             m_Pairs.Clear();
+            m_WristPairs.Clear();
             m_Captured = true;
             m_Hidden.Clear();
 
@@ -262,7 +280,8 @@ namespace CompositeBody.Avatar.Body
             // bones by NAME picked the wrong skeleton: the networked hand carries two, their
             // bones are identically named, and the diagnostic caught a second 'L_IndexProximal'
             // sitting under a metacarpal. A name is not an identity here; this list is.
-            Dictionary<string, Transform> animated = Candidate(hand, xrPrefix, m_Candidate);
+            bool isOwner = IsOwnedHere();
+            Dictionary<string, Transform> animated = Candidate(hand, xrPrefix, m_Candidate, isOwner);
             if (animated != null && animated.Count > 0)
             {
                 Transform wristFromDriver = animated.TryGetValue("Wrist", out Transform w) ? w : null;
@@ -272,6 +291,16 @@ namespace CompositeBody.Avatar.Body
                     Debug.Log($"[HandRetarget] {xrPrefix} using the replicator's own joint list " +
                               $"({animated.Count} joints), wrist='{sourceWrist.name}'.", this);
             }
+
+            // The wrist itself, so Ch36 hand turns with the tracked one.
+            m_WristPairs.Add(new Pair
+            {
+                source = sourceWrist,
+                target = targetWrist,
+                sourceWrist = sourceWrist,
+                targetWrist = targetWrist,
+                offset = Quaternion.Inverse(sourceWrist.rotation) * targetWrist.rotation,
+            });
 
             int paired = 0;
             foreach (var (xr, mixamo) in k_Map)
@@ -393,9 +422,39 @@ namespace CompositeBody.Avatar.Body
                 }
             }
 
-            if (m_LogPairing)
-                Debug.Log($"[HandRetarget] hid {hidden} renderer(s) on the local rig " +
-                          $"({string.Join(", ", m_HideOnLocalRig)}).", this);
+            if (!m_LogPairing) return;
+
+            Debug.Log($"[HandRetarget] hid {hidden} renderer(s) on the local rig " +
+                      $"({string.Join(", ", m_HideOnLocalRig)}).", this);
+
+            // Everything still drawing under the rig's hands, named. Three rounds have now been
+            // spent guessing which object the duplicate pair of hands belongs to; this prints the
+            // list instead so the next one can be named rather than guessed at.
+            var modality = FindFirstObjectByType<
+                UnityEngine.XR.Interaction.Toolkit.Inputs.XRInputModalityManager>(
+                FindObjectsInactive.Include);
+            if (modality == null) return;
+
+            var still = new StringBuilder();
+            foreach (GameObject side in new[] { modality.leftHand, modality.rightHand,
+                                                modality.leftController, modality.rightController })
+            {
+                if (side == null) continue;
+
+                foreach (Renderer r in side.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (r.forceRenderingOff || !r.enabled || !r.gameObject.activeInHierarchy)
+                        continue;
+
+                    still.Append($"\n[HandRetarget]     '{r.name}' ({r.GetType().Name}) under " +
+                                 $"'{(r.transform.parent != null ? r.transform.parent.name : "?")}'" +
+                                 $" in '{side.name}'");
+                }
+            }
+
+            Debug.Log(still.Length > 0
+                ? "[HandRetarget] still drawing on the rig:" + still
+                : "[HandRetarget] nothing else is drawing on the rig's hands.", this);
         }
 
         /// <summary>
@@ -420,12 +479,20 @@ namespace CompositeBody.Avatar.Body
         ///      networked hand is only written to on the other machine, so locally it is static.
         /// 2 -- any other JointBasedHand under the networked hand, for the second rig variant.
         /// </summary>
-        static Dictionary<string, Transform> Candidate(Hand hand, string xrPrefix, int index)
+        static Dictionary<string, Transform> Candidate(Hand hand, string xrPrefix, int index,
+                                                      bool isOwner)
         {
             switch (index)
             {
                 case 0: return AnimatedJoints(hand.driverRoot);
-                case 1: return LocalRigJoints(xrPrefix);
+
+                // OWNER ONLY. The local rig belongs to whoever is sitting here, not to the avatar
+                // being retargeted -- so on a machine watching someone else this would drive
+                // THEIR fingers from YOUR hands. It would even pass the watchdog, because those
+                // bones are certainly moving. That is worse than not tracking: it looks like it
+                // works.
+                case 1: return isOwner ? LocalRigJoints(xrPrefix) : null;
+
                 default: return AnimatedJoints(hand.driverRoot, skip: 1);
             }
         }
@@ -492,6 +559,16 @@ namespace CompositeBody.Avatar.Body
             }
 
             return map;
+        }
+
+        /// <summary>
+        /// Whether this avatar belongs to the person at this machine. Decides whether the local
+        /// rig is a legitimate source for it.
+        /// </summary>
+        bool IsOwnedHere()
+        {
+            var player = GetComponentInParent<XRMultiplayer.XRINetworkPlayer>(true);
+            return player != null && player.IsOwner;
         }
 
         /// <summary>The wrist this hand is currently paired against, or null.</summary>
