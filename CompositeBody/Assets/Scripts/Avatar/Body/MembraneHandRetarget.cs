@@ -121,9 +121,25 @@ namespace CompositeBody.Avatar.Body
 
         float m_NextRecaptureCheck;
 
+        /// <summary>
+        /// Everything being kept hidden, re-asserted every frame.
+        ///
+        /// Setting forceRenderingOff once is not enough: AvatarFormation owns that flag on the
+        /// avatar's body renderers and writes it every frame as the membrane grows, so a mesh
+        /// hidden at capture comes straight back the moment the body forms. It runs before this
+        /// does, so re-asserting here wins.
+        /// </summary>
+        readonly List<Renderer> m_Hidden = new();
+
         void LateUpdate()
         {
             if (!m_Captured) Capture();
+
+            for (int i = 0; i < m_Hidden.Count; i++)
+            {
+                Renderer r = m_Hidden[i];
+                if (r != null && !r.forceRenderingOff) r.forceRenderingOff = true;
+            }
 
             // The networked hand carries two skeletons -- a Quest set and an AXR set -- and only
             // one is switched on. Before tracking comes up neither is, so the first capture pairs
@@ -134,15 +150,20 @@ namespace CompositeBody.Avatar.Body
             {
                 m_NextRecaptureCheck = Time.unscaledTime + 1f;
 
-                foreach (Pair p in m_Pairs)
-                {
-                    if (p.sourceWrist == null || p.sourceWrist.gameObject.activeInHierarchy)
-                        continue;
+                // Only when a DIFFERENT wrist is now the live one. The first version re-paired
+                // whenever the current wrist was inactive, which with no skeleton active at all
+                // meant finding the same inactive bone again and again -- a capture loop once a
+                // second that also kept resetting the diagnostic below, so the one line that
+                // would have explained the problem never printed.
+                Transform liveLeft = LiveWrist(m_Left, "L_");
+                Transform liveRight = LiveWrist(m_Right, "R_");
 
-                    Debug.Log($"[HandRetarget] '{p.sourceWrist.name}' is no longer the live " +
-                              "skeleton; pairing again.", this);
+                if ((liveLeft != null && liveLeft != CurrentWrist(m_Left)) ||
+                    (liveRight != null && liveRight != CurrentWrist(m_Right)))
+                {
+                    Debug.Log("[HandRetarget] a different skeleton is live now; pairing again.",
+                              this);
                     Capture();
-                    break;
                 }
             }
 
@@ -157,7 +178,15 @@ namespace CompositeBody.Avatar.Body
                 // world rotation on a parent is immediately corrected by the child's own.
                 Quaternion relative = Quaternion.Inverse(p.sourceWrist.rotation) * p.source.rotation;
                 p.target.rotation = p.targetWrist.rotation * relative * p.offset;
+
+                // Watch one bone per hand. A retarget reading a skeleton that never moves looks
+                // exactly like a retarget that is broken, and the networked hand carries more
+                // than one skeleton -- so "which bones am I actually reading" is the question
+                // worth answering in the log rather than by eye.
+                if (i == m_WatchIndex) Observe(relative);
             }
+
+            ReportIfSourceIsStatic();
         }
 
         /// <summary>
@@ -173,8 +202,23 @@ namespace CompositeBody.Avatar.Body
         {
             m_Pairs.Clear();
             m_Captured = true;
+            m_Hidden.Clear();
 
             int paired = PairHand(m_Left, "L_") + PairHand(m_Right, "R_");
+
+            // Index proximal: the bone a curl shows on most clearly.
+            m_WatchIndex = -1;
+            for (int i = 0; i < m_Pairs.Count; i++)
+            {
+                if (!m_Pairs[i].source.name.Contains("IndexProximal")) continue;
+                m_WatchIndex = i;
+                m_WatchRest = Quaternion.Inverse(m_Pairs[i].sourceWrist.rotation) *
+                              m_Pairs[i].source.rotation;
+                break;
+            }
+            m_WatchMaxAngle = 0f;
+            m_WatchReported = false;
+            m_WatchDeadline = Time.unscaledTime + 8f;
             HideLocalRigHands();
 
             if (m_LogPairing)
@@ -214,10 +258,28 @@ namespace CompositeBody.Avatar.Body
                 Debug.Log($"[HandRetarget] {xrPrefix} wrists: source='{sourceWrist.name}' " +
                           $"target='{targetWrist.name}'", this);
 
+            // The joint list the replicator actually animates, keyed by XRHandJointID. Matching
+            // bones by NAME picked the wrong skeleton: the networked hand carries two, their
+            // bones are identically named, and the diagnostic caught a second 'L_IndexProximal'
+            // sitting under a metacarpal. A name is not an identity here; this list is.
+            Dictionary<string, Transform> animated = AnimatedJoints(hand.driverRoot);
+            if (animated != null && animated.Count > 0)
+            {
+                Transform wristFromDriver = animated.TryGetValue("Wrist", out Transform w) ? w : null;
+                if (wristFromDriver != null) sourceWrist = wristFromDriver;
+
+                if (m_LogPairing)
+                    Debug.Log($"[HandRetarget] {xrPrefix} using the replicator's own joint list " +
+                              $"({animated.Count} joints), wrist='{sourceWrist.name}'.", this);
+            }
+
             int paired = 0;
             foreach (var (xr, mixamo) in k_Map)
             {
-                Transform source = FindBySuffix(sources, xrPrefix + xr);
+                Transform source = animated != null && animated.TryGetValue(xr, out Transform t)
+                    ? t
+                    : FindBySuffix(sources, xrPrefix + xr);
+
                 Transform target = FindBySuffix(targets, mixamo);
 
                 if (source == null || target == null)
@@ -326,6 +388,7 @@ namespace CompositeBody.Avatar.Body
                         if (IsProtected(r.name)) continue;
                         r.forceRenderingOff = true;
                         hidden++;
+                        m_Hidden.Add(r);
                     }
                 }
             }
@@ -333,6 +396,129 @@ namespace CompositeBody.Avatar.Body
             if (m_LogPairing)
                 Debug.Log($"[HandRetarget] hid {hidden} renderer(s) on the local rig " +
                           $"({string.Join(", ", m_HideOnLocalRig)}).", this);
+        }
+
+        /// <summary>
+        /// The joints the finger replication actually writes to, keyed by their XRHandJointID
+        /// name ("IndexProximal", "ThumbMetacarpal", ...).
+        ///
+        /// JointBasedHand holds these references and is what both the curl path and the
+        /// full-rotation path drive, so this is the skeleton that moves -- as opposed to the one
+        /// that merely has the right bone names.
+        /// </summary>
+        static Dictionary<string, Transform> AnimatedJoints(Transform driverRoot)
+        {
+            var hands = driverRoot.GetComponentsInChildren<XRMultiplayer.JointBasedHand>(true);
+            if (hands == null || hands.Length == 0) return null;
+
+            // Prefer one that is switched on; fall back to the first, which is still better than
+            // a name match because at least these transforms are the ones being written to.
+            XRMultiplayer.JointBasedHand chosen = null;
+            foreach (var h in hands)
+            {
+                if (!h.gameObject.activeInHierarchy) continue;
+                chosen = h;
+                break;
+            }
+            chosen ??= hands[0];
+
+            if (chosen.handFidelityOptions == null || chosen.handFidelityOptions.Length == 0)
+                return null;
+
+            var map = new Dictionary<string, Transform>();
+
+            foreach (var finger in chosen.handFidelityOptions[0].fingerJoints)
+            {
+                if (finger.jointTransformReferences == null) continue;
+
+                foreach (var reference in finger.jointTransformReferences)
+                {
+                    if (reference.jointTransform == null) continue;
+                    map[reference.xrHandJointID.ToString()] = reference.jointTransform;
+                }
+            }
+
+            return map;
+        }
+
+        /// <summary>The wrist this hand is currently paired against, or null.</summary>
+        Transform CurrentWrist(Hand hand)
+        {
+            foreach (Pair p in m_Pairs)
+                if (p.target != null && hand.targetRoot != null && p.targetWrist == hand.targetRoot)
+                    return p.sourceWrist;
+            return null;
+        }
+
+        /// <summary>
+        /// The wrist that is active right now, or null when none is -- which is the normal state
+        /// before tracking comes up and must not be mistaken for a change.
+        /// </summary>
+        static Transform LiveWrist(Hand hand, string xrPrefix)
+        {
+            if (hand?.driverRoot == null) return null;
+
+            foreach (Transform t in hand.driverRoot.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name.Contains(xrPrefix + "Wrist", System.StringComparison.Ordinal) &&
+                    t.gameObject.activeInHierarchy)
+                    return t;
+            }
+            return null;
+        }
+
+        // --- is the source actually animating? ---------------------------------------------------
+
+        int m_WatchIndex = -1;
+        Quaternion m_WatchRest;
+        float m_WatchMaxAngle;
+        float m_WatchDeadline;
+        bool m_WatchReported;
+
+        void Observe(Quaternion relative)
+        {
+            m_WatchMaxAngle = Mathf.Max(m_WatchMaxAngle, Quaternion.Angle(m_WatchRest, relative));
+        }
+
+        /// <summary>
+        /// After a grace period, say whether the bones being read have moved at all -- and if
+        /// not, name every other transform with the same bone name, which is the list the right
+        /// one is hiding in.
+        /// </summary>
+        void ReportIfSourceIsStatic()
+        {
+            if (m_WatchReported || m_WatchIndex < 0 || Time.unscaledTime < m_WatchDeadline) return;
+            m_WatchReported = true;
+
+            Pair p = m_Pairs[m_WatchIndex];
+
+            if (m_WatchMaxAngle > 2f)
+            {
+                Debug.Log($"[HandRetarget] source is animating: '{p.source.name}' moved " +
+                          $"{m_WatchMaxAngle:0.0} degrees. Ch36 should be following it.", this);
+                return;
+            }
+
+            var others = new System.Text.StringBuilder();
+            foreach (Transform t in m_Left.driverRoot.root.GetComponentsInChildren<Transform>(true))
+            {
+                if (t == p.source || t.name != p.source.name) continue;
+                others.Append($"\n[HandRetarget]     also '{t.name}' under " +
+                              $"'{(t.parent != null ? t.parent.name : "?")}' " +
+                              $"active={t.gameObject.activeInHierarchy}");
+            }
+
+            // Two very different causes look identical from here, so it says both rather than
+            // picking one. In a headless run nothing is tracking and this is simply true; in a
+            // headset, with the tracked hands visibly moving, it means the wrong skeleton.
+            Debug.LogWarning($"[HandRetarget] source '{p.source.name}' has not moved " +
+                             $"({m_WatchMaxAngle:0.0} degrees in 8s), so Ch36's fingers have " +
+                             "nothing to follow. Either nothing is being tracked -- check for " +
+                             "the 'neither a tracked hand nor a controller is active' warning " +
+                             "-- or this is not the skeleton being animated." + (others.Length > 0
+                                 ? "\n[HandRetarget]   other transforms with that name:" + others
+                                 : "\n[HandRetarget]   no other transform carries that name."),
+                             this);
         }
 
         bool IsProtected(string rendererName)
@@ -354,6 +540,7 @@ namespace CompositeBody.Avatar.Body
             {
                 if (IsProtected(r.name)) continue;
                 r.forceRenderingOff = true;
+                m_Hidden.Add(r);
             }
         }
     }
