@@ -8,10 +8,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Scenes/MainScene.unity
     guid: 95d11f4e15ff24f4ba5da37cc4bf4d6e
-  - enabled: 1
+  - enabled: 0
     path: Assets/_Scenes/_Test/MembraneCombineTest.unity
     guid: 4784016cfbaa5ec48a7eb47061ee4b0e
-  - enabled: 1
+  - enabled: 0
     path: Assets/_Scenes/_Test/CompositeBody_Experience.unity
     guid: 0f063361a8cebeb48a24894d4b0b6acb
   m_configObjects:
