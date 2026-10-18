@@ -54,6 +54,16 @@ namespace CompositeBody.Avatar.Body
         [SerializeField] Hand m_Left = new();
         [SerializeField] Hand m_Right = new();
 
+        [SerializeField, Tooltip("Objects on the LOCAL XR rig whose meshes are hidden, matched " +
+                                 "on name. The rig draws your own hands from a hierarchy that " +
+                                 "has nothing to do with the avatar, so hiding the driver above " +
+                                 "does not touch it -- which is why the model's hands and a " +
+                                 "tracked pair were on screen at once.\n\n" +
+                                 "'Hand Visualizer' is the raw tracked mesh. The Interaction " +
+                                 "Visuals are deliberately NOT listed: they carry the hand " +
+                                 "membrane films and the poke and ray affordances.")]
+        string[] m_HideOnLocalRig = { "Hand Visualizer" };
+
         [SerializeField, Tooltip("Log the bones that were paired and the ones that were not, " +
                                  "once, on capture. A finger that silently fails to pair is the " +
                                  "one thing here that looks like nothing at all.")]
@@ -114,6 +124,7 @@ namespace CompositeBody.Avatar.Body
             m_Captured = true;
 
             int paired = Pair(m_Left, "L_") + Pair(m_Right, "R_");
+            HideLocalRigHands();
 
             if (m_LogPairing)
                 Debug.Log($"[HandRetarget] paired {paired} finger bones " +
@@ -189,6 +200,44 @@ namespace CompositeBody.Avatar.Body
         /// the membrane film links, and switching the object off would stop the skeleton being
         /// skinned at all -- which is exactly how the networked Head came to replicate nothing.
         /// </summary>
+        /// <summary>
+        /// Hides the rig's own hand meshes, which live outside the avatar entirely.
+        ///
+        /// Only on the machine that owns this avatar: these are the hands you see of YOURSELF,
+        /// and the rig they belong to is this player's. A remote avatar must not reach out and
+        /// switch off the local rig's renderers.
+        /// </summary>
+        void HideLocalRigHands()
+        {
+            if (m_HideOnLocalRig == null || m_HideOnLocalRig.Length == 0) return;
+
+            var player = GetComponentInParent<XRMultiplayer.XRINetworkPlayer>(true);
+            if (player == null || !player.IsOwner) return;
+
+            var origin = FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>(
+                FindObjectsInactive.Include);
+            if (origin == null) return;
+
+            int hidden = 0;
+            foreach (Transform t in origin.GetComponentsInChildren<Transform>(true))
+            {
+                foreach (string name in m_HideOnLocalRig)
+                {
+                    if (string.IsNullOrEmpty(name) || t.name != name) continue;
+
+                    foreach (Renderer r in t.GetComponentsInChildren<Renderer>(true))
+                    {
+                        r.forceRenderingOff = true;
+                        hidden++;
+                    }
+                }
+            }
+
+            if (m_LogPairing)
+                Debug.Log($"[HandRetarget] hid {hidden} renderer(s) on the local rig " +
+                          $"({string.Join(", ", m_HideOnLocalRig)}).", this);
+        }
+
         static void HideMesh(Transform driverRoot)
         {
             foreach (Renderer r in driverRoot.GetComponentsInChildren<Renderer>(true))

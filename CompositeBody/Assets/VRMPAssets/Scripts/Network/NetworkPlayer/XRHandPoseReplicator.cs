@@ -101,9 +101,8 @@ namespace XRMultiplayer
 
         // MODIFIED: see RetryLocalHandSetup.
         bool m_ModalityListenersAdded;
-        bool m_HandOriginsReady;
-        bool m_HandSkeletonFound;
         float m_NextHandSetupRetry;
+        bool m_WarnedNoHandOrigin;
 
         /// <summary>
         /// MODIFIED. Keeps looking for the rig and the hand references until the owner actually
@@ -121,9 +120,9 @@ namespace XRMultiplayer
         /// </summary>
         void RetryLocalHandSetup()
         {
-            if (!IsOwner || m_HandOriginsReady) return;
+            if (!IsOwner) return;
             if (Time.unscaledTime < m_NextHandSetupRetry) return;
-            m_NextHandSetupRetry = Time.unscaledTime + 0.5f;
+            m_NextHandSetupRetry = Time.unscaledTime + 0.25f;
 
             if (m_XROrigin == null)
                 m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
@@ -132,26 +131,69 @@ namespace XRMultiplayer
             if (m_XRModalityManager == null && !m_XROrigin.TryGetComponent(out m_XRModalityManager))
                 return;
 
-            SetupLocalHands();
+            // RESOLVED LIVE, NOT LATCHED. Twice now this settled on a reference that was non-null
+            // and permanently stationary -- a controller transform on a rig that was actually
+            // hand tracking -- and stopped looking, which is indistinguishable from never having
+            // resolved at all. Deciding every quarter second costs nothing and cannot get stuck:
+            // whatever is tracking right now is what the hands follow.
+            Transform left = PreferredOrigin(m_XRModalityManager.leftHand,
+                                             m_XRModalityManager.leftController);
+            Transform right = PreferredOrigin(m_XRModalityManager.rightHand,
+                                              m_XRModalityManager.rightController);
 
-            if (m_LeftHandOrigin == null || m_RightHandOrigin == null) return;
+            if (left == null && right == null)
+            {
+                // Said out loud, once, because the silent version of this is a player whose
+                // hands sit at their hips with nothing in any log to explain it. Neither the
+                // hand nor the controller being ACTIVE is the modality manager reporting that
+                // nothing is being tracked -- which is the honest answer in a headless run and
+                // a real fault in a headset.
+                if (!m_WarnedNoHandOrigin)
+                {
+                    m_WarnedNoHandOrigin = true;
+                    Utils.LogWarning("XRHandPoseReplicator: neither a tracked hand nor a " +
+                                     "controller is active, so there is nothing for the hands " +
+                                     "to follow. The arms will hang.");
+                }
+                return;
+            }
 
-            // Settled only when the origins can actually be trusted to move: either a hand
-            // skeleton was found, or the rig really is on controllers. Resolving to a controller
-            // transform while hand tracking is what is live gives origins that are non-null and
-            // permanently stationary -- hands and, because the Ch36 arms solve onto them, arms
-            // that never follow. That is indistinguishable from the bug this was meant to fix,
-            // so it must not end the search.
-            bool trustworthy = m_HandSkeletonFound ||
-                               XRInputModalityManager.currentInputMode.Value ==
-                               XRInputModalityManager.InputMode.MotionController;
+            m_WarnedNoHandOrigin = false;
+            if (left == m_LeftHandOrigin && right == m_RightHandOrigin) return;
 
-            if (!trustworthy) return;
+            m_LeftHandOrigin = left != null ? left : m_LeftHandOrigin;
+            m_RightHandOrigin = right != null ? right : m_RightHandOrigin;
 
-            m_HandOriginsReady = true;
-            Utils.Log($"XRHandPoseReplicator: hand origins resolved " +
-                      $"({(m_HandSkeletonFound ? "hand skeleton" : "controllers")}); " +
-                      "hands will now replicate.");
+            if (XRINetworkPlayer.LocalPlayer != null)
+                XRINetworkPlayer.LocalPlayer.SetHandOrigins(m_LeftHandOrigin, m_RightHandOrigin);
+
+            Utils.Log($"XRHandPoseReplicator: hand origins -> " +
+                      $"left='{(m_LeftHandOrigin != null ? m_LeftHandOrigin.name : "NONE")}' " +
+                      $"right='{(m_RightHandOrigin != null ? m_RightHandOrigin.name : "NONE")}'");
+        }
+
+        /// <summary>
+        /// Whichever of the two is actually live, preferring a tracked hand's skeleton root over
+        /// the controller.
+        ///
+        /// XRInputModalityManager switches these objects on and off as the player picks up or
+        /// puts down a controller, so "is it active" is the question that matters -- not what the
+        /// mode enum said once at spawn. The skeleton ROOT is taken rather than the hand object,
+        /// because that is the transform the wrist actually tracks; the hand object above it does
+        /// not move.
+        /// </summary>
+        static Transform PreferredOrigin(GameObject hand, GameObject controller)
+        {
+            if (hand != null && hand.activeInHierarchy)
+            {
+                var skeleton = hand.GetComponentInChildren<XRHandSkeletonDriver>(true);
+                if (skeleton != null && skeleton.rootTransform != null) return skeleton.rootTransform;
+                return hand.transform;
+            }
+
+            if (controller != null && controller.activeInHierarchy) return controller.transform;
+
+            return null;
         }
 
         private void Update()
@@ -251,7 +293,6 @@ namespace XRMultiplayer
                 if (rightHandSkeleton != null || leftHandSkeleton != null)
                 {
                     SetTrackingType(XRInputModalityManager.currentInputMode.Value);
-                    m_HandSkeletonFound = true;
                 }
                 else
                 {
