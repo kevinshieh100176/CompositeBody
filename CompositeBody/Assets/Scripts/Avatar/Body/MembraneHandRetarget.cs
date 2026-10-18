@@ -262,7 +262,7 @@ namespace CompositeBody.Avatar.Body
             // bones by NAME picked the wrong skeleton: the networked hand carries two, their
             // bones are identically named, and the diagnostic caught a second 'L_IndexProximal'
             // sitting under a metacarpal. A name is not an identity here; this list is.
-            Dictionary<string, Transform> animated = AnimatedJoints(hand.driverRoot);
+            Dictionary<string, Transform> animated = Candidate(hand, xrPrefix, m_Candidate);
             if (animated != null && animated.Count > 0)
             {
                 Transform wristFromDriver = animated.TryGetValue("Wrist", out Transform w) ? w : null;
@@ -406,7 +406,58 @@ namespace CompositeBody.Avatar.Body
         /// full-rotation path drive, so this is the skeleton that moves -- as opposed to the one
         /// that merely has the right bone names.
         /// </summary>
-        static Dictionary<string, Transform> AnimatedJoints(Transform driverRoot)
+        /// <summary>How many different skeletons this will try before giving up.</summary>
+        const int k_CandidateCount = 3;
+
+        int m_Candidate;
+
+        /// <summary>
+        /// The joint set to try, in order of how likely it is to be the animated one.
+        ///
+        /// 0 -- the networked hand's JointBasedHand. Correct on a machine watching SOMEONE ELSE,
+        ///      because that is where the replicated finger data is applied.
+        /// 1 -- the local XR rig's tracked hand skeleton. Correct for your OWN avatar: your own
+        ///      networked hand is only written to on the other machine, so locally it is static.
+        /// 2 -- any other JointBasedHand under the networked hand, for the second rig variant.
+        /// </summary>
+        static Dictionary<string, Transform> Candidate(Hand hand, string xrPrefix, int index)
+        {
+            switch (index)
+            {
+                case 0: return AnimatedJoints(hand.driverRoot);
+                case 1: return LocalRigJoints(xrPrefix);
+                default: return AnimatedJoints(hand.driverRoot, skip: 1);
+            }
+        }
+
+        /// <summary>
+        /// The joints of the local rig's own tracked hand -- the skeleton an XRHandSkeletonDriver
+        /// writes from the headset, which is the only one that moves on the machine that owns
+        /// the avatar.
+        /// </summary>
+        static Dictionary<string, Transform> LocalRigJoints(string xrPrefix)
+        {
+            var modality = FindFirstObjectByType<
+                UnityEngine.XR.Interaction.Toolkit.Inputs.XRInputModalityManager>(
+                FindObjectsInactive.Include);
+            if (modality == null) return null;
+
+            GameObject side = xrPrefix == "L_" ? modality.leftHand : modality.rightHand;
+            if (side == null) return null;
+
+            var driver = side.GetComponentInChildren<UnityEngine.XR.Hands.XRHandSkeletonDriver>(true);
+            if (driver?.jointTransformReferences == null) return null;
+
+            var map = new Dictionary<string, Transform>();
+            foreach (var reference in driver.jointTransformReferences)
+            {
+                if (reference.jointTransform == null) continue;
+                map[reference.xrHandJointID.ToString()] = reference.jointTransform;
+            }
+            return map;
+        }
+
+        static Dictionary<string, Transform> AnimatedJoints(Transform driverRoot, int skip = 0)
         {
             var hands = driverRoot.GetComponentsInChildren<XRMultiplayer.JointBasedHand>(true);
             if (hands == null || hands.Length == 0) return null;
@@ -414,13 +465,15 @@ namespace CompositeBody.Avatar.Body
             // Prefer one that is switched on; fall back to the first, which is still better than
             // a name match because at least these transforms are the ones being written to.
             XRMultiplayer.JointBasedHand chosen = null;
+            int seen = 0;
             foreach (var h in hands)
             {
                 if (!h.gameObject.activeInHierarchy) continue;
+                if (seen++ < skip) continue;
                 chosen = h;
                 break;
             }
-            chosen ??= hands[0];
+            chosen ??= hands.Length > skip ? hands[skip] : hands[0];
 
             if (chosen.handFidelityOptions == null || chosen.handFidelityOptions.Length == 0)
                 return null;
@@ -495,7 +548,22 @@ namespace CompositeBody.Avatar.Body
             if (m_WatchMaxAngle > 2f)
             {
                 Debug.Log($"[HandRetarget] source is animating: '{p.source.name}' moved " +
-                          $"{m_WatchMaxAngle:0.0} degrees. Ch36 should be following it.", this);
+                          $"{m_WatchMaxAngle:0.0} degrees (candidate {m_Candidate}). Ch36 is " +
+                          "following it.", this);
+                return;
+            }
+
+            // NOT MOVING, SO TRY THE NEXT SKELETON. Which one carries the finger animation is not
+            // something this can know in advance: the owner's networked hand is only written to
+            // on OTHER machines, the local rig has its own tracked skeleton, and the bones in all
+            // of them share names. Rather than guess again, it watches, and if nothing moved it
+            // moves on. The candidate that moves is the right one by definition.
+            if (m_Candidate + 1 < k_CandidateCount)
+            {
+                m_Candidate++;
+                Debug.LogWarning($"[HandRetarget] '{p.source.name}' never moved; trying " +
+                                 $"source candidate {m_Candidate} instead.", this);
+                Capture();
                 return;
             }
 

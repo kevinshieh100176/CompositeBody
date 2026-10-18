@@ -184,11 +184,18 @@ namespace XRMultiplayer
         /// </summary>
         static Transform PreferredOrigin(GameObject hand, GameObject controller)
         {
-            if (hand != null && hand.activeInHierarchy)
+            // The tracked hand wins whenever it exists AT ALL, not only while it is switched on.
+            //
+            // Holding a controller for locomotion while hand tracking is also running makes the
+            // modality manager flick between the two, and preferring whichever was active this
+            // frame made the origin alternate 87 times in one session -- the hand jumping between
+            // two skeletons, and every consumer downstream jumping with it. One stable choice is
+            // worth more here than the most current one.
+            if (hand != null)
             {
                 var skeleton = hand.GetComponentInChildren<XRHandSkeletonDriver>(true);
                 if (skeleton != null && skeleton.rootTransform != null) return skeleton.rootTransform;
-                return hand.transform;
+                if (hand.activeInHierarchy) return hand.transform;
             }
 
             if (controller != null && controller.activeInHierarchy) return controller.transform;
