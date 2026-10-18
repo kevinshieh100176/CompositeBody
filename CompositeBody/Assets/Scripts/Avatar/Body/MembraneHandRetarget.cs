@@ -62,7 +62,13 @@ namespace CompositeBody.Avatar.Body
                                  "'Hand Visualizer' is the raw tracked mesh. The Interaction " +
                                  "Visuals are deliberately NOT listed: they carry the hand " +
                                  "membrane films and the poke and ray affordances.")]
-        string[] m_HideOnLocalRig = { "Hand Visualizer" };
+        string[] m_HideOnLocalRig = { "Hand Visualizer", "LeftHand", "RightHand" };
+
+        [SerializeField, Tooltip("Renderers whose name contains any of these are never hidden, " +
+                                 "even inside an object listed above. The hand membrane films " +
+                                 "are generated as children of the very meshes being hidden, " +
+                                 "and they are the beat, not a duplicate.")]
+        string[] m_NeverHide = { "Membrane" };
 
         [SerializeField, Tooltip("Log the bones that were paired and the ones that were not, " +
                                  "once, on capture. A finger that silently fails to pair is the " +
@@ -94,18 +100,63 @@ namespace CompositeBody.Avatar.Body
             ("LittleDistal", "Pinky3"),    ("LittleTip", "Pinky4"),
         };
 
-        readonly List<(Transform source, Transform target, Quaternion offset)> m_Pairs = new();
+        /// <summary>
+        /// One bone pair, plus the two wrists its rotation is expressed relative to.
+        ///
+        /// WRIST-RELATIVE, NOT WORLD. Copying the source bone's world rotation looks right until
+        /// you notice the two wrists do not share an orientation: MembraneBodyRig solves Ch36's
+        /// wrist onto the networked hand, whose axes are not the tracked skeleton's. A curl is a
+        /// rotation about the finger's own axis, so expressed in world space it arrives at an
+        /// angle to Ch36's palm and the fingers bend sideways and through each other. Taking the
+        /// rotation relative to each skeleton's own wrist cancels that difference.
+        /// </summary>
+        struct Pair
+        {
+            public Transform source, target, sourceWrist, targetWrist;
+            public Quaternion offset;
+        }
+
+        readonly List<Pair> m_Pairs = new();
         bool m_Captured;
+
+        float m_NextRecaptureCheck;
 
         void LateUpdate()
         {
             if (!m_Captured) Capture();
 
+            // The networked hand carries two skeletons -- a Quest set and an AXR set -- and only
+            // one is switched on. Before tracking comes up neither is, so the first capture pairs
+            // whichever was found first and that can be the wrong one. If the bones being read
+            // are not the live ones, pair again; the newly activated skeleton is still near its
+            // rest pose at that moment, which is what the capture wants anyway.
+            if (m_Captured && Time.unscaledTime >= m_NextRecaptureCheck)
+            {
+                m_NextRecaptureCheck = Time.unscaledTime + 1f;
+
+                foreach (Pair p in m_Pairs)
+                {
+                    if (p.sourceWrist == null || p.sourceWrist.gameObject.activeInHierarchy)
+                        continue;
+
+                    Debug.Log($"[HandRetarget] '{p.sourceWrist.name}' is no longer the live " +
+                              "skeleton; pairing again.", this);
+                    Capture();
+                    break;
+                }
+            }
+
             for (int i = 0; i < m_Pairs.Count; i++)
             {
-                var (source, target, offset) = m_Pairs[i];
-                if (source == null || target == null) continue;
-                target.rotation = source.rotation * offset;
+                Pair p = m_Pairs[i];
+                if (p.source == null || p.target == null ||
+                    p.sourceWrist == null || p.targetWrist == null) continue;
+
+                // Where the source bone sits relative to its own wrist, re-expressed in the
+                // target wrist's frame. Parents are listed before their children, so setting a
+                // world rotation on a parent is immediately corrected by the child's own.
+                Quaternion relative = Quaternion.Inverse(p.sourceWrist.rotation) * p.source.rotation;
+                p.target.rotation = p.targetWrist.rotation * relative * p.offset;
             }
         }
 
@@ -123,7 +174,7 @@ namespace CompositeBody.Avatar.Body
             m_Pairs.Clear();
             m_Captured = true;
 
-            int paired = Pair(m_Left, "L_") + Pair(m_Right, "R_");
+            int paired = PairHand(m_Left, "L_") + PairHand(m_Right, "R_");
             HideLocalRigHands();
 
             if (m_LogPairing)
@@ -132,7 +183,7 @@ namespace CompositeBody.Avatar.Body
                           this);
         }
 
-        int Pair(Hand hand, string xrPrefix)
+        int PairHand(Hand hand, string xrPrefix)
         {
             if (hand?.driverRoot == null || hand.targetRoot == null)
             {
@@ -147,6 +198,21 @@ namespace CompositeBody.Avatar.Body
 
             Transform[] sources = hand.driverRoot.GetComponentsInChildren<Transform>(true);
             Transform[] targets = hand.targetRoot.GetComponentsInChildren<Transform>(true);
+
+            // The tracked skeleton's own wrist, not the networked hand object above it: that
+            // object is positioned by XRINetworkPlayer and carries no finger bones, so measuring
+            // against it would fold the hand's own orientation back into every finger.
+            // Matched on CONTAINS, not on the end of the name: the tracked skeletons label their
+            // wrists "L_Wrist - Quest" and "L_Wrist - AXR" for the two rig variants. Missing it
+            // falls back to the networked hand object, which sits at the wrist but does not share
+            // its orientation -- and that difference is exactly what this is supposed to cancel,
+            // so the fallback silently reintroduces the bent fingers.
+            Transform sourceWrist = FindContaining(sources, xrPrefix + "Wrist") ?? hand.driverRoot;
+            Transform targetWrist = hand.targetRoot;
+
+            if (m_LogPairing)
+                Debug.Log($"[HandRetarget] {xrPrefix} wrists: source='{sourceWrist.name}' " +
+                          $"target='{targetWrist.name}'", this);
 
             int paired = 0;
             foreach (var (xr, mixamo) in k_Map)
@@ -163,8 +229,21 @@ namespace CompositeBody.Avatar.Body
                     continue;
                 }
 
-                m_Pairs.Add((source, target,
-                             Quaternion.Inverse(source.rotation) * target.rotation));
+                Quaternion restSource = Quaternion.Inverse(sourceWrist.rotation) * source.rotation;
+                Quaternion restTarget = Quaternion.Inverse(targetWrist.rotation) * target.rotation;
+
+                m_Pairs.Add(new Pair
+                {
+                    source = source,
+                    target = target,
+                    sourceWrist = sourceWrist,
+                    targetWrist = targetWrist,
+
+                    // Takes the source bone's rest orientation to the target's, both measured
+                    // from their own wrist. Everything the two skeletons disagree about -- axis
+                    // conventions, roll, how open the bind pose is -- lives here and cancels.
+                    offset = Quaternion.Inverse(restSource) * restTarget,
+                });
                 paired++;
             }
 
@@ -175,6 +254,23 @@ namespace CompositeBody.Avatar.Body
         /// Matched on the end of the name, because Mixamo prefixes every bone with "mixamorig1:"
         /// and the left and right sets are otherwise identically named.
         /// </summary>
+        /// <summary>As FindBySuffix, but matching anywhere in the name.</summary>
+        static Transform FindContaining(Transform[] candidates, string fragment)
+        {
+            Transform fallback = null;
+
+            foreach (Transform t in candidates)
+            {
+                if (t == null || !t.name.Contains(fragment, System.StringComparison.Ordinal))
+                    continue;
+
+                if (t.gameObject.activeInHierarchy) return t;
+                fallback ??= t;
+            }
+
+            return fallback;
+        }
+
         static Transform FindBySuffix(Transform[] candidates, string suffix)
         {
             // Active first. The networked hand carries more than one skeleton -- an AXR set and
@@ -227,6 +323,7 @@ namespace CompositeBody.Avatar.Body
 
                     foreach (Renderer r in t.GetComponentsInChildren<Renderer>(true))
                     {
+                        if (IsProtected(r.name)) continue;
                         r.forceRenderingOff = true;
                         hidden++;
                     }
@@ -238,10 +335,26 @@ namespace CompositeBody.Avatar.Body
                           $"({string.Join(", ", m_HideOnLocalRig)}).", this);
         }
 
-        static void HideMesh(Transform driverRoot)
+        bool IsProtected(string rendererName)
+        {
+            if (m_NeverHide == null) return false;
+
+            foreach (string keep in m_NeverHide)
+            {
+                if (!string.IsNullOrEmpty(keep) &&
+                    rendererName.Contains(keep, System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        void HideMesh(Transform driverRoot)
         {
             foreach (Renderer r in driverRoot.GetComponentsInChildren<Renderer>(true))
+            {
+                if (IsProtected(r.name)) continue;
                 r.forceRenderingOff = true;
+            }
         }
     }
 }
