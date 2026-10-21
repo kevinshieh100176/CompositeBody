@@ -53,30 +53,42 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// players. Everything after that is timed; drop a ShowHoldMarker on the marker track to
         /// make one of them wait.
         /// </summary>
-        static readonly (string holder, string label, double duration, string gate)[] k_Order =
+        static readonly (string holder, string label, double duration, string gate, double holdLead)[] k_Order =
         {
-            ("O_0",        "O-0 進入",            60d,  null),
-            ("Beat_O1",    "O-1 鬼的抓取",         90d,  "beat.O1_Control"),
-            ("Beat_O2",    "O-2 鬼魂交流",         120d, "beat.O2_Grasp"),
-            ("Beat_O3",    "O-3 Onboarding結束",   20d,  "beat.O3_Communion"),
+            // O-0 POINTS AT A PATH, NOT A NAME, and the path is into live content. Every other
+            // entry here names an empty holder under Beats; this one names the director that
+            // actually owns the opening cue, inside the Onboarding prefab instance. Until now the
+            // lookup found no object called "O_0", quietly made an empty holder and nested
+            // nothing -- so the cue was driven by nobody at all: O0ArrivalBeat stands down
+            // whenever a master driver exists, and the master was pointing at a stub.
+            ("Onboarding/Timeline", "O-0 進入", 60d, null, 0d),
 
-            ("Beat_S1-1",  "S1-1 記憶痕跡成形",     40d,  null),
-            ("Beat_S1-2",  "S1-2 吊掛的家",        120d, null),
+            // O-1 holds at the end of its clip, and what the two grabs earn -- the orbit lights,
+            // the footprints, S0-2 -- opens the NEXT beat rather than closing this one. Those
+            // cues used to be authored here, in a ten-second tail kept back after the hold; they
+            // live in O-2's own timeline now, which is where a beat's content belongs.
+            ("Beat_O1",    "O-1 鬼的抓取",         90d,  "beat.O1_Control", 0d),
 
-            ("Beat_S2-1",  "S2-1 門關上之後",       60d,  null),
-            ("Beat_S2-2",  "S2-2 碎片：燈",        180d, null),
-            ("Beat_S2-3",  "S2-3 碎片：杯子",       120d, null),
-            ("Beat_S2-4",  "S2-4 隱藏的記憶",       180d, null),
+            ("Onboarding/Timeline O_2", "O-2 鬼魂交流", 120d, "beat.O2_Grasp", 0d),
+            ("Beat_O3",    "O-3 Onboarding結束",   20d,  "beat.O3_Communion", 0d),
 
-            ("Beat_S3A-1", "S3A-1 把家道別",        40d,  null),
-            ("Beat_S3A-2", "S3A-2 回到依附的人",     300d, null),
-            ("Beat_S3A-3", "S3A-3 物件化膜",        90d,  null),
-            ("Beat_S3A-4", "S3A-4 沒有說出口的話",   240d, null),
+            ("Beat_S1-1",  "S1-1 記憶痕跡成形",     40d,  null, 0d),
+            ("Beat_S1-2",  "S1-2 吊掛的家",        120d, null, 0d),
 
-            ("Beat_S3B-1", "S3B-1 真人消失",        60d,  null),
-            ("Beat_S3B-2", "S3B-2 一片片的記憶",     240d, null),
-            ("Beat_S3B-3", "S3B-3 最後一次旋轉",     180d, null),
-            ("Beat_S3B-4", "S3B-4 膜鬆開",          120d, null),
+            ("Beat_S2-1",  "S2-1 門關上之後",       60d,  null, 0d),
+            ("Beat_S2-2",  "S2-2 碎片：燈",        180d, null, 0d),
+            ("Beat_S2-3",  "S2-3 碎片：杯子",       120d, null, 0d),
+            ("Beat_S2-4",  "S2-4 隱藏的記憶",       180d, null, 0d),
+
+            ("Beat_S3A-1", "S3A-1 把家道別",        40d,  null, 0d),
+            ("Beat_S3A-2", "S3A-2 回到依附的人",     300d, null, 0d),
+            ("Beat_S3A-3", "S3A-3 物件化膜",        90d,  null, 0d),
+            ("Beat_S3A-4", "S3A-4 沒有說出口的話",   240d, null, 0d),
+
+            ("Beat_S3B-1", "S3B-1 真人消失",        60d,  null, 0d),
+            ("Beat_S3B-2", "S3B-2 一片片的記憶",     240d, null, 0d),
+            ("Beat_S3B-3", "S3B-3 最後一次旋轉",     180d, null, 0d),
+            ("Beat_S3B-4", "S3B-4 膜鬆開",          120d, null, 0d),
         };
 
         [MenuItem("Tools/Show/Build Main Timeline")]
@@ -181,9 +193,12 @@ namespace CompositeBody.Multiplayer.EditorSetup
             var director = holder.GetComponent<PlayableDirector>();
             if (director == null) director = holder.gameObject.AddComponent<PlayableDirector>();
 
-            // Manual and not played on awake: the driver sets the time from the shared clock.
+            // Unscaled and not played on awake: the driver plays it and pulls it onto the shared
+            // clock. It used to be Manual, which is exact and silent -- a graph that is only
+            // evaluated never advances the audio clock, so no AudioTrack in the show could
+            // sound. See the remarks on ShowTimelineDriver.
             director.playOnAwake = false;
-            director.timeUpdateMode = DirectorUpdateMode.Manual;
+            director.timeUpdateMode = DirectorUpdateMode.UnscaledGameTime;
             director.extrapolationMode = DirectorWrapMode.Hold;
 
             if (holder.GetComponent<ShowTimelineDriver>() == null)
@@ -192,8 +207,26 @@ namespace CompositeBody.Multiplayer.EditorSetup
             return director;
         }
 
+        /// <summary>
+        /// Remove what earlier versions of this builder left in the scene. The S0-2 speaker used
+        /// to live under the show driver, because the cue used to be a track on this timeline;
+        /// it is in the onboarding prefab now, beside the beat that plays it. An orphan here
+        /// would be a second, silent AudioSource that looks like it should be doing something.
+        /// </summary>
+        static void RemoveStaleObjects(PlayableDirector director)
+        {
+            Transform speaker = director.transform.Find("Cue Speaker S0-2");
+            if (speaker == null) return;
+
+            Object.DestroyImmediate(speaker.gameObject);
+            Debug.Log("[MainTimeline] removed the old 'Cue Speaker S0-2'; O-2's timeline owns " +
+                      "that cue and its speaker now.");
+        }
+
         static bool BuildOrder(Scene scene, TimelineAsset timeline, PlayableDirector director)
         {
+            RemoveStaleObjects(director);
+
             timeline.CreateMarkerTrack();
             MarkerTrack markers = timeline.markerTrack;
 
@@ -202,7 +235,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             int gates = 0;
             int created = 0;
 
-            foreach ((string holderName, string label, double duration, string gate) in k_Order)
+            foreach ((string holderName, string label, double duration, string gate, double holdLead) in k_Order)
             {
                 GameObject target = FindInScene(scene, holderName);
                 if (target == null)
@@ -238,7 +271,13 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 // director's time instead of letting it run itself.
                 control.updateDirector = true;
                 control.updateParticle = false;
-                control.active = true;
+
+                // A PATH MEANS LIVE CONTENT, AND LIVE CONTENT IS NOT ACTIVATED BY ITS CLIP. The
+                // clip would switch its target on for its duration and, on Revert, off again
+                // afterwards -- which for O-0's holder means switching off the object carrying
+                // the whole onboarding room sixty seconds in. An empty placeholder holder has
+                // nothing to lose, so it keeps the old behaviour.
+                control.active = !holderName.Contains("/");
                 control.postPlayback = ActivationControlPlayable.PostPlaybackState.Revert;
 
                 // The sub-director lives on a child of the holder (O_0/Timeline), not on the
@@ -262,10 +301,12 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 if (!string.IsNullOrWhiteSpace(gate))
                 {
-                    var hold = markers.CreateMarker<ShowHoldMarker>(at);
+                    double holdAt = at - holdLead;
+                    var hold = markers.CreateMarker<ShowHoldMarker>(holdAt);
                     hold.SetTaskId(gate);
                     gates++;
-                    Debug.Log($"[MainTimeline] {"hold",-16} {at,5:F1}s        waits for '{gate}'");
+                    Debug.Log($"[MainTimeline] {"hold",-16} {holdAt,5:F1}s        waits for '{gate}'" +
+                              (holdLead > 0d ? $"   ({holdLead:F0}s of beat left after it)" : ""));
                 }
             }
 
@@ -292,14 +333,36 @@ namespace CompositeBody.Multiplayer.EditorSetup
             return false;
         }
 
-        static GameObject FindInScene(Scene scene, string name)
+        /// <summary>
+        /// A name, or a slash path when a name is not enough. "Timeline" appears twice in the
+        /// onboarding prefab -- the live director and a disabled preview one -- so the entry that
+        /// wants the live one has to say which; a search by name picks whichever comes first in
+        /// the file, which is not a decision anybody made.
+        /// </summary>
+        static GameObject FindInScene(Scene scene, string nameOrPath)
         {
-            foreach (GameObject root in scene.GetRootGameObjects())
+            if (!nameOrPath.Contains("/"))
             {
-                GameObject found = FindIn(root.transform, name);
-                if (found != null) return found;
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    GameObject found = FindIn(root.transform, nameOrPath);
+                    if (found != null) return found;
+                }
+                return null;
             }
-            return null;
+
+            // THE FIRST SEGMENT IS FOUND ANYWHERE, not only among the scene roots. The onboarding
+            // prefab is instanced under Beats rather than at the top of the scene, so a path
+            // anchored at the roots found nothing and the builder quietly made an empty holder
+            // called "Onboarding/Content/Orbits" -- slash and all.
+            string[] parts = nameOrPath.Split('/');
+
+            GameObject head = FindInScene(scene, parts[0]);
+            if (head == null) return null;
+
+            Transform at = head.transform;
+            for (int i = 1; i < parts.Length && at != null; i++) at = at.Find(parts[i]);
+            return at != null ? at.gameObject : null;
         }
 
         static GameObject FindIn(Transform parent, string name)
@@ -337,13 +400,15 @@ namespace CompositeBody.Multiplayer.EditorSetup
             }
             Debug.Log("[MainTimeline] OK   driver and timeline");
 
-            if (director.timeUpdateMode != DirectorUpdateMode.Manual)
+            if (director.timeUpdateMode == DirectorUpdateMode.Manual)
             {
-                Debug.LogError("[MainTimeline] RESULT: FAIL - the show director is not Manual, so it " +
-                               "would run on this machine's clock and the two headsets would drift.");
+                Debug.LogError("[MainTimeline] RESULT: FAIL - the show director is Manual, so its " +
+                               "graph never advances and every AudioTrack in the show is silent. " +
+                               "The driver plays it and corrects it against the shared clock.");
                 return;
             }
-            Debug.Log("[MainTimeline] OK   Manual update mode");
+            Debug.Log($"[MainTimeline] OK   {director.timeUpdateMode} update mode (played, " +
+                      "corrected against the shared clock)");
 
             if (driver.GetComponentInParent<Unity.Netcode.NetworkObject>() == null)
             {
@@ -386,6 +451,35 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return;
             }
             Debug.Log($"[MainTimeline] OK   {clips} nested beat clip(s), all bound");
+
+            // EVERY TRACK'S BINDING, not just the Control clips. A binding is a reference to a
+            // scene object, and anything that destroys and recreates that object -- rebuilding
+            // the footprint rings, say -- leaves the track bound to nothing. Nothing complains:
+            // the activation track simply stops driving, so the thing it was meant to hide is
+            // visible from the first frame of the show, which looks like a staging decision
+            // rather than a broken reference.
+            int bound = 0, missing = 0;
+            foreach (TrackAsset track in timeline.GetOutputTracks())
+            {
+                if (track is ControlTrack || track is MarkerTrack) continue;
+
+                if (director.GetGenericBinding(track) != null) bound++;
+                else
+                {
+                    missing++;
+                    Debug.LogError($"[MainTimeline] track '{track.name}' is bound to nothing. " +
+                                   "Whatever it drove has been recreated since the timeline was " +
+                                   "built; re-run this builder to bind it again.");
+                }
+            }
+
+            if (missing > 0)
+            {
+                Debug.LogError($"[MainTimeline] RESULT: FAIL - {missing} of {bound + missing} " +
+                               "track(s) drive nothing.");
+                return;
+            }
+            Debug.Log($"[MainTimeline] OK   {bound} payoff track(s), all bound");
 
             int holds = 0;
             if (timeline.markerTrack != null)

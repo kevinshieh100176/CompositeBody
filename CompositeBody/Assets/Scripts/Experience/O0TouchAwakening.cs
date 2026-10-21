@@ -1,6 +1,8 @@
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.XR.Hands;
+using CompositeBody.Diagnostics;
+using CompositeBody.Multiplayer;
 using CompositeBody.PointClouds;
 
 namespace CompositeBody.Experience
@@ -30,7 +32,7 @@ namespace CompositeBody.Experience
     /// wind different plates. If both players should see one plate start when either of them
     /// touches, that is a networked event and is not built.
     /// </summary>
-    public class O0TouchAwakening : MonoBehaviour
+    public class O0TouchAwakening : MonoBehaviour, IDebugInteraction
     {
         [System.Serializable]
         public class Station
@@ -108,6 +110,12 @@ namespace CompositeBody.Experience
                 if (hand != null) hand.FormFrom(worldPoint);
             }
         }
+
+        // Awake rather than OnEnable, so an interaction that is switched off still has a row --
+        // "absent from the list" and "not built yet" must not look the same.
+        void Awake() => InteractionDebug.Register(this);
+
+        void OnDestroy() => InteractionDebug.Unregister(this);
 
         void LateUpdate()
         {
@@ -238,6 +246,125 @@ namespace CompositeBody.Experience
             m_Origin = FindFirstObjectByType<XROrigin>();
             return m_Origin != null;
         }
+
+        #region Debug panel
+
+        // LOCAL SCOPE, BECAUSE THE INTERACTION IS LOCAL. Each player's hands form from their own
+        // touch and nothing about that crosses the network -- so the row describes this machine,
+        // and the relay mirrors it so one screen can still show both.
+        public string debugId => "o0.awakening";
+
+        // ASCII, because the panel's font has no CJK glyphs; see AvatarFormationSync.debugLabel.
+        public string debugLabel => "Touch the scan figure -- hands, plate, body";
+
+        public DebugInteractionScope debugScope => DebugInteractionScope.LocalMachine;
+
+        public string debugFireLabel => "Touch";
+
+        public DebugInteractionState DebugState()
+        {
+            var state = DebugInteractionState.Idle;
+            state.fired = m_Awakened;
+
+            if (m_Awakened)
+            {
+                float since = ExperienceClock.now - m_TouchTime;
+                float reveal = Mathf.Clamp01((since - m_HandDelay) / Mathf.Max(m_HandSeconds, 0.01f));
+                state.detail = $"{TouchedStations()} touched, hands {reveal * 100f:0}%";
+            }
+            else if (!isActiveAndEnabled)
+            {
+                state.detail = "inactive -- its beat is not running, so no touch is being watched for";
+            }
+            else
+            {
+                // Says WHY nothing can happen, which is the question someone asks of a touch
+                // that will not fire: without hand tracking the poll never gets as far as the
+                // capsule test, and that looks identical to a capsule that is too small.
+                state.detail = m_Stations.Length == 0
+                    ? "no stations wired"
+                    : (TryGetSubsystem() ? "waiting for a hand on a scan figure" : "no hand tracking on this machine");
+            }
+
+            return state;
+        }
+
+        string TouchedStations()
+        {
+            int touched = 0;
+            foreach (Station station in m_Stations)
+            {
+                if (station != null && station.touched) touched++;
+            }
+            return $"{touched}/{m_Stations.Length} station(s)";
+        }
+
+        public bool DebugCanFire(DebugFireTarget target)
+        {
+            // Firing while the beat's content is switched off would set the flag and then never
+            // drive the forming, because LateUpdate is not running.
+            if (target == DebugFireTarget.Local) return isActiveAndEnabled && !m_Awakened;
+            if (!InteractionDebugRelay.canForce) return false;
+
+            bool p1 = InteractionDebugRelay.TryGetClientForRole(PlayerRole.Player1, out _);
+            bool p2 = InteractionDebugRelay.TryGetClientForRole(PlayerRole.Player2, out _);
+
+            return target switch
+            {
+                DebugFireTarget.Player1 => p1,
+                DebugFireTarget.Player2 => p2,
+                DebugFireTarget.Both => p1 || p2,
+                _ => false,
+            };
+        }
+
+        public void DebugFire(DebugFireTarget target)
+        {
+            if (!DebugCanFire(target)) return;
+
+            if (target == DebugFireTarget.Local)
+            {
+                // Through ForceAwaken, which is the staff rescue path the beat already has, so
+                // the panel fires exactly what a person reaching out would.
+                ForceAwaken(DebugTouchPoint());
+                return;
+            }
+
+            if (target != DebugFireTarget.Player2) FireForRole(PlayerRole.Player1);
+            if (target != DebugFireTarget.Player1) FireForRole(PlayerRole.Player2);
+        }
+
+        static void FireForRole(PlayerRole role)
+        {
+            if (InteractionDebugRelay.TryGetClientForRole(role, out ulong clientId))
+                InteractionDebugRelay.Instance?.FireOnClient(clientId, "o0.awakening");
+        }
+
+        /// <summary>
+        /// Where a debug touch lands: the first station's own centre if there is one. The point
+        /// matters -- the hands shed from it and the cloud drifts toward it -- so a fabricated
+        /// touch at the origin would play the beat with its one piece of staging wrong.
+        /// </summary>
+        Vector3 DebugTouchPoint()
+        {
+            foreach (Station station in m_Stations)
+            {
+                if (station?.figure == null) continue;
+                var filter = station.figure.GetComponent<MeshFilter>();
+                if (filter == null || filter.sharedMesh == null) continue;
+                return station.figure.transform.TransformPoint(filter.sharedMesh.bounds.center);
+            }
+            return transform.position;
+        }
+
+        // NO RESET. The touch spins plates up, sheds a cloud toward a hand and starts a body
+        // arriving; there is no reverse for any of it, and a button that un-awakened only the
+        // flag would leave the room looking touched and reporting untouched.
+        public bool DebugCanReset() => false;
+
+        public void DebugReset() { }
+
+        #endregion
 
         void OnDrawGizmosSelected()
         {

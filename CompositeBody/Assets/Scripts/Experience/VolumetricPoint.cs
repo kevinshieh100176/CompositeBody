@@ -54,6 +54,16 @@ namespace CompositeBody.Experience
         /// <summary>The colour actually drawn, role or authored.</summary>
         public Color effectiveColor => m_UseRoleColor ? PlayerRoleColors.For(m_Role) : m_Color;
 
+        /// <summary>
+        /// How bright the air is. Above 1 it is an HDR value, which is what bloom reads: the
+        /// colour buffer is floating point, so a glow may be brighter than white.
+        /// </summary>
+        public float intensity
+        {
+            get => m_Intensity;
+            set { m_Intensity = Mathf.Max(value, 0f); Apply(); }
+        }
+
         /// <summary>0 hides the glow, 1 shows it. For a beat to drive.</summary>
         public float reveal
         {

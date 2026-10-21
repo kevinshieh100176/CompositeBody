@@ -16,10 +16,23 @@ namespace CompositeBody.Experience
     /// Control clip, so the whole show is one scrubbable surface instead of a running order spread
     /// across a beat list and four prefabs.
     ///
-    /// IT IS DRIVEN, NOT PLAYED, for the same reason every other director in this project is:
-    /// a PlayableDirector left to play runs on the local machine's clock, and two people standing
-    /// in the same room would reach the same cue seconds apart depending on when each headset
-    /// started. Time here is computed from the shared clock instead.
+    /// IT PLAYS, AND IS PULLED ONTO THE SHARED CLOCK. This used to set <c>director.time</c> and
+    /// call <c>Evaluate()</c> every frame, which is exact -- and silent. Timeline's audio clips
+    /// are scheduled against the audio DSP clock by a graph that is RUNNING; a director that is
+    /// only ever evaluated samples its tracks without ever playing a sample, so every AudioTrack
+    /// in the show was authored into a timeline that could not sound. Since the cues are the
+    /// piece (the script's own first section is 「聲音先於空間」), the director now plays.
+    ///
+    /// What the shared clock then does is correct it. <see cref="showTime"/> is still the only
+    /// authority on where the show is, and every frame the director's own time is compared with
+    /// it: a disagreement under <see cref="m_Deadband"/> is ignored, a larger one is absorbed by
+    /// trimming playback speed by a couple of percent -- inaudible, and enough to pull back 20ms
+    /// a second -- and only a real discontinuity (a hold clearing, a staff scrub, a late joiner)
+    /// is corrected by jumping, which is audible and is meant to be: those ARE discontinuities.
+    ///
+    /// So the two headsets are no longer frame-identical; they are within a few tens of
+    /// milliseconds and cannot accumulate drift. For two people in one room that is below the
+    /// threshold of noticing, and it is the price of the cues existing at all.
     ///
     /// WHICH MAKES THE HOLD THE INTERESTING PART. A monotonic shared clock cannot be paused, so
     /// "show time" is kept as two server-owned numbers -- how much show has already been banked,
@@ -66,6 +79,25 @@ namespace CompositeBody.Experience
                                  "running order on a desk without the lobby.")]
         bool m_WaitForStart = true;
 
+        [Header("Audio sync")]
+        [SerializeField, Min(0.02f), Tooltip("Seconds of disagreement with the shared clock that " +
+                                             "are corrected by a jump rather than by trimming " +
+                                             "the speed. A jump is audible, so this wants to be " +
+                                             "larger than any drift the trim can absorb.")]
+        float m_HardResync = 0.25f;
+
+        [SerializeField, Range(0f, 0.2f), Tooltip("How much the playback speed may be trimmed to " +
+                                                  "pull the director back onto the shared clock. " +
+                                                  "0.02 is 2%, about 35 cents of pitch -- " +
+                                                  "inaudible, and enough to absorb 20ms per " +
+                                                  "second. Large values bend the pitch audibly.")]
+        float m_SpeedTrim = 0.02f;
+
+        [SerializeField, Min(0.001f), Tooltip("Disagreement below this is left alone, so the " +
+                                              "speed is not trimmed every frame against ordinary " +
+                                              "frame-time noise.")]
+        float m_Deadband = 0.012f;
+
         PlayableDirector m_Director;
         TimelineAsset m_Timeline;
 
@@ -87,6 +119,18 @@ namespace CompositeBody.Experience
         bool m_LocalHeld;
 
         bool m_WarnedNoProgress;
+
+        float m_Drift;
+
+        /// <summary>
+        /// How far the director is behind (negative: ahead of) the shared clock, in seconds. For
+        /// the debug panel: this is the one number that says whether the audio sync is working,
+        /// and without it a slow drift is invisible until a cue lands in the wrong place.
+        /// </summary>
+        public float driftSeconds => m_Drift;
+
+        /// <summary>Whether the show's director is actually playing, which is what makes it sound.</summary>
+        public bool isPlaying => m_Director != null && m_Director.state == PlayState.Playing;
 
         /// <summary>
         /// Whether the networked numbers are live. Reading a NetworkVariable before the object is
@@ -136,13 +180,18 @@ namespace CompositeBody.Experience
             m_Director = GetComponent<PlayableDirector>();
             m_Timeline = m_Director != null ? m_Director.playableAsset as TimelineAsset : null;
 
-            // Manual regardless of what the asset was saved with. A director that plays itself
-            // would run the show on this machine's clock, which is the thing this class exists
-            // to avoid, and a stale serialized value should not be able to reintroduce it.
+            // UNSCALED, and not Manual any more: a manually evaluated graph never advances the
+            // audio clock, so the cues would not sound (see the class remarks). Unscaled rather
+            // than GameTime because audio runs on real time whatever Time.timeScale is doing,
+            // and a timeline whose video half slowed down while its audio half did not would be
+            // worse than either.
+            //
+            // playOnAwake stays off: the show starts when staff start it, and Play() is called
+            // from Apply once there is a reason to.
             if (m_Director != null)
             {
                 m_Director.playOnAwake = false;
-                m_Director.timeUpdateMode = DirectorUpdateMode.Manual;
+                m_Director.timeUpdateMode = DirectorUpdateMode.UnscaledGameTime;
                 m_Director.extrapolationMode = DirectorWrapMode.Hold;
             }
 
@@ -211,8 +260,79 @@ namespace CompositeBody.Experience
             if (m_Timeline != null && m_Timeline.duration > 0d)
                 t = System.Math.Min(t, m_Timeline.duration);
 
-            m_Director.time = t;
-            m_Director.Evaluate();
+            Apply(t, shared ? m_Held.Value : m_LocalHeld);
+        }
+
+        /// <summary>
+        /// Put the director where the shared clock says, playing.
+        ///
+        /// HELD IS A PAUSE, NOT A FROZEN EVALUATION. Pausing stops the audio with the picture,
+        /// which is what a hold is: the show is waiting for the players, and a cue that kept
+        /// sounding into the wait would be telling them the show had moved on. The frame is still
+        /// evaluated while paused, so the held moment stays on screen and a late joiner lands on
+        /// it.
+        /// </summary>
+        void Apply(double target, bool held)
+        {
+            if (held)
+            {
+                if (m_Director.state == PlayState.Playing) m_Director.Pause();
+
+                SetSpeed(1d);
+                m_Director.time = target;
+                m_Director.Evaluate();      // keep the held frame applied
+                m_Drift = 0f;
+                return;
+            }
+
+            if (m_Director.state != PlayState.Playing)
+            {
+                // Time BEFORE Play: a director that is stopped rather than paused starts from
+                // its initial time, so playing first would run the opening of the show at
+                // whatever point the clock is actually at.
+                m_Director.time = target;
+                m_Director.Play();
+                SetSpeed(1d);
+                m_Drift = 0f;
+                return;
+            }
+
+            m_Drift = (float)(target - m_Director.time);
+            float error = Mathf.Abs(m_Drift);
+
+            if (error > m_HardResync)
+            {
+                // A jump. Only a real discontinuity gets this far, and the audible seam is
+                // honest -- the alternative is a cue that finishes seconds late.
+                if (m_LogTransitions)
+                    Utils.LogWarning($"[ShowTimeline] resyncing by {m_Drift:+0.00;-0.00}s " +
+                                     $"(at {m_Director.time:0.00}s, shared clock says {target:0.00}s).");
+
+                m_Director.time = target;
+                m_Director.Evaluate();
+                SetSpeed(1d);
+                return;
+            }
+
+            if (error <= m_Deadband)
+            {
+                SetSpeed(1d);
+                return;
+            }
+
+            // Proportional, because the trim has to fall off as the error closes or the director
+            // overshoots and the pitch audibly hunts. Full trim at the hard-resync threshold.
+            double trim = m_SpeedTrim * Mathf.Clamp(m_Drift / m_HardResync, -1f, 1f);
+            SetSpeed(1d + trim);
+        }
+
+        void SetSpeed(double speed)
+        {
+            if (!m_Director.playableGraph.IsValid()) return;
+            if (m_Director.playableGraph.GetRootPlayableCount() == 0) return;
+
+            Playable root = m_Director.playableGraph.GetRootPlayable(0);
+            if (root.IsValid()) root.SetSpeed(speed);
         }
 
         /// <summary>

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using CompositeBody.Diagnostics;
 
 namespace CompositeBody.Multiplayer
 {
@@ -126,6 +127,13 @@ namespace CompositeBody.Multiplayer
         public override void OnNetworkSpawn()
         {
             m_Assembled.OnValueChanged += HandleAssembledChanged;
+
+            // The pair's gate gets a debug row as soon as a half exists. Declared from here
+            // rather than from a list somewhere because the task id is authored on the prop:
+            // a pair added to a scene later brings its own row with it, and the row is
+            // deduplicated by task id so the second half does not add another.
+            InteractionDebug.RegisterTaskGate(m_CompletedTaskId,
+                $"Assemble '{(string.IsNullOrEmpty(m_PairId) ? "pair" : m_PairId)}' (both halves)");
 
             // A client that joins or reconnects after the weld receives the flag in its spawn
             // payload rather than as a change, so the presentation has to be applied here too.

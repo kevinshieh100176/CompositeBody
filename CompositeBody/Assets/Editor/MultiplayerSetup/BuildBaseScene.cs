@@ -5,6 +5,7 @@ using Unity.Netcode;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using CompositeBody.Diagnostics;
 using CompositeBody.Multiplayer;
 
 namespace CompositeBody.Multiplayer.EditorSetup
@@ -51,6 +52,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             BuildEnvironment(out Transform p1Spawn, out Transform p2Spawn, out GameObject envRoot);
             BuildSessionManagers(envRoot);
             BuildStaffPanel(p1Spawn, p2Spawn);
+            BuildInteractionDebugPanel();
             BuildCalibrationMarker();
 
             Directory.CreateDirectory("Assets/_Scenes");
@@ -175,12 +177,26 @@ namespace CompositeBody.Multiplayer.EditorSetup
             return mat;
         }
 
+        /// <summary>
+        /// On its own object, not the staff panel's: both components build a Screen Space Overlay
+        /// canvas at runtime and a GameObject may only hold one Canvas.
+        /// </summary>
+        static void BuildInteractionDebugPanel()
+        {
+            var go = new GameObject("InteractionDebugPanel");
+            go.AddComponent<InteractionDebugPanel>();
+        }
+
         static void BuildSessionManagers(GameObject lobbyRoot)
         {
             var go = new GameObject("GameSessionManager");
             go.AddComponent<NetworkObject>();
             var session = go.AddComponent<GameSessionManager>();
             go.AddComponent<StoryProgressManager>();
+
+            // The debug relay rides the same NetworkObject: what it mirrors belongs to the
+            // session, which outlives the additively loaded experience scene.
+            go.AddComponent<InteractionDebugRelay>();
 
             var so = new SerializedObject(session);
             so.FindProperty("m_ExperienceSceneName").stringValue =

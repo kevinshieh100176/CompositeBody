@@ -339,6 +339,10 @@ namespace XRMultiplayer
             if (localLeftHandSkeleton == null || localRightHandSkeleton == null)
                 return;
 
+            // MODIFIED: kept, so LocalRigJoints below can answer with the WHOLE skeleton rather
+            // than the five fingers assembled underneath. See the note there.
+            m_LocalSkeletons = new[] { localLeftHandSkeleton, localRightHandSkeleton };
+
             m_LocalHandFidelityOptions = new HandFidelityOption[2];
             for (int i = 0; i < m_LocalHandFidelityOptions.Length; i++)
             {
@@ -400,6 +404,60 @@ namespace XRMultiplayer
 
             SetFidelity(m_FidelityLevel);
         }
+
+        // MODIFIED: the two accessors below. Nothing in the template needs them; MembraneHandRetarget
+        // does, and the alternative was it re-deriving the same two skeletons for itself. It did,
+        // and it got different answers: SetupLocalFingerReferences above looks the local skeleton
+        // up with GetComponentInChildren<XRHandSkeletonDriver>() -- ACTIVE ONLY -- while the
+        // retarget passed `true` and so could pick up a second, inactive skeleton whose bones
+        // carry identical names. PC B's log is the proof: hand tracking was live and the origins
+        // resolved to 'L_Wrist', yet the retarget watched its own 'L_IndexProximal' sit at 0.0
+        // degrees for eight seconds. Whichever list is right, there is no argument about which
+        // one is READ if the reader hands it over.
+
+        XRHandSkeletonDriver[] m_LocalSkeletons;
+
+        /// <summary>
+        /// The LOCAL RIG joints this replicator reads the owner's finger poses from, keyed by
+        /// XRHandJointID name ("IndexProximal", "Wrist", ...). Null on a machine that does not
+        /// own this player, and before the references are resolved.
+        ///
+        /// THE WHOLE SKELETON, NOT JUST THE FINGERS IT SENDS. The first version of this returned
+        /// m_LocalHandFidelityOptions, which is the five fingers and nothing else -- 19 joints,
+        /// no wrist. The caller retargets each finger RELATIVE TO ITS OWN WRIST, so with no wrist
+        /// in the list it fell back to searching the avatar and found the NETWORKED hand's
+        /// 'L_Wrist - Quest': local-rig fingers measured against a different skeleton's wrist,
+        /// which is precisely the mismatch the relative measurement exists to cancel. The result
+        /// was fingers at impossible angles. These are the same transform objects either way --
+        /// m_LocalHandFidelityOptions is assembled from this very skeleton -- so handing over the
+        /// full list costs nothing and keeps every joint in one frame of reference.
+        /// </summary>
+        /// <param name="side">0 left, 1 right.</param>
+        public Dictionary<string, Transform> LocalRigJoints(int side)
+        {
+            if (m_LocalSkeletons == null || side < 0 || side >= m_LocalSkeletons.Length) return null;
+
+            XRHandSkeletonDriver skeleton = m_LocalSkeletons[side];
+            if (skeleton?.jointTransformReferences == null) return null;
+
+            var map = new Dictionary<string, Transform>();
+            foreach (var reference in skeleton.jointTransformReferences)
+            {
+                if (reference.jointTransform == null) continue;
+                map[reference.xrHandJointID.ToString()] = reference.jointTransform;
+            }
+            return map.Count > 0 ? map : null;
+        }
+
+        /// <summary>
+        /// The networked hand this replicator WRITES the other player's finger poses onto -- the
+        /// skeleton that moves on a machine watching someone else.
+        /// </summary>
+        /// <param name="side">0 left, 1 right.</param>
+        public JointBasedHand NetworkedHand(int side) =>
+            m_HandCurler != null && side >= 0 && side < m_HandCurler.Length
+                ? m_HandCurler[side]
+                : null;
 
         public void ChangeControllerType(XRInputModalityManager.InputMode inputMode)
         {

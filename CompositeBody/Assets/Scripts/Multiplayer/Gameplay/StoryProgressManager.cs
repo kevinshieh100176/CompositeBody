@@ -1,6 +1,7 @@
 using System;
 using Unity.Collections;
 using Unity.Netcode;
+using XRMultiplayer;
 using CompositeBody.Multiplayer;
 
 namespace CompositeBody.Multiplayer
@@ -43,11 +44,46 @@ namespace CompositeBody.Multiplayer
             if (GameSessionManager.Instance == null) return;
             if (!TryGetRoleForClient(rpcParams.Receive.SenderClientId, out PlayerRole role)) return;
 
+            SetRoleDone(taskId, role, true);
+        }
+
+        /// <summary>
+        /// DEBUG ONLY, SERVER ONLY: set a role's flag without that role's machine having
+        /// reported it. The debug panel's way of walking a two-player gate with one person in
+        /// the room.
+        ///
+        /// Kept apart from <see cref="ReportTaskCompleteRpc"/> rather than folded into it as an
+        /// extra argument, because the distinction is the whole safety story: a report is
+        /// attributed to whoever sent it and cannot name another player, while this writes a
+        /// flag nobody earned. A client cannot reach it -- there is no RPC -- so the worst a
+        /// client build can do is report its own half.
+        /// </summary>
+        public void DebugSetRoleDone(string taskId, PlayerRole role, bool done)
+        {
+            if (!IsServer)
+            {
+                Utils.LogWarning("[StoryProgress] DebugSetRoleDone is server-only; ignored.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(taskId) || role == PlayerRole.Unassigned) return;
+
+            Utils.LogWarning($"[StoryProgress] DEBUG: forcing {role} {(done ? "done" : "not done")} " +
+                             $"on '{taskId}' without a report from that player.");
+            SetRoleDone(taskId, role, done);
+        }
+
+        /// <summary>
+        /// The one place a task's flags change, so the unlock notification cannot be forgotten by
+        /// a second writer -- which is exactly the bug the debug path would otherwise introduce:
+        /// flags set, gate satisfied, and nothing listening told about it.
+        /// </summary>
+        void SetRoleDone(FixedString64Bytes taskId, PlayerRole role, bool done)
+        {
             int index = FindTaskIndex(taskId);
             TaskProgress progress = index >= 0 ? m_Tasks[index] : new TaskProgress { taskId = taskId };
 
-            if (role == PlayerRole.Player1) progress.player1Done = true;
-            else if (role == PlayerRole.Player2) progress.player2Done = true;
+            if (role == PlayerRole.Player1) progress.player1Done = done;
+            else if (role == PlayerRole.Player2) progress.player2Done = done;
 
             if (index >= 0) m_Tasks[index] = progress;
             else m_Tasks.Add(progress);

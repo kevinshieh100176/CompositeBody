@@ -42,7 +42,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_LineTex = "Assets/_Art/O0/O0_OpeningLine.png";
         const string k_TitleMat = "Assets/Materials/O0Title.mat";
         const string k_LineMat = "Assets/Materials/O0Line.mat";
-        const string k_ToneClip = "Assets/Audio/Placeholder/O0_Cue_PLACEHOLDER.wav";
+        const string k_ToneClip = "Assets/_Audio/Placeholder/O0_Cue_PLACEHOLDER.wav";
 
         /// <summary>
         /// Where the cards hang, in metres from the beat's origin, and how wide they are.

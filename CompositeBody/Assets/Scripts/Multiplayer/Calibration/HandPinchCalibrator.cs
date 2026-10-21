@@ -3,6 +3,7 @@ using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.XR.Hands;
 using XRMultiplayer;
+using CompositeBody.Diagnostics;
 
 namespace CompositeBody.Multiplayer
 {
@@ -19,7 +20,7 @@ namespace CompositeBody.Multiplayer
     /// pinch has to be <i>held</i>, so brushing the fingers together does nothing; and it only
     /// counts while armed, which by default means the lobby, before the piece starts.
     /// </summary>
-    public class HandPinchCalibrator : MonoBehaviour
+    public class HandPinchCalibrator : MonoBehaviour, IDebugInteraction
     {
         [SerializeField, Tooltip("The physical marker to line up with. Found in the scene if left empty.")]
         CalibrationPoint m_Marker;
@@ -80,6 +81,15 @@ namespace CompositeBody.Multiplayer
         }
 
         public void Disarm() => m_StaffArmed = false;
+
+        // AWAKE, NOT ONENABLE, so a SWITCHED-OFF interaction still gets a row. This component
+        // ships disabled -- the headset's own room setup stands in for a shared origin until the
+        // piece needs one -- and a debug list that simply omitted it would be saying "this
+        // interaction does not exist", which is the one answer that sends someone looking in the
+        // wrong place. Awake runs on a disabled component of an active object; OnEnable does not.
+        void Awake() => InteractionDebug.Register(this);
+
+        void OnDestroy() => InteractionDebug.Unregister(this);
 
         void Start()
         {
@@ -208,6 +218,94 @@ namespace CompositeBody.Multiplayer
             m_Subsystem = null;
             return false;
         }
+
+        #region Debug panel
+
+        public string debugId => "calibration";
+
+        public string debugLabel => "Calibrate origin (hold a pinch on the marker)";
+
+        public DebugInteractionScope debugScope => DebugInteractionScope.LocalMachine;
+
+        /// <summary>
+        /// ARM, NOT FIRE, and the button says so. A fabricated pinch would hand Calibrate a
+        /// point nobody's hand was at, which moves this player's whole world relative to the
+        /// other's with no way to undo it from inside a headset -- and the reach check would
+        /// refuse it anyway. So the button does the part staff are allowed to do: let the next
+        /// real pinch count.
+        /// </summary>
+        public string debugFireLabel => "Arm";
+
+        public DebugInteractionState DebugState()
+        {
+            var state = DebugInteractionState.Idle;
+            state.fired = hasCalibrated;
+
+            if (!isActiveAndEnabled)
+            {
+                // The gesture is wired and switched off, which is a state worth naming: nothing
+                // is broken, nothing will happen either, and Update is not running to notice.
+                state.detail = "component disabled -- the pinch gesture is not being watched";
+                return state;
+            }
+
+            string armed = isArmed ? "armed" : "not armed";
+            float progress = holdProgress;
+
+            state.detail = m_Marker == null
+                ? "no CalibrationPoint in the scene"
+                : progress > 0f
+                    ? $"{armed}, holding {progress * 100f:0}%"
+                    : armed;
+
+            return state;
+        }
+
+        public bool DebugCanFire(DebugFireTarget target)
+        {
+            // Arming a disabled calibrator sets a flag that nothing reads, since Update is what
+            // acts on it -- so the button is dead rather than quietly useless.
+            if (target == DebugFireTarget.Local) return isActiveAndEnabled && !isArmed;
+            if (!InteractionDebugRelay.canForce) return false;
+
+            bool p1 = InteractionDebugRelay.TryGetClientForRole(PlayerRole.Player1, out _);
+            bool p2 = InteractionDebugRelay.TryGetClientForRole(PlayerRole.Player2, out _);
+
+            return target switch
+            {
+                DebugFireTarget.Player1 => p1,
+                DebugFireTarget.Player2 => p2,
+                DebugFireTarget.Both => p1 || p2,
+                _ => false,
+            };
+        }
+
+        public void DebugFire(DebugFireTarget target)
+        {
+            if (!DebugCanFire(target)) return;
+
+            if (target == DebugFireTarget.Local)
+            {
+                Arm();
+                return;
+            }
+
+            if (target != DebugFireTarget.Player2) ArmRole(PlayerRole.Player1);
+            if (target != DebugFireTarget.Player1) ArmRole(PlayerRole.Player2);
+        }
+
+        static void ArmRole(PlayerRole role)
+        {
+            if (InteractionDebugRelay.TryGetClientForRole(role, out ulong clientId))
+                InteractionDebugRelay.Instance?.FireOnClient(clientId, "calibration");
+        }
+
+        /// <summary>Disarming is the one half of this that can be taken back.</summary>
+        public bool DebugCanReset() => m_StaffArmed;
+
+        public void DebugReset() => Disarm();
+
+        #endregion
 
         bool TryGetOrigin()
         {
