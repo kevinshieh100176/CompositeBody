@@ -65,7 +65,13 @@ namespace CompositeBody.Diagnostics
                           $"XR: {(XRSettings.enabled ? XRSettings.loadedDeviceName : "off")}, " +
                           $"eye texture {XRSettings.eyeTextureWidth}x{XRSettings.eyeTextureHeight}, " +
                           $"viewport scale {XRSettings.renderViewportScale:0.00}. " +
-                          $"Scene: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}.");
+                          $"Scene: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}." +
+                          (XRSettings.enabled
+                              ? ""
+                              : "
+[FrameTime] XR IS OFF. These numbers are for one flat view, " +
+                                "not two eyes, so they understate the real cost by roughly half. " +
+                                "Connect the headset before reading anything into them."));
             }
 
             void Update()
@@ -91,7 +97,13 @@ namespace CompositeBody.Diagnostics
             {
                 if (m_Wall.Count == 0) return;
 
-                string line = $"[FrameTime] over {m_Wall.Count} frames, " +
+                // Labelled, because an editor figure and a build figure are not comparable and
+                // a log outlives the afternoon that produced it. The editor carries the game
+                // view, the inspectors and the serialisation with it, which lands on the CPU
+                // line; the GPU line is the one worth trusting there.
+                string where = Application.isEditor ? "EDITOR (cpu inflated)" : "build";
+
+                string line = $"[FrameTime] {where}, over {m_Wall.Count} frames, " +
                               $"scene '{UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}'" +
                               $"\n[FrameTime]   wall  {Describe(m_Wall)}";
 
