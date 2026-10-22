@@ -26,7 +26,7 @@ namespace CompositeBody.Experience
     {
         [Header("The room, in metres")]
         [SerializeField, Min(0.5f)] float m_Width = 4f;
-        [SerializeField, Min(0.5f)] float m_Depth = 5f;
+        [SerializeField, Min(0.5f)] float m_Depth = 4f;
 
         [Header("Drawing")]
         [SerializeField, Range(0.005f, 0.2f), Tooltip("Thickness of the outline.")]

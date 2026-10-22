@@ -385,6 +385,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1719202497536021629}
   - component: {fileID: 5893575513314128580}
+  - component: {fileID: 457310892769473376}
   m_Layer: 0
   m_Name: Orbits
   m_TagString: Untagged
@@ -28117,3 +28118,21 @@ VFXRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
+--- !u!114 &457310892769473376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 603307582101040375}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d91deec8dd8ae814e8c86d70102353f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Multiplayer.BeatContent
+  m_Beat: 40
+  m_AlsoActiveFor: 
+  m_ContentRoot: {fileID: 0}
+  m_Objects:
+  - {fileID: 1701276177590974111}
+  - {fileID: 6678123093218552129}

@@ -104,7 +104,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PlaySpaceBounds
   m_Width: 4
-  m_Depth: 5
+  m_Depth: 4
   m_LineWidth: 0.04
   m_Lift: 0.004
   m_CentreMark: 1
