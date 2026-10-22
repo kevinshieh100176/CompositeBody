@@ -90,6 +90,12 @@ namespace CompositeBody.Experience
                 s_BaseCaptured = true;
             }
 
+            if (!s_EnvCaptured)
+            {
+                s_EnvBase = Environment.Read();
+                s_EnvCaptured = true;
+            }
+
             if (!s_Active.Contains(this)) s_Active.Add(this);
             Rebuild();
         }
@@ -108,6 +114,10 @@ namespace CompositeBody.Experience
                 LightmapSettings.lightmaps = s_SceneBase ?? new LightmapData[0];
                 s_SceneBase = null;
                 s_BaseCaptured = false;
+
+                if (s_EnvCaptured) s_EnvBase.Write();
+                s_EnvCaptured = false;
+                s_WarnedTwoEnvironments = false;
                 return;
             }
 
@@ -140,6 +150,8 @@ namespace CompositeBody.Experience
             LightmapSettings.lightmaps = all.ToArray();
 
             foreach (BakedLightmapCarrier carrier in s_Active) carrier.Apply();
+
+            ApplyEnvironment();
         }
 
         void Apply()
@@ -151,6 +163,148 @@ namespace CompositeBody.Experience
                 entry.renderer.lightmapIndex = entry.index + m_Offset;
                 entry.renderer.lightmapScaleOffset = entry.scaleOffset;
             }
+        }
+
+        // --- the environment ----------------------------------------------------------------
+
+        [SerializeField, Tooltip("Also carry the scene's fog, ambient light and skybox.\n\n" +
+                                 "These are ONE SET PER SCENE, not per object, so only one " +
+                                 "carrier can own them at a time. Leave this off for props and " +
+                                 "set it on the environment itself -- a chair should not have " +
+                                 "an opinion about the fog.")]
+        bool m_CarryEnvironment = true;
+
+        /// <summary>
+        /// A scene's lighting environment, which lives in RenderSettings and is global.
+        ///
+        /// The scenes differ sharply here -- S1_v3 sits in pale grey fog, MainScene in something
+        /// almost black -- so geometry moved from one to the other without this arrives wearing
+        /// the wrong weather, which reads as the model being wrong rather than the scene.
+        /// </summary>
+        [System.Serializable]
+        struct Environment
+        {
+            public bool captured;
+
+            public bool fog;
+            public Color fogColor;
+            public FogMode fogMode;
+            public float fogDensity, fogStart, fogEnd;
+
+            public UnityEngine.Rendering.AmbientMode ambientMode;
+            public Color ambientSky, ambientEquator, ambientGround;
+            public float ambientIntensity;
+            public Material skybox;
+            public float reflectionIntensity;
+
+            /// <summary>
+            /// The ambient probe itself, 27 floats, because the colour fields above do not
+            /// reproduce it. With ambient mode set to Skybox and no skybox assigned -- which is
+            /// how S1_v3 is set up -- the probe is the only place the ambient light exists.
+            /// </summary>
+            public float[] probe;
+
+            public static Environment Read()
+            {
+                var e = new Environment
+                {
+                    captured = true,
+                    fog = RenderSettings.fog,
+                    fogColor = RenderSettings.fogColor,
+                    fogMode = RenderSettings.fogMode,
+                    fogDensity = RenderSettings.fogDensity,
+                    fogStart = RenderSettings.fogStartDistance,
+                    fogEnd = RenderSettings.fogEndDistance,
+                    ambientMode = RenderSettings.ambientMode,
+                    ambientSky = RenderSettings.ambientSkyColor,
+                    ambientEquator = RenderSettings.ambientEquatorColor,
+                    ambientGround = RenderSettings.ambientGroundColor,
+                    ambientIntensity = RenderSettings.ambientIntensity,
+                    skybox = RenderSettings.skybox,
+                    reflectionIntensity = RenderSettings.reflectionIntensity,
+                    probe = new float[27],
+                };
+
+                UnityEngine.Rendering.SphericalHarmonicsL2 sh = RenderSettings.ambientProbe;
+                for (int rgb = 0; rgb < 3; rgb++)
+                    for (int coefficient = 0; coefficient < 9; coefficient++)
+                        e.probe[rgb * 9 + coefficient] = sh[rgb, coefficient];
+
+                return e;
+            }
+
+            public void Write()
+            {
+                if (!captured) return;
+
+                RenderSettings.fog = fog;
+                RenderSettings.fogColor = fogColor;
+                RenderSettings.fogMode = fogMode;
+                RenderSettings.fogDensity = fogDensity;
+                RenderSettings.fogStartDistance = fogStart;
+                RenderSettings.fogEndDistance = fogEnd;
+
+                RenderSettings.ambientMode = ambientMode;
+                RenderSettings.ambientSkyColor = ambientSky;
+                RenderSettings.ambientEquatorColor = ambientEquator;
+                RenderSettings.ambientGroundColor = ambientGround;
+                RenderSettings.ambientIntensity = ambientIntensity;
+                RenderSettings.skybox = skybox;
+                RenderSettings.reflectionIntensity = reflectionIntensity;
+
+                if (probe == null || probe.Length != 27) return;
+
+                var sh = new UnityEngine.Rendering.SphericalHarmonicsL2();
+                for (int rgb = 0; rgb < 3; rgb++)
+                    for (int coefficient = 0; coefficient < 9; coefficient++)
+                        sh[rgb, coefficient] = probe[rgb * 9 + coefficient];
+
+                // Set last: assigning the ambient mode or the skybox above makes Unity
+                // regenerate the probe, which would overwrite the one that was baked.
+                RenderSettings.ambientProbe = sh;
+            }
+        }
+
+        [SerializeField] Environment m_Environment;
+
+        static Environment s_EnvBase;
+        static bool s_EnvCaptured;
+        static bool s_WarnedTwoEnvironments;
+
+        /// <summary>
+        /// Hand the environment to the carrier that most recently came on, and say so when more
+        /// than one is asking.
+        ///
+        /// There is no right answer with two of them active -- the fog cannot be two colours --
+        /// so rather than pick quietly and let it look like a bad bake, this names them. The
+        /// show never has two environments up at once, so hearing this means something is
+        /// enabled that should not be.
+        /// </summary>
+        static void ApplyEnvironment()
+        {
+            BakedLightmapCarrier owner = null;
+            int asking = 0;
+
+            foreach (BakedLightmapCarrier carrier in s_Active)
+            {
+                if (!carrier.m_CarryEnvironment || !carrier.m_Environment.captured) continue;
+
+                owner = carrier;
+                asking++;
+            }
+
+            if (asking > 1 && !s_WarnedTwoEnvironments)
+            {
+                s_WarnedTwoEnvironments = true;
+                Debug.LogWarning($"[Lightmaps] {asking} carriers are each carrying an " +
+                                 "environment, and the fog, ambient and skybox are one set per " +
+                                 $"scene. '{owner.name}' wins because it came on last. Only one " +
+                                 "environment should be enabled at a time, or the others should " +
+                                 "have Carry Environment switched off.", owner);
+            }
+
+            if (owner != null) owner.m_Environment.Write();
+            else if (s_EnvCaptured) s_EnvBase.Write();
         }
 
 #if UNITY_EDITOR
@@ -222,6 +376,7 @@ namespace CompositeBody.Experience
 
             m_Entries = entries.ToArray();
             m_Lightmaps = maps;
+            if (m_CarryEnvironment) m_Environment = Environment.Read();
 
             UnityEditor.EditorUtility.SetDirty(this);
 
