@@ -68,10 +68,10 @@ namespace CompositeBody.Diagnostics
                           $"Scene: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}." +
                           (XRSettings.enabled
                               ? ""
-                              : "
-[FrameTime] XR IS OFF. These numbers are for one flat view, " +
-                                "not two eyes, so they understate the real cost by roughly half. " +
-                                "Connect the headset before reading anything into them."));
+                              : "\n[FrameTime] XR IS OFF. These numbers are for one flat " +
+                                "view, not two eyes, so they understate the real cost by " +
+                                "roughly half. Connect the headset before reading anything " +
+                                "into them."));
             }
 
             void Update()
