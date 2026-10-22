@@ -351,11 +351,29 @@ namespace CompositeBody.Avatar.Body
         {
             if (hand == null || hand.driverRoot == null) return false;
 
+            // TWO PASSES, ACTIVE FIRST. The networked hand carries a Quest skeleton and an AXR
+            // one, and JointBasedHand switches on whichever the platform calls for -- so one of
+            // them is not being written to and sits wherever it was authored. Taking the first
+            // match found would be a coin toss between the hand and a mannequin, and the search
+            // deliberately includes inactive objects because before tracking comes up neither is
+            // on yet. An inactive match is therefore worth having, but only if no live one
+            // exists.
             bool any = false;
-            foreach (Transform t in hand.driverRoot.GetComponentsInChildren<Transform>(true))
+            Transform[] all = hand.driverRoot.GetComponentsInChildren<Transform>(true);
+
+            foreach (Transform t in all)
             {
-                if (!TryJointFromName(t.name, out XRHandJointID id)) continue;
-                if (into.Has(id)) continue;          // first match wins; they coincide anyway
+                if (!t.gameObject.activeInHierarchy) continue;
+                if (!TryJointFromName(t.name, out XRHandJointID id) || into.Has(id)) continue;
+
+                into.Set(id, t.position);
+                any = true;
+            }
+
+            foreach (Transform t in all)
+            {
+                if (t.gameObject.activeInHierarchy) continue;
+                if (!TryJointFromName(t.name, out XRHandJointID id) || into.Has(id)) continue;
 
                 into.Set(id, t.position);
                 any = true;
