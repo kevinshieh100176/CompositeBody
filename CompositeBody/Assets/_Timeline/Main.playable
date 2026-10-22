@@ -150,7 +150,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 15e0374501f39d54eb30235764636e0e, type: 3}
-  m_Name: "O-1 \u9B3C\u7684\u6293\u53D6"
+  m_Name: "O-1 \u9B3C\u7684\u63A7\u5236"
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ControlTrack
   m_Version: 3
   m_AnimClip: {fileID: 0}
@@ -229,7 +229,7 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: "O-1 \u9B3C\u7684\u6293\u53D6"
+    m_DisplayName: "O-1 \u9B3C\u7684\u63A7\u5236"
   m_Markers:
     m_Objects: []
 --- !u!114 &-7219230497586220158
@@ -1836,7 +1836,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 15e0374501f39d54eb30235764636e0e, type: 3}
-  m_Name: "O-2 \u9B3C\u9B42\u4EA4\u6D41"
+  m_Name: "O-2 \u9B3C\u7684\u6293\u53D6"
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ControlTrack
   m_Version: 3
   m_AnimClip: {fileID: 0}
@@ -1915,7 +1915,7 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: "O-2 \u9B3C\u9B42\u4EA4\u6D41"
+    m_DisplayName: "O-2 \u9B3C\u7684\u6293\u53D6"
   m_Markers:
     m_Objects: []
 --- !u!114 &8729947917777763670
@@ -2112,7 +2112,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 15e0374501f39d54eb30235764636e0e, type: 3}
-  m_Name: "O-3 Onboarding\u7D50\u675F"
+  m_Name: "O-3 \u9B3C\u9B42\u4EA4\u6D41"
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ControlTrack
   m_Version: 3
   m_AnimClip: {fileID: 0}
@@ -2191,6 +2191,6 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: "O-3 Onboarding\u7D50\u675F"
+    m_DisplayName: "O-3 \u9B3C\u9B42\u4EA4\u6D41"
   m_Markers:
     m_Objects: []
