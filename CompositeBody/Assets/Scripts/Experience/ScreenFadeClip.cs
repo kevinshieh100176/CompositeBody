@@ -22,29 +22,29 @@ namespace CompositeBody.Experience
     /// wherever the clip says it should be. That is also what makes it scrubbable while
     /// authoring, which is the point of the whole show being one timeline.
     ///
-    /// LEAVING THE SCREEN BLACK IS POSSIBLE, AND DELIBERATE. When the clip ends the last value
-    /// is held, so a clip that ends at 1 leaves the screen black until something else lifts it.
-    /// For the onboarding's 「Black.」 that is right -- the dark is the end of the section, not a
-    /// transition effect -- but it does mean the next section has to fade itself up, with its
-    /// own clip or with ScreenFade.FadeIn. A clip that returns to 0 by its own end is the other
-    /// way to say it, and the curve can hold the black in the middle for as long as wanted.
+    /// THE CURVE IS THE FADE. Alpha is read straight off it, so one clip can do the whole
+    /// out-hold-in of a blackout: up, flat across the middle, down again. Three abutting clips
+    /// would say the same thing and could develop a gap between them, and a gap in a blackout
+    /// is a frame of the next section arriving early.
+    ///
+    /// The end value is held after the clip finishes, so a curve that ends high leaves the
+    /// screen dark until something lifts it. That is a legitimate thing to want -- the
+    /// onboarding's 「Black.」 is the end of a section rather than a transition -- but then the
+    /// next section has to bring the light back itself.
     /// </summary>
     [Serializable]
     public class ScreenFadeBehaviour : PlayableBehaviour
     {
-        [Tooltip("Alpha at the start of the clip. 0 is clear, 1 is the fade colour.")]
-        [Range(0f, 1f)] public float from;
-
-        [Tooltip("Alpha at the end. Held after the clip finishes, so 1 leaves the screen dark.")]
-        [Range(0f, 1f)] public float to = 1f;
-
         [Tooltip("The colour faded to. Black for a blackout.")]
         public Color color = Color.black;
 
-        [Tooltip("Shape across the clip. A curve that rises, flattens and falls does a whole " +
-                 "out-hold-in inside one clip, which is usually easier to read on the timeline " +
-                 "than three abutting ones.")]
-        public AnimationCurve shape = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        [Tooltip("Alpha across the clip: 0 is clear, 1 is the colour above, time runs 0 to 1 " +
+                 "from the clip's start to its end.\n\n" +
+                 "THE CURVE IS THE FADE, not a shape applied to one. A curve that rises, holds " +
+                 "and falls is a whole out-hold-in in a single clip, which reads better on the " +
+                 "timeline than three abutting ones and cannot develop gaps between them. A " +
+                 "curve that only rises is a plain fade out, and its end value is held.")]
+        public AnimationCurve alpha = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
         public override void ProcessFrame(Playable playable, FrameData info, object playerData)
         {
@@ -58,7 +58,7 @@ namespace CompositeBody.Experience
 
             // Zero seconds means snap: the timeline is the clock, so the value is set, never
             // animated towards. Animating here would be two clocks driving one number.
-            fade.FadeTo(Mathf.Lerp(from, to, shape.Evaluate(Mathf.Clamp01(t))), 0f);
+            fade.FadeTo(Mathf.Clamp01(alpha.Evaluate(Mathf.Clamp01(t))), 0f);
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace CompositeBody.Experience
             // is what a scrub away or a stop looks like, must not slam the screen to black.
             if (playable.GetTime() < playable.GetDuration() - 0.001) return;
 
-            fade.FadeTo(Mathf.Lerp(from, to, shape.Evaluate(1f)), 0f);
+            fade.FadeTo(Mathf.Clamp01(alpha.Evaluate(1f)), 0f);
         }
     }
 
