@@ -93,7 +93,7 @@ namespace CompositeBody.Multiplayer
 
         void Start()
         {
-            if (m_Marker == null) m_Marker = FindFirstObjectByType<CalibrationPoint>();
+            if (m_Marker == null) m_Marker = FindAnyObjectByType<CalibrationPoint>();
             if (m_Marker == null)
                 Utils.LogWarning("[HandPinchCalibrator] No CalibrationPoint in scene; pinching will do nothing.");
         }
@@ -311,7 +311,7 @@ namespace CompositeBody.Multiplayer
         {
             if (m_XROrigin != null && m_XROrigin.Camera != null) return true;
 
-            m_XROrigin = FindFirstObjectByType<XROrigin>();
+            m_XROrigin = FindAnyObjectByType<XROrigin>();
             if (m_XROrigin == null || m_XROrigin.Camera == null)
             {
                 Utils.LogError("[HandPinchCalibrator] No XROrigin with a camera; cannot calibrate.");

@@ -200,7 +200,7 @@ namespace CompositeBody.Diagnostics
             // see their own hands: their avatar's hands are hidden for them, because the avatar
             // is what everyone else sees. Checked here because the avatar films above are a
             // different set of objects entirely, so passing those says nothing about these.
-            var origin = Object.FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
+            var origin = Object.FindAnyObjectByType<Unity.XR.CoreUtils.XROrigin>();
             if (Check(origin != null, "XR Origin present"))
             {
                 var rigFilms = new List<MembraneFilmLink>();
@@ -235,7 +235,7 @@ namespace CompositeBody.Diagnostics
             }
 
             // --- the assembly pair ---
-            var halves = Object.FindObjectsByType<CompositeHalf>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var halves = Object.FindObjectsByType<CompositeHalf>(FindObjectsInactive.Include);
             Check(halves.Length == 2, $"two halves in the scene (found {halves.Length})");
 
             foreach (var half in halves)

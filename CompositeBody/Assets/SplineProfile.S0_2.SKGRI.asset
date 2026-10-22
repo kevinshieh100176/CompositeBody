@@ -1,0 +1,224 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec75ce71e21e40849beed5184a1b355f, type: 3}
+  m_Name: SplineProfile.S0_2.SKGRI
+  m_EditorClassIdentifier: KWS::KWS.SplineScriptableData
+  Splines:
+  - InitialSplinePosition: {x: 0, y: 0, z: -94}
+    ID: 0
+    SplinePoints:
+    - ID: 0
+      WorldPosition: {x: -1.0551844, y: -0.5, z: -415}
+      Width: 1.7646677
+    - ID: 1
+      WorldPosition: {x: -0.021307236, y: -0.5, z: -400.07462}
+      Width: 2.1004329
+    - ID: 2
+      WorldPosition: {x: 1.0687248, y: -0.5, z: -385.14926}
+      Width: 2.195881
+    - ID: 3
+      WorldPosition: {x: 1.8983247, y: -0.5, z: -370.22388}
+      Width: 2.2959685
+    - ID: 4
+      WorldPosition: {x: 0.13224836, y: -0.5, z: -355.2985}
+      Width: 2.2084603
+    - ID: 5
+      WorldPosition: {x: -0.63778013, y: -0.5, z: -340.37314}
+      Width: 1.7607198
+    - ID: 6
+      WorldPosition: {x: -1.6554874, y: -0.5, z: -325.44775}
+      Width: 1.7383049
+    - ID: 7
+      WorldPosition: {x: -1.1623039, y: -0.5, z: -310.5224}
+      Width: 2.0354128
+    - ID: 8
+      WorldPosition: {x: 0.78845453, y: -0.5, z: -295.59702}
+      Width: 2.3714654
+    - ID: 9
+      WorldPosition: {x: 1.1018506, y: -0.5, z: -280.67163}
+      Width: 1.9426978
+    - ID: 10
+      WorldPosition: {x: 1.6387565, y: -0.5, z: -265.74628}
+      Width: 1.9085376
+    - ID: 11
+      WorldPosition: {x: -0.015349693, y: -0.5, z: -250.82089}
+      Width: 2.0155232
+    - ID: 12
+      WorldPosition: {x: -1.3802794, y: -0.5, z: -235.89552}
+      Width: 2.0922778
+    - ID: 13
+      WorldPosition: {x: -1.2197689, y: -0.5, z: -220.97015}
+      Width: 1.7412817
+    - ID: 14
+      WorldPosition: {x: -0.9932236, y: -0.5, z: -206.04477}
+      Width: 1.8061194
+    - ID: 15
+      WorldPosition: {x: 1.1749768, y: -0.5, z: -191.1194}
+      Width: 2.2321396
+    - ID: 16
+      WorldPosition: {x: 1.4569361, y: -0.5, z: -176.19403}
+      Width: 2.101954
+    - ID: 17
+      WorldPosition: {x: 0.94033504, y: -0.5, z: -161.26866}
+      Width: 1.831332
+    - ID: 18
+      WorldPosition: {x: -0.061136056, y: -0.5, z: -146.34328}
+      Width: 2.1216226
+    - ID: 19
+      WorldPosition: {x: -1.8695145, y: -0.5, z: -131.41791}
+      Width: 2.1785018
+    - ID: 20
+      WorldPosition: {x: -1.0264714, y: -0.5, z: -116.49254}
+      Width: 2.1849673
+    - ID: 21
+      WorldPosition: {x: -0.33497268, y: -0.5, z: -101.56716}
+      Width: 1.8489206
+    - ID: 22
+      WorldPosition: {x: 1.1321771, y: -0.5, z: -86.64179}
+      Width: 2.3271582
+    - ID: 23
+      WorldPosition: {x: 1.8398468, y: -0.5, z: -71.716415}
+      Width: 2.2024996
+    - ID: 24
+      WorldPosition: {x: 0.2709765, y: -0.5, z: -56.791046}
+      Width: 2.3162096
+    - ID: 25
+      WorldPosition: {x: -0.41372594, y: -0.5, z: -41.865673}
+      Width: 1.8205857
+    - ID: 26
+      WorldPosition: {x: -1.8028619, y: -0.5, z: -26.940298}
+      Width: 2.2118497
+    - ID: 27
+      WorldPosition: {x: -1.1124979, y: -0.5, z: -12.014925}
+      Width: 2.0612538
+    - ID: 28
+      WorldPosition: {x: 0.5321931, y: -0.5, z: 2.9104478}
+      Width: 2.0446615
+    - ID: 29
+      WorldPosition: {x: 1.0604788, y: -0.5, z: 17.835821}
+      Width: 1.9001346
+    - ID: 30
+      WorldPosition: {x: 1.7967235, y: -0.5, z: 32.761192}
+      Width: 2.2410064
+    - ID: 31
+      WorldPosition: {x: -0.017645692, y: -0.5, z: 47.686565}
+      Width: 2.1695936
+    - ID: 32
+      WorldPosition: {x: -1.1128688, y: -0.5, z: 62.61194}
+      Width: 1.841716
+    - ID: 33
+      WorldPosition: {x: -1.3737546, y: -0.5, z: 77.537315}
+      Width: 1.8240855
+    - ID: 34
+      WorldPosition: {x: -1.0944669, y: -0.5, z: 92.462685}
+      Width: 2.186251
+    - ID: 35
+      WorldPosition: {x: 1.1096016, y: -0.5, z: 107.38806}
+      Width: 1.7521864
+    - ID: 36
+      WorldPosition: {x: 1.29605, y: -0.5, z: 122.31343}
+      Width: 1.8014538
+    - ID: 37
+      WorldPosition: {x: 1.2184734, y: -0.5, z: 137.2388}
+      Width: 2.229109
+    - ID: 38
+      WorldPosition: {x: -0.048589885, y: -0.5, z: 152.16418}
+      Width: 1.9141853
+    - ID: 39
+      WorldPosition: {x: -1.7516711, y: -0.5, z: 167.08955}
+      Width: 1.8446741
+    - ID: 40
+      WorldPosition: {x: -1.0482708, y: -0.5, z: 182.01492}
+      Width: 2.34836
+    - ID: 41
+      WorldPosition: {x: -0.61551213, y: -0.5, z: 196.94029}
+      Width: 2.1439648
+    - ID: 42
+      WorldPosition: {x: 1.1956307, y: -0.5, z: 211.86568}
+      Width: 2.0080035
+    - ID: 43
+      WorldPosition: {x: 1.7186996, y: -0.5, z: 226.79105}
+      Width: 1.7544016
+    - ID: 44
+      WorldPosition: {x: 0.4737926, y: -0.5, z: 241.71642}
+      Width: 2.0884583
+    - ID: 45
+      WorldPosition: {x: -0.24871421, y: -0.5, z: 256.64178}
+      Width: 2.1670125
+    - ID: 46
+      WorldPosition: {x: -1.8979237, y: -0.5, z: 271.56717}
+      Width: 2.3626735
+    - ID: 47
+      WorldPosition: {x: -1.0501873, y: -0.5, z: 286.49252}
+      Width: 1.8228207
+    - ID: 48
+      WorldPosition: {x: 0.23027566, y: -0.5, z: 301.4179}
+      Width: 1.9379919
+    - ID: 49
+      WorldPosition: {x: 1.0743864, y: -0.5, z: 316.3433}
+      Width: 2.5537903
+    - ID: 50
+      WorldPosition: {x: 1.8738031, y: -0.5, z: 331.26865}
+      Width: 2.2407439
+    - ID: 51
+      WorldPosition: {x: 0.022585273, y: -0.5, z: 346.19403}
+      Width: 2.2130194
+    - ID: 52
+      WorldPosition: {x: -0.8401802, y: -0.5, z: 361.11942}
+      Width: 1.8213103
+    - ID: 53
+      WorldPosition: {x: -1.5506701, y: -0.5, z: 376.04477}
+      Width: 1.8400824
+    - ID: 54
+      WorldPosition: {x: -1.1241254, y: -0.5, z: 390.97015}
+      Width: 2.2004485
+    - ID: 55
+      WorldPosition: {x: 0.96767014, y: -0.5, z: 405.8955}
+      Width: 2.2001631
+    - ID: 56
+      WorldPosition: {x: 1.1715636, y: -0.5, z: 420.8209}
+      Width: 2.2636883
+    - ID: 57
+      WorldPosition: {x: 1.47424, y: -0.5, z: 435.74628}
+      Width: 1.7139442
+    - ID: 58
+      WorldPosition: {x: -0.06421706, y: -0.5, z: 450.67163}
+      Width: 2.0049605
+    - ID: 59
+      WorldPosition: {x: -1.5597903, y: -0.5, z: 465.59702}
+      Width: 1.7377357
+    - ID: 60
+      WorldPosition: {x: -1.1286238, y: -0.5, z: 480.5224}
+      Width: 2.1173196
+    - ID: 61
+      WorldPosition: {x: -0.83800244, y: -0.5, z: 495.44775}
+      Width: 1.8526294
+    - ID: 62
+      WorldPosition: {x: 1.2298625, y: -0.5, z: 510.37314}
+      Width: 1.766098
+    - ID: 63
+      WorldPosition: {x: 1.5605736, y: -0.5, z: 525.2985}
+      Width: 2.200992
+    - ID: 64
+      WorldPosition: {x: 0.72713006, y: -0.5, z: 540.2239}
+      Width: 2.3611834
+    - ID: 65
+      WorldPosition: {x: -0.14944719, y: -0.5, z: 555.14923}
+      Width: 1.7441828
+    - ID: 66
+      WorldPosition: {x: -1.919405, y: -0.5, z: 570.07465}
+      Width: 1.8634405
+    - ID: 67
+      WorldPosition: {x: -1.0042152, y: -0.5, z: 585}
+      Width: 2.1562495
+    VertexCountBetweenPoints: 20
+    Depth: 3

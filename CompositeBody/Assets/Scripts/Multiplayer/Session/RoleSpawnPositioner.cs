@@ -82,7 +82,7 @@ namespace CompositeBody.Multiplayer
             };
             if (target == null) return;
 
-            var origin = FindFirstObjectByType<XROrigin>();
+            var origin = FindAnyObjectByType<XROrigin>();
             if (origin == null)
             {
                 Utils.LogWarning("[RoleSpawnPositioner] No XROrigin in scene; cannot place the rig.");

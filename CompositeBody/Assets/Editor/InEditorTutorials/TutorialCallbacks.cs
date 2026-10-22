@@ -66,12 +66,12 @@ public class TutorialCallbacks : ScriptableObject
 
     public void SelectNetworkManager()
     {
-        Selection.activeObject = FindFirstObjectByType<NetworkManagerVRMultiplayer>();
+        Selection.activeObject = FindAnyObjectByType<NetworkManagerVRMultiplayer>();
     }
 
     public void SelectOfflineMenuAppearancePanel()
     {
-        var appearanceMenus = FindObjectsByType<PlayerAppearanceMenu>(FindObjectsSortMode.None);
+        var appearanceMenus = FindObjectsByType<PlayerAppearanceMenu>();
         foreach(var menu in appearanceMenus)
         {
             if(menu.transform.parent.name != "Offline Menu UI")

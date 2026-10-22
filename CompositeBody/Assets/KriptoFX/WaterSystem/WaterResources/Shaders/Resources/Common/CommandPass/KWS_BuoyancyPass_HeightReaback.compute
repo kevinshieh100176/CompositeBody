@@ -1,0 +1,72 @@
+#pragma kernel SearchHeightPositions
+
+#pragma multi_compile _ KWS_USE_DYNAMIC_WAVES KWS_USE_DYNAMIC_WAVES_ATLAS
+
+#include "../../PlatformSpecific/Includes/KWS_VertFragIncludes.cginc"
+
+struct WaterSurfaceData
+{
+	float3 position;
+	float foam;
+
+	float2 velocity;
+};
+RWStructuredBuffer<WaterSurfaceData> SurfaceDataBuffer;
+uint KWS_SurfaceDataBufferCount;
+
+
+[numthreads(64, 1, 1)]
+void SearchHeightPositions(uint2 id : SV_DispatchThreadID)
+{
+	if (id.x >= KWS_SurfaceDataBufferCount) return;
+
+	WaterSurfaceData data = SurfaceDataBuffer[id.x];
+	const uint iterations = 4;
+	
+	float3 invertedDisplacedPosition = data.position;
+	for (uint i = 0; i < iterations; i++)
+	{
+		float3 displacement = GetFftWavesDisplacementBuoyancy(invertedDisplacedPosition);
+		float3 error = (invertedDisplacedPosition + displacement) - data.position;
+		invertedDisplacedPosition -= error;
+	}
+
+	float3 disp = GetFftWavesDisplacementBuoyancy(invertedDisplacedPosition);
+	float2 velocity = -clamp(disp.xz * 0.25, -1, 1);
+	
+	#if defined(KWS_USE_DYNAMIC_WAVES) || defined(KWS_USE_DYNAMIC_WAVES_ATLAS)
+		
+		float2 zoneUV = 0;
+		if (TryGetDynamicWavesZoneUV(invertedDisplacedPosition, zoneUV))
+		{
+			#ifdef KWS_PRE_PASS
+				float4 dynamicWaves = GetDynamicWavesZone(zoneUV);
+			#else
+				float4 dynamicWaves = GetDynamicWavesZoneBicubic(zoneUV);
+			#endif
+			
+			float borderFade = GetDynamicWavesBorderFading(zoneUV);
+			dynamicWaves *= borderFade;
+			disp *= 1-borderFade;
+
+			if(dynamicWaves.z > 0.1)
+			{
+				disp.y += dynamicWaves.z + dynamicWaves.w;
+				disp.xz += dynamicWaves.xy * dynamicWaves.z * 0.1;
+				velocity += dynamicWaves.xy;
+			}
+			
+		}
+		
+	#endif
+
+
+	float waterSurfaceHeight = KWS_WaterPositionArray[1].y;
+
+	data.position.y = disp.y + waterSurfaceHeight;
+	data.velocity = velocity;
+	
+
+	SurfaceDataBuffer[id.x] = data;
+
+}

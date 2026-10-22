@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec75ce71e21e40849beed5184a1b355f, type: 3}
+  m_Name: SplineProfile.S0_2.River2
+  m_EditorClassIdentifier: KWS::KWS.SplineScriptableData
+  Splines:
+  - InitialSplinePosition: {x: 0, y: 0, z: 0}
+    ID: 0
+    SplinePoints:
+    - ID: 0
+      WorldPosition: {x: -2.54, y: 5.849124, z: 77.41}
+      Width: 2.1
+    - ID: 1
+      WorldPosition: {x: -2.16, y: 5.6873364, z: 75.94}
+      Width: 2.2927115
+    - ID: 2
+      WorldPosition: {x: -1.78, y: 4.9790316, z: 74.47}
+      Width: 2.2031002
+    - ID: 3
+      WorldPosition: {x: -1.4, y: 4.350406, z: 73}
+      Width: 1.9624467
+    - ID: 4
+      WorldPosition: {x: -1.3, y: 4.0003843, z: 71.4}
+      Width: 1.923309
+    - ID: 5
+      WorldPosition: {x: -1.2, y: 4.0778913, z: 69.8}
+      Width: 2.143024
+    - ID: 6
+      WorldPosition: {x: -1.1, y: 4.550286, z: 68.2}
+      Width: 2.2997086
+    - ID: 7
+      WorldPosition: {x: -1, y: 5.2479873, z: 66.6}
+      Width: 2.1638198
+    - ID: 8
+      WorldPosition: {x: -0.9, y: 5.789022, z: 65}
+      Width: 1.9344347
+    - ID: 9
+      WorldPosition: {x: -0.84, y: 5.6503463, z: 63.4}
+      Width: 1.9476031
+    - ID: 10
+      WorldPosition: {x: -0.78000003, y: 5.2521615, z: 61.8}
+      Width: 2.1840334
+    - ID: 11
+      WorldPosition: {x: -0.72, y: 4.8120914, z: 60.2}
+      Width: 2.2973542
+    - ID: 12
+      WorldPosition: {x: -0.66, y: 4.314221, z: 58.6}
+      Width: 2.1215508
+    - ID: 13
+      WorldPosition: {x: -0.6, y: 3.7859356, z: 57}
+      Width: 1.9141752
+    - ID: 14
+      WorldPosition: {x: -0.54, y: 3.250001, z: 55.4}
+      Width: 1.9790331
+    - ID: 51
+      WorldPosition: {x: -1.2, y: -0.5, z: -5}
+      Width: 2.0358446
+    VertexCountBetweenPoints: 20
+    Depth: 10

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec75ce71e21e40849beed5184a1b355f, type: 3}
+  m_Name: SplineProfile.S0_2.NewRiver
+  m_EditorClassIdentifier: KWS::KWS.SplineScriptableData
+  Splines:
+  - InitialSplinePosition: {x: 0, y: 0, z: 0}
+    ID: 0
+    SplinePoints:
+    - ID: 4
+      WorldPosition: {x: 0.0805161, y: 5.276975, z: 104.12189}
+      Width: 2.2175784
+    - ID: 9
+      WorldPosition: {x: -0.22972977, y: 5.183013, z: 88.90482}
+      Width: 2.079348
+    - ID: 12
+      WorldPosition: {x: 0.01944685, y: -1.0725899, z: 73.53623}
+      Width: 0.25
+    - ID: 13
+      WorldPosition: {x: -0.27386832, y: -0.02533114, z: 61.01856}
+      Width: 1.9782726
+    - ID: 42
+      WorldPosition: {x: 0.4, y: -0.35632133, z: -5}
+      Width: 2.1511278
+    VertexCountBetweenPoints: 20
+    Depth: 10

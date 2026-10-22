@@ -176,7 +176,7 @@ namespace CompositeBody.Diagnostics
             yield return null; // BeatController binds on a coroutine, so give it a frame
 
             BeatController found = null;
-            foreach (var controller in FindObjectsByType<BeatController>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var controller in FindObjectsByType<BeatController>(FindObjectsInactive.Include))
             {
                 if (controller.beat == beat) { found = controller; break; }
             }

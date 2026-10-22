@@ -11,7 +11,7 @@ public class TextConverter : MonoBehaviour
     static void UpdateLegacyText()
     {
         Debug.Log("Converting Legacy Text to TMP");
-        Text[] allText = FindObjectsByType<Text>(FindObjectsSortMode.None);
+        Text[] allText = FindObjectsByType<Text>();
         Debug.Log($"Found {allText.Length} Legacy Text{(allText.Length > 1 ? "s" : "")}");
         List<TextMigrator> migratorList = new List<TextMigrator>();
         foreach (var t in allText)

@@ -160,7 +160,7 @@ namespace CompositeBody.Multiplayer
             Application.logMessageReceived += CaptureFirstArrayIndexError;
 
             int disabled = 0;
-            foreach (var provider in FindObjectsByType<LocomotionProvider>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var provider in FindObjectsByType<LocomotionProvider>(FindObjectsInactive.Include))
             {
                 if (!provider.enabled) continue;
                 provider.enabled = false;
@@ -172,7 +172,7 @@ namespace CompositeBody.Multiplayer
             // "Array index (0) is out of bounds" every frame. Matched by namespace rather than
             // concrete type so this assembly needs no reference to the XR Hands package.
             int handsDisabled = 0;
-            foreach (var behaviour in FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var behaviour in FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include))
             {
                 if (behaviour == null || !behaviour.enabled) continue;
 
@@ -227,7 +227,7 @@ namespace CompositeBody.Multiplayer
         /// </summary>
         void StandCameraUp()
         {
-            m_Origin = FindFirstObjectByType<XROrigin>();
+            m_Origin = FindAnyObjectByType<XROrigin>();
             if (m_Origin == null || m_Origin.Camera == null) return;
 
             // The pose driver goes first. A headset that is not being worn can still be feeding a

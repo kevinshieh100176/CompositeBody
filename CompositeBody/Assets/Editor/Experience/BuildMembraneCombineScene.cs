@@ -526,7 +526,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return;
             }
 
-            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include))
             {
                 onValidate.Invoke(netObj, null);
                 EditorUtility.SetDirty(netObj);
@@ -540,15 +540,15 @@ namespace CompositeBody.Multiplayer.EditorSetup
         {
             var required = new (string name, bool present)[]
             {
-                ("NetworkManager", Object.FindFirstObjectByType<NetworkManager>() != null),
-                ("XRINetworkGameManager", Object.FindFirstObjectByType<XRINetworkGameManager>() != null),
-                ("PlayerHudNotification", Object.FindFirstObjectByType<PlayerHudNotification>() != null),
-                ("XROrigin", Object.FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>() != null),
-                ("GameSessionManager", Object.FindFirstObjectByType<GameSessionManager>() != null),
-                ("StoryProgressManager", Object.FindFirstObjectByType<StoryProgressManager>() != null),
-                ("StaffControlPanel", Object.FindFirstObjectByType<StaffControlPanel>() != null),
-                ("CalibrationPoint", Object.FindFirstObjectByType<CalibrationPoint>() != null),
-                ("HandPinchCalibrator", Object.FindFirstObjectByType<HandPinchCalibrator>() != null),
+                ("NetworkManager", Object.FindAnyObjectByType<NetworkManager>() != null),
+                ("XRINetworkGameManager", Object.FindAnyObjectByType<XRINetworkGameManager>() != null),
+                ("PlayerHudNotification", Object.FindAnyObjectByType<PlayerHudNotification>() != null),
+                ("XROrigin", Object.FindAnyObjectByType<Unity.XR.CoreUtils.XROrigin>() != null),
+                ("GameSessionManager", Object.FindAnyObjectByType<GameSessionManager>() != null),
+                ("StoryProgressManager", Object.FindAnyObjectByType<StoryProgressManager>() != null),
+                ("StaffControlPanel", Object.FindAnyObjectByType<StaffControlPanel>() != null),
+                ("CalibrationPoint", Object.FindAnyObjectByType<CalibrationPoint>() != null),
+                ("HandPinchCalibrator", Object.FindAnyObjectByType<HandPinchCalibrator>() != null),
             };
 
             bool ok = true;
@@ -565,7 +565,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             // Both membrane figures, with a film that actually has geometry.
             var films = new List<SkinnedMeshRenderer>();
-            foreach (var smr in Object.FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var smr in Object.FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Include))
             {
                 if (smr.name == "MembraneFilm") films.Add(smr);
             }
@@ -598,7 +598,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Debug.Log($"[Combine] OK   2 membrane films ({films[0].sharedMesh.vertexCount} verts each)");
 
             // The assembly pair, with everything the server needs to decide the weld.
-            var halves = Object.FindObjectsByType<CompositeHalf>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var halves = Object.FindObjectsByType<CompositeHalf>(FindObjectsInactive.Include);
             if (halves.Length != 2)
             {
                 Debug.LogError($"[Combine] RESULT: FAIL - expected 2 halves, found {halves.Length}.");
@@ -649,7 +649,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             }
             Debug.Log("[Combine] OK   assembly pair: one anchor, one half per role, fully networked");
 
-            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var netObj in Object.FindObjectsByType<NetworkObject>(FindObjectsInactive.Include))
             {
                 uint hash = ReadGlobalObjectIdHash(netObj);
                 if (hash == 0)

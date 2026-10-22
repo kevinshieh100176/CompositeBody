@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 208a3c14a53357c49b24e31e635262dd, type: 3}
+  m_Name: FlowProfile.S0_2.SKGRI
+  m_EditorClassIdentifier: KWS::KWS.FlowingScriptableData
+  AreaSize: 1000
+  AreaPosition: {x: 0, y: 0, z: 85}
+  FlowmapResolution: 4096
+  FlowmapTexture: {fileID: 7158084264069255513, guid: 2a55d04d55750424c88af25e42047796,
+    type: 3}
+  FluidsMaskTexture: {fileID: 0}
+  FluidsPrebakedTexture: {fileID: 0}
