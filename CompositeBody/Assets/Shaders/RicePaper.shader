@@ -72,6 +72,11 @@ Shader "CompositeBody/RicePaper"
                 float2 uv         : TEXCOORD2;
                 float  fogFactor  : TEXCOORD3;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
+                // Carries which eye this vertex belongs to into the fragment stage. Both eyes
+                // are drawn in one pass with instancing, so without this channel the fragment
+                // stage has no way to know which of the two it is shading and uses whichever
+                // was set last -- the paper came out in the wrong place, or only once.
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             float Hash21(float2 p)
@@ -103,6 +108,7 @@ Shader "CompositeBody/RicePaper"
                 Varyings OUT;
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 VertexPositionInputs p = GetVertexPositionInputs(IN.positionOS.xyz);
                 OUT.positionCS = p.positionCS;
                 OUT.positionWS = p.positionWS;
@@ -138,6 +144,7 @@ Shader "CompositeBody/RicePaper"
             half4 frag(Varyings IN, bool isFront : SV_IsFrontFace) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
 
                 half3 N = normalize(IN.normalWS);
                 // Always shade the face that is looking at us; the "other side" is handled by the transmission term.
