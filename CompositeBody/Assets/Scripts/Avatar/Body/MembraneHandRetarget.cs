@@ -85,6 +85,47 @@ namespace CompositeBody.Avatar.Body
         [SerializeField, Tooltip("As the left, for the right wrist.")]
         Vector3 m_RightWristTweak;
 
+        [Header("Finger nudges (degrees, both hands)")]
+        [Tooltip("Turned on top of the computed mapping, in the Ch36 bone's own axes, and shared " +
+                 "by the left and right hands -- a hand is a mirror of the other, so a correction " +
+                 "that suits one suits both.\n\n" +
+                 "APPLIED EVERY FRAME, not baked in when the pose is captured, so a value changed " +
+                 "during Play shows in the headset immediately. That is the only way to dial one " +
+                 "in: the hands are only visible while playing.\n\n" +
+                 "Play mode still discards Inspector edits on exit, so copy the component's " +
+                 "values before stopping, or set them on the XRI_Network_Player_Avatar prefab.\n\n" +
+                 "Leave at zero where the computed mapping is already right. The per-finger line " +
+                 "in the log reports how far each finger's aim is from the player's; the nudge is " +
+                 "right when that number stops falling.")]
+        [SerializeField] Vector3 m_ThumbNudge;
+        [SerializeField] Vector3 m_IndexNudge;
+        [SerializeField] Vector3 m_MiddleNudge;
+        [SerializeField] Vector3 m_RingNudge;
+        [SerializeField] Vector3 m_LittleNudge;
+
+        /// <summary>The five nudges as rotations, rebuilt once a frame rather than per bone.</summary>
+        readonly Quaternion[] m_Nudge = new Quaternion[5];
+
+        void RefreshNudges()
+        {
+            m_Nudge[0] = Quaternion.Euler(m_ThumbNudge);
+            m_Nudge[1] = Quaternion.Euler(m_IndexNudge);
+            m_Nudge[2] = Quaternion.Euler(m_MiddleNudge);
+            m_Nudge[3] = Quaternion.Euler(m_RingNudge);
+            m_Nudge[4] = Quaternion.Euler(m_LittleNudge);
+        }
+
+        /// <summary>Which finger an XR joint name belongs to, or -1.</summary>
+        static int FingerOf(string xr)
+        {
+            if (xr.StartsWith("Thumb", System.StringComparison.Ordinal)) return 0;
+            if (xr.StartsWith("Index", System.StringComparison.Ordinal)) return 1;
+            if (xr.StartsWith("Middle", System.StringComparison.Ordinal)) return 2;
+            if (xr.StartsWith("Ring", System.StringComparison.Ordinal)) return 3;
+            if (xr.StartsWith("Little", System.StringComparison.Ordinal)) return 4;
+            return -1;
+        }
+
         /// <summary>
         /// Whether the pairing detail is still worth printing.
         ///
@@ -135,6 +176,9 @@ namespace CompositeBody.Avatar.Body
         {
             public Transform source, target, sourceWrist, targetWrist;
             public Quaternion offset;
+
+            /// <summary>0 thumb to 4 little, or -1 for a wrist. Indexes the hand-tuned nudges.</summary>
+            public int finger;
         }
 
         readonly List<Pair> m_Pairs = new();
@@ -191,6 +235,8 @@ namespace CompositeBody.Avatar.Body
                 }
             }
 
+            RefreshNudges();
+
             // The wrists first, because every finger below is expressed relative to them.
             //
             // MembraneBodyRig solves the arm onto the hand's POSITION only -- Solve takes
@@ -202,6 +248,11 @@ namespace CompositeBody.Avatar.Body
                 Pair w = m_WristPairs[i];
                 if (w.source == null || w.target == null) continue;
                 w.target.rotation = w.source.rotation * w.offset;
+
+                // Live, for the same reason the fingers are: a wrist nudge that only took effect
+                // on a recapture could not be judged against the hand it is meant to match.
+                Vector3 wristNudge = w.finger == -1 ? m_LeftWristTweak : m_RightWristTweak;
+                if (wristNudge != Vector3.zero) w.target.rotation *= Quaternion.Euler(wristNudge);
             }
 
             for (int i = 0; i < m_Pairs.Count; i++)
@@ -215,6 +266,13 @@ namespace CompositeBody.Avatar.Body
                 // world rotation on a parent is immediately corrected by the child's own.
                 Quaternion relative = Quaternion.Inverse(p.sourceWrist.rotation) * p.source.rotation;
                 p.target.rotation = p.targetWrist.rotation * relative * p.offset;
+
+                // The hand-tuned nudge, after the computed mapping and in the target bone's own
+                // axes, so turning it in the Inspector turns the finger the way it looks like it
+                // should. Live rather than baked into the offset at capture: these can only be
+                // judged while playing, with a headset on, and a value that needed a recapture to
+                // take effect could not be dialled in at all.
+                if (p.finger >= 0) p.target.rotation *= m_Nudge[p.finger];
 
                 // Watch one bone per hand. A retarget reading a skeleton that never moves looks
                 // exactly like a retarget that is broken, and the networked hand carries more
@@ -431,6 +489,7 @@ namespace CompositeBody.Avatar.Body
                     sourceWrist = sourceWrist,
                     targetWrist = targetWrist,
                     offset = offset,
+                    finger = FingerOf(xr),
                 });
                 paired++;
 
@@ -460,11 +519,6 @@ namespace CompositeBody.Avatar.Body
                 ? palmSource * Quaternion.Inverse(palmTarget)
                 : Quaternion.Inverse(sourceWrist.rotation) * targetWrist.rotation;
 
-            // Last resort, and deliberately a knob rather than a guess: if a rig turns up whose
-            // palm frame still lands wrong, this dials it out without another build.
-            Vector3 tweak = xrPrefix == "L_" ? m_LeftWristTweak : m_RightWristTweak;
-            if (tweak != Vector3.zero) wristOffset *= Quaternion.Euler(tweak);
-
             m_WristPairs.Add(new Pair
             {
                 source = sourceWrist,
@@ -472,6 +526,10 @@ namespace CompositeBody.Avatar.Body
                 sourceWrist = sourceWrist,
                 targetWrist = targetWrist,
                 offset = wristOffset,
+
+                // -1 left, -2 right. A wrist belongs to no finger, so the field is free to say
+                // which side it is, which is what the live nudge below needs.
+                finger = xrPrefix == "L_" ? -1 : -2,
             });
 
             if (Chatty)
