@@ -44,8 +44,6 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _LegFadeSoftness: 0.15
-    - _LegFadeStart: 0.5
     - _AlphaClip: 1
     - _AlphaToMask: 1
     - _Blend: 0
@@ -54,6 +52,8 @@ Material:
     - _Cull: 2
     - _DstBlend: 0
     - _DstBlendAlpha: 0
+    - _LegFadeSoftness: 0.15
+    - _LegFadeStart: 0.05
     - _MaxDistance: 0
     - _Metallic: 0
     - _MinDistance: 0
