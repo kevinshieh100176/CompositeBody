@@ -41,10 +41,13 @@ namespace CompositeBody.Diagnostics
                                  "else with a debugId -- no code needed.")]
         Binding[] m_Bindings =
         {
-            new() { key = Key.Digit1, debugId = "o0.awakening", target = DebugFireTarget.Local },
-            new() { key = Key.Digit2, debugId = "beat.O2_Grasp", target = DebugFireTarget.Local },
-            new() { key = Key.Digit3, debugId = "beat.O1_Control", target = DebugFireTarget.Local },
-            new() { key = Key.Digit4, debugId = "beat.O3_Communion", target = DebugFireTarget.Local },
+            // Letters, and mnemonic ones: Touch, Grasp, Lamp, commuNion. Digit1 and friends are
+            // the number row rather than the keypad, but the names read as keypad and a key you
+            // believe you pressed is worse than one you know you have not.
+            new() { key = Key.T, debugId = "o0.awakening", target = DebugFireTarget.Local },
+            new() { key = Key.G, debugId = "beat.O2_Grasp", target = DebugFireTarget.Local },
+            new() { key = Key.L, debugId = "beat.O1_Control", target = DebugFireTarget.Local },
+            new() { key = Key.N, debugId = "beat.O3_Communion", target = DebugFireTarget.Local },
         };
 
         [SerializeField, Tooltip("Hold this to use the number row, so typing a seat number into " +

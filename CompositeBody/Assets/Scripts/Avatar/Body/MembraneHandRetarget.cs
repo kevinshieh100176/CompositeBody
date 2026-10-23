@@ -59,6 +59,17 @@ namespace CompositeBody.Avatar.Body
                      "never the GameObject: switching that off would stop the skinning and, on " +
                      "a networked hand, its NetworkTransform with it.")]
             public bool hideDriverMesh = true;
+
+            [Tooltip("Hide the membrane film on the driver too, which Never Hide would otherwise " +
+                     "protect.\n\n" +
+                     "That film sits on the TRACKED hand, while this model's hand is wherever " +
+                     "MembraneBodyRig could reach -- measured at 13 to 32 cm apart. So it does " +
+                     "not wrap this hand, it stands beside it, and the other player sees two " +
+                     "pairs.\n\n" +
+                     "This removes the second pair without fixing why they are apart. The body " +
+                     "and head films are elsewhere in the hierarchy and are untouched; only the " +
+                     "two on the hands go.")]
+            public bool hideDriverMembrane = true;
         }
 
         [SerializeField] Hand m_Left = new();
@@ -468,7 +479,8 @@ namespace CompositeBody.Avatar.Body
                 return 0;
             }
 
-            if (hand.hideDriverMesh && hand.driverRoot != null) HideMesh(hand.driverRoot, prefix);
+            if (hand.hideDriverMesh && hand.driverRoot != null)
+                HideMesh(hand.driverRoot, prefix, hand.hideDriverMembrane);
 
             Transform[] bones = hand.targetRoot.GetComponentsInChildren<Transform>(true);
             BindPose bind = BindPose.Around(hand.targetRoot);
@@ -691,13 +703,13 @@ namespace CompositeBody.Avatar.Body
         /// came from the other side of the room, with nothing in any log to narrow it down.
         /// Hiding zero and hiding everything look identical from here without the number.
         /// </summary>
-        void HideMesh(Transform root, string prefix)
+        void HideMesh(Transform root, string prefix, bool includeMembrane)
         {
             int hidden = 0, protectedCount = 0;
 
             foreach (Renderer r in root.GetComponentsInChildren<Renderer>(true))
             {
-                if (IsProtected(r.name)) { protectedCount++; continue; }
+                if (!includeMembrane && IsProtected(r.name)) { protectedCount++; continue; }
 
                 r.forceRenderingOff = true;
                 m_Hidden.Add(r);
