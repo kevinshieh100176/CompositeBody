@@ -8,8 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MembraneAvatarBodyDither
-  m_Shader: {fileID: -6465566751694194690, guid: 2490bf543e8961146a8dfabde490eadc,
-    type: 3}
+  m_Shader: {fileID: 4800000, guid: 3beccc375a4edff4fb05232f369215a5, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -45,6 +44,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _LegFadeSoftness: 0.15
+    - _LegFadeStart: 0.5
     - _AlphaClip: 1
     - _AlphaToMask: 1
     - _Blend: 0
