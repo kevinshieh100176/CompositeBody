@@ -2535,6 +2535,7 @@ GameObject:
   m_Component:
   - component: {fileID: 785909516}
   - component: {fileID: 785909517}
+  - component: {fileID: 446400731}
   m_Layer: 0
   m_Name: Playspace
   m_TagString: Untagged
@@ -7370,3 +7371,15 @@ SceneRoots:
   - {fileID: 785909516}
   - {fileID: 1919931883}
   - {fileID: 1099148427}
+--- !u!114 &446400731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 785909515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c267696f7df0cd44bba48a4888789648, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.Playspace
