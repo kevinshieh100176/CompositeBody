@@ -266,6 +266,10 @@ namespace CompositeBody.Avatar.Body
             }
 
             Measure(bound, joints);
+
+            if (joints.Has(XRHandJointID.Wrist) && hand.targetRoot != null)
+                m_WristGap[isLeft ? 0 : 1] =
+                    Vector3.Distance(hand.targetRoot.position, joints.At(XRHandJointID.Wrist));
         }
 
         /// <summary>
@@ -768,6 +772,16 @@ namespace CompositeBody.Avatar.Body
         float m_NextReport;
 
         /// <summary>
+        /// How far Ch36's wrist sits from the tracked one, per hand.
+        ///
+        /// The retarget sets a wrist's ROTATION and never its position -- that comes from
+        /// MembraneBodyRig's arm solve. So the two can disagree, and when they do the other
+        /// player sees two pairs of hands: this body's, where the arm reached, and the membrane
+        /// films, which sit on the tracked hand. Four hands, with nothing in any log to say why.
+        /// </summary>
+        readonly float[] m_WristGap = { -1f, -1f };
+
+        /// <summary>
         /// Whether anything was measured at all this period. Without it the report prints 0.0
         /// degrees when no hand is tracked, which reads as a perfect result and is the opposite
         /// of one. Two diagnostics have already been thrown away this week for saying nothing
@@ -809,6 +823,20 @@ namespace CompositeBody.Avatar.Body
             {
                 report.Append($"\n[HandRetarget]     {names[f]}: aim off by {m_Spread[f]:0.0} deg");
                 m_Spread[f] = 0f;
+            }
+
+            for (int h = 0; h < 2; h++)
+            {
+                if (m_WristGap[h] < 0f) continue;
+
+                report.Append($"\n[HandRetarget]     {(h == 0 ? "left" : "right")} wrist sits " +
+                              $"{m_WristGap[h]:0.000} m from the tracked one");
+
+                // A centimetre is the model's own wrist offset. A hand's width is two pairs.
+                if (m_WristGap[h] > 0.05f)
+                    report.Append(" -- FAR. The arm solve is not reaching the tracked hand, so " +
+                                  "this body's hands and the membrane films are in different " +
+                                  "places and read as two pairs.");
             }
 
             Debug.Log($"[HandRetarget] {Who()}: worst aim error over the last 10s." + report, this);
