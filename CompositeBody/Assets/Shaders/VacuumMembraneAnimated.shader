@@ -75,6 +75,10 @@ Shader "CompositeBody/VacuumMembraneAnimated"
         _TranslucencyPower ("Translucency Power", Range(1, 16)) = 4.0
         _AmbientIntensity ("Ambient Intensity", Range(0, 2)) = 0.55
 
+        [Header(Legs)]
+        _LegFadeStart ("Fade start height (m), 0 is off", Float) = 0.0
+        _LegFadeSoftness ("Fade softness (m)", Range(0.001, 1)) = 0.15
+
         [Header(Debug)]
         [Toggle] _ShowContact ("Visualise Contact (red on skin blue spanning air)", Float) = 0
     }
@@ -132,6 +136,8 @@ Shader "CompositeBody/VacuumMembraneAnimated"
                 float _Reveal;
                 float4 _GrowOrigin;
                 float _GrowRadius;
+                float _LegFadeStart;
+                float _LegFadeSoftness;
                 float _GrowSoftness;
                 float _GrowInflate;
                 float _GrowEdgeFrost;
@@ -403,6 +409,17 @@ Shader "CompositeBody/VacuumMembraneAnimated"
                 float alpha = lerp(_ClearAlpha, _FrostAlpha, frost);
                 alpha = saturate(alpha + fresnel * _EdgeOpacity);
                 alpha *= reveal;
+
+                // The film stops where the body it wraps stops. Measured on the REST position,
+                // not the displaced one, so a membrane billowing outward near the cut does not
+                // swim across the line and flicker. In the renderer's own space, where y is
+                // height above the avatar's origin -- the same measure the body uses, and the
+                // same origin, since both hang off MembraneBody at zero.
+                //
+                // A start of 0 leaves everything above the floor fully present, which is why
+                // that is the default: the head and the hands share this shader and must not
+                // acquire an opinion about knees.
+                alpha *= smoothstep(_LegFadeStart - _LegFadeSoftness, _LegFadeStart, IN.restOS.y);
 
                 float wrapped = saturate((NoL + 0.55) / 1.55);
                 float3 color = film * wrapped * mainLight.color * atten * (0.35 + frost * 0.65);

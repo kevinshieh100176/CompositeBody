@@ -25,6 +25,8 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
+    - _LegFadeSoftness: 0.15
+    - _LegFadeStart: 0.5
     - _AmbientIntensity: 0.55
     - _BreathAmount: 0
     - _BreathNormal: 20
