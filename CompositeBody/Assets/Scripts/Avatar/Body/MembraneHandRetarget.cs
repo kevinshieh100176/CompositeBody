@@ -223,6 +223,8 @@ namespace CompositeBody.Avatar.Body
                 if (r != null && !r.forceRenderingOff) r.forceRenderingOff = true;
             }
 
+            SweepForLateDriverMeshes();
+
             m_Nudge[0] = Quaternion.Euler(m_ThumbNudge);
             m_Nudge[1] = Quaternion.Euler(m_IndexNudge);
             m_Nudge[2] = Quaternion.Euler(m_MiddleNudge);
@@ -634,6 +636,48 @@ namespace CompositeBody.Avatar.Body
         }
 
         // --- hiding ------------------------------------------------------------------------------
+
+        float m_NextSweep;
+
+        /// <summary>
+        /// Look again for driver meshes that were not there when this bound.
+        ///
+        /// JointBasedHand switches between a Quest hand and an AndroidXR one by SetActive, from
+        /// its own Start and again whenever the platform changes -- which is after this has
+        /// collected the renderers to hide. Whichever variant comes on late was never in the
+        /// list, so it draws, and the other player sees FOUR hands: this avatar's own, and a
+        /// tracked pair standing in the same place.
+        ///
+        /// A sweep rather than a rebind: the binding is right, only the set of renderers has
+        /// grown. Twice a second, because the thing it is catching happens once at spawn and
+        /// again only if someone changes platform mid-session, and the cost is a
+        /// GetComponentsInChildren on two small hierarchies.
+        /// </summary>
+        void SweepForLateDriverMeshes()
+        {
+            if (Time.unscaledTime < m_NextSweep) return;
+            m_NextSweep = Time.unscaledTime + 0.5f;
+
+            SweepOne(m_Left);
+            SweepOne(m_Right);
+        }
+
+        void SweepOne(Hand hand)
+        {
+            if (hand == null || !hand.hideDriverMesh || hand.driverRoot == null) return;
+
+            foreach (Renderer r in hand.driverRoot.GetComponentsInChildren<Renderer>(true))
+            {
+                if (r == null || r.forceRenderingOff || IsProtected(r.name)) continue;
+
+                r.forceRenderingOff = true;
+                if (!m_Hidden.Contains(r)) m_Hidden.Add(r);
+
+                if (m_LogPairing)
+                    Debug.Log($"[HandRetarget] {Who()}: hid '{r.name}', which appeared after " +
+                              "binding -- the platform's hand variant comes on late.", this);
+            }
+        }
 
         void HideMesh(Transform root)
         {
