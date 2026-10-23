@@ -41,7 +41,7 @@ Material:
     - _GlitchSeed: 3
     - _GlitchShift: 0.05
     - _GlitchSlabs: 48
-    - _KeepScanColor: 0
+    - _KeepScanColor: 1
     - _MinPixels: 1.5
     - _Phase: 0
     - _PointSize: 0.0045
