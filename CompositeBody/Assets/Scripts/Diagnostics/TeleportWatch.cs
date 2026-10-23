@@ -31,8 +31,26 @@ namespace CompositeBody.Diagnostics
         float m_Threshold = 0.5f;
 
         XROrigin m_Rig;
+        Transform m_Avatar;
         Vector3 m_LastWorld, m_LastLocal, m_LastPlayspace;
+        Vector3 m_LastAvatarWorld, m_LastAvatarLocal;
         bool m_Primed;
+
+        /// <summary>
+        /// The local player's avatar root, which is a different object from the rig and can move
+        /// independently of it. That is the whole reason this watches both: the rig is what the
+        /// player sees through, the avatar is what the other player sees, and when they part
+        /// company the headset shows nothing wrong at all.
+        /// </summary>
+        Transform FindAvatar()
+        {
+            foreach (var p in FindObjectsByType<XRMultiplayer.XRINetworkPlayer>(
+                         FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (p.IsOwner) return p.transform;
+            }
+            return null;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Hook()
@@ -94,6 +112,48 @@ namespace CompositeBody.Diagnostics
             }
 
             m_LastWorld = world; m_LastLocal = local; m_LastPlayspace = space;
+
+            WatchAvatar(playspace);
+        }
+
+        void WatchAvatar(Transform playspace)
+        {
+            if (m_Avatar == null) { m_Avatar = FindAvatar(); if (m_Avatar == null) return; }
+
+            Vector3 world = m_Avatar.position;
+            Vector3 local = m_Avatar.localPosition;
+
+            if (m_LastAvatarWorld == Vector3.zero && m_LastAvatarLocal == Vector3.zero)
+            {
+                m_LastAvatarWorld = world; m_LastAvatarLocal = local;
+                return;
+            }
+
+            float moved = Vector3.Distance(world, m_LastAvatarWorld);
+            if (moved >= m_Threshold)
+            {
+                string parent = m_Avatar.parent == null ? "(scene root)" : m_Avatar.parent.name;
+                bool onPlayspace = playspace != null && m_Avatar.parent == playspace;
+
+                float show = ShowTimelineDriver.Instance != null
+                    ? ShowTimelineDriver.Instance.showTime : -1f;
+
+                Debug.LogWarning(
+                    $"[TeleportWatch] the AVATAR moved {moved:0.00} m in one frame at show " +
+                    $"{(show >= 0f ? $"{(int)show / 60:00}:{(int)show % 60:00} ({show:0.0}s)" : "time unknown")}." +
+                    $"\n[TeleportWatch]   avatar world {m_LastAvatarWorld:F2} -> {world:F2}" +
+                    $"\n[TeleportWatch]   avatar local {m_LastAvatarLocal:F2} -> {local:F2}" +
+                    $"\n[TeleportWatch]   parent '{parent}'" +
+                    (onPlayspace
+                        ? ", which IS the playspace, so PlayspaceRider did its job and something " +
+                          "else moved the avatar inside it."
+                        : ", which is NOT the playspace. PlayspaceRider never parented this " +
+                          "avatar, so its head and hands are replicating local coordinates " +
+                          "against the wrong frame -- that alone will put it somewhere else " +
+                          "entirely."), this);
+            }
+
+            m_LastAvatarWorld = world; m_LastAvatarLocal = local;
         }
     }
 }

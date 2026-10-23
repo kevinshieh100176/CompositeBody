@@ -32,6 +32,15 @@ namespace CompositeBody.Experience
     /// answer. That includes the avatars of other players, which is the point: their local
     /// coordinates have to be read against the same playspace they were written against.
     /// </summary>
+    /// <remarks>
+    /// Runs BEFORE XRINetworkPlayer, which has no execution order of its own and therefore sits
+    /// at zero. That ordering is the whole of the fix: XRINetworkPlayer places the head at the
+    /// rig camera's WORLD pose in its LateUpdate, and a parent moved after that drags the head
+    /// with it. Pinning first leaves the head to be placed last, which is the one that has to be
+    /// right. Getting this backwards broke OwnerHeadFollowsTheCamera, which is in the suite
+    /// precisely because the failure is invisible on the machine that causes it.
+    /// </remarks>
+    [DefaultExecutionOrder(-100)]
     [DisallowMultipleComponent]
     public class PlayspaceRider : MonoBehaviour
     {
@@ -59,13 +68,40 @@ namespace CompositeBody.Experience
             }
 
             transform.SetParent(Playspace.Instance.transform, worldPositionStays: false);
+            m_Riding = true;
+            Pin();
+        }
 
-            // Sit exactly on the playspace, so a head's local position IS its position in the
-            // room. Without this the root keeps wherever Netcode spawned it, and every
-            // replicated coordinate would be offset by that much.
+        bool m_Riding;
+
+        /// <summary>
+        /// Sit exactly on the playspace, so a head's local position IS its position in the room.
+        ///
+        /// HELD EVERY FRAME, not set once. Doing it once was wrong and the way it was wrong was
+        /// invisible until it was catastrophic: the avatar's NetworkObject has
+        /// SynchronizeTransform on, so Netcode writes this transform after spawn, and with
+        /// AutoObjectParentSync off -- which it must be, since the playspace is a plain scene
+        /// object with no NetworkObject -- what it writes is a world position landing in a local
+        /// one. The root ends up somewhere arbitrary.
+        ///
+        /// Before the head and hands replicated in local space that did not matter: they were
+        /// placed at absolute world positions and the root was decorative. Making replication
+        /// relative is exactly what turned a harmless wrong number into the avatar standing 75
+        /// metres away while the camera it belongs to stayed put.
+        /// </summary>
+        void Pin()
+        {
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
             transform.localScale = Vector3.one;
+        }
+
+        // Early in LateUpdate, before XRINetworkPlayer places the head -- see the note on the
+        // class. Netcode's own transform writes land before this in the frame, which is what
+        // this is correcting.
+        void LateUpdate()
+        {
+            if (m_Riding) Pin();
         }
     }
 }
