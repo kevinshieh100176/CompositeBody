@@ -468,7 +468,7 @@ namespace CompositeBody.Avatar.Body
                 return 0;
             }
 
-            if (hand.hideDriverMesh && hand.driverRoot != null) HideMesh(hand.driverRoot);
+            if (hand.hideDriverMesh && hand.driverRoot != null) HideMesh(hand.driverRoot, prefix);
 
             Transform[] bones = hand.targetRoot.GetComponentsInChildren<Transform>(true);
             BindPose bind = BindPose.Around(hand.targetRoot);
@@ -683,14 +683,36 @@ namespace CompositeBody.Avatar.Body
             }
         }
 
-        void HideMesh(Transform root)
+        /// <summary>
+        /// Hide the tracked hand this avatar is wearing, so only the model's own hand draws.
+        ///
+        /// Counts out loud. A renderer that was NOT hidden here is a hand the other player can
+        /// see, and there is no way to notice that from this machine -- the four-hands report
+        /// came from the other side of the room, with nothing in any log to narrow it down.
+        /// Hiding zero and hiding everything look identical from here without the number.
+        /// </summary>
+        void HideMesh(Transform root, string prefix)
         {
+            int hidden = 0, protectedCount = 0;
+
             foreach (Renderer r in root.GetComponentsInChildren<Renderer>(true))
             {
-                if (IsProtected(r.name)) continue;
+                if (IsProtected(r.name)) { protectedCount++; continue; }
+
                 r.forceRenderingOff = true;
                 m_Hidden.Add(r);
+                hidden++;
             }
+
+            if (!m_LogPairing) return;
+
+            Debug.Log($"[HandRetarget] {Who()}: {prefix} hid {hidden} driver renderer(s) under " +
+                      $"'{root.name}', and left {protectedCount} alone for matching " +
+                      $"{string.Join("/", m_NeverHide ?? new string[0])}." +
+                      (hidden == 0
+                          ? " NOTHING WAS HIDDEN -- if the other machine sees two pairs of " +
+                            "hands, this is why."
+                          : ""), this);
         }
 
         bool IsProtected(string name)
