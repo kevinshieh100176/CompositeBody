@@ -14,14 +14,22 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// show's timeline: an activation track decides when and an animation track does the fade, so
     /// the component goes.
     ///
-    /// AND THE GROUP IS LEFT SWITCHED ON IN THE PREFAB, which looks wrong and is not. An
-    /// activation track drives its target for the WHOLE timeline, not only during its clip:
-    /// everywhere it has no clip the target is forced inactive, including before the first one.
-    /// So the show hides these itself on its first evaluated frame, and leaving them on in the
-    /// prefab costs nothing at runtime while buying two things that matter -- the paths can be
-    /// seen while they are shaped by hand, and the components' Awake runs, so the footprints and
-    /// the orbits have rows in the debug panel before they have appeared rather than popping
-    /// into the list when they fire.
+    /// AND NOTHING ELSE OWNS THEM EITHER. A <see cref="BeatContent"/> was added later to hold the
+    /// two lights back to O3_Communion, which gave the group two masters: the activation track
+    /// switched the parent on inside O-2 while the BeatContent kept the children off until the
+    /// beat after it, so the authored fade ran on lights nobody could see. One owner, and it is
+    /// the timeline -- so the component is stripped here, the same way LightOrbitGate was.
+    ///
+    /// WHICH MEANS THE GROUP SHIPS SWITCHED OFF. An activation track does force its target
+    /// inactive everywhere it has no clip -- but only while its director is being EVALUATED, and
+    /// these tracks live on the beat's own timeline, which the master only drives during O-2's
+    /// clip. Before that nothing is hiding them, so whatever the prefab says is what the room
+    /// shows: left on, they were up from the first frame of the show. Off is therefore the
+    /// authored state, and it costs nothing in the panel because
+    /// <see cref="CompositeBody.Diagnostics.InteractionDebugRoster"/> registers interactions on
+    /// inactive objects for exactly this case. The one real cost is that the orbit paths cannot
+    /// be seen while they are shaped by hand: switch the group on in the scene view and off again
+    /// before saving.
     ///
     /// An Animator is added to the group because an Animation track has to bind to one; it has no
     /// controller and animates nothing on its own.
@@ -64,6 +72,47 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 if (!HandOrbitsToTimeline(content)) return;
 
                 if (!BuildFootprints.BuildInto(content)) return;
+
+                PrefabUtility.SaveAsPrefabAsset(root, k_PrefabPath);
+                Debug.Log("[O1Payoff] RESULT: PASS");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        /// <summary>
+        /// The orbit hand-over on its own, without re-wiring the stations or rebuilding the
+        /// prints. Separate because this is the part that has had to be re-applied after a
+        /// component was added to the group by hand, and the rest of <see cref="Run"/> needs the
+        /// cue clips present to get as far as it.
+        ///
+        /// Unity.exe -batchmode -quit -projectPath &lt;path&gt;
+        ///   -executeMethod CompositeBody.Multiplayer.EditorSetup.WireO1Payoff.HandOrbitsOnly
+        /// </summary>
+        [MenuItem("Tools/O-1/Hand the Orbits to the Timeline")]
+        public static void HandOrbitsOnly()
+        {
+            Debug.Log("[O1Payoff] Handing the orbits to the timeline...");
+
+            GameObject root = PrefabUtility.LoadPrefabContents(k_PrefabPath);
+            if (root == null)
+            {
+                Debug.LogError($"[O1Payoff] RESULT: FAIL - could not open {k_PrefabPath}.");
+                return;
+            }
+
+            try
+            {
+                Transform content = root.transform.Find("Content");
+                if (content == null)
+                {
+                    Debug.LogError("[O1Payoff] RESULT: FAIL - no Content in the prefab.");
+                    return;
+                }
+
+                if (!HandOrbitsToTimeline(content)) return;
 
                 PrefabUtility.SaveAsPrefabAsset(root, k_PrefabPath);
                 Debug.Log("[O1Payoff] RESULT: PASS");
@@ -141,21 +190,24 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return false;
             }
 
-            // BY TYPE NAME, not by type. This script has to keep compiling after LightOrbitGate
-            // is deleted from the project, and it has to run BEFORE the delete -- a component
-            // whose script is gone leaves a missing-script entry in the prefab that is far more
-            // annoying to remove than the component was.
+            // LightOrbitGate BY TYPE NAME, not by type. This script has to keep compiling after
+            // LightOrbitGate is deleted from the project, and it has to run BEFORE the delete --
+            // a component whose script is gone leaves a missing-script entry in the prefab that
+            // is far more annoying to remove than the component was.
+            //
+            // BeatContent by type, because that one is still in the project and is meant to stay:
+            // it is the right tool for content that belongs to a beat, and wrong for these two
+            // lights, whose moment is a point inside a beat that the timeline already names.
             int removed = 0;
             foreach (Component component in orbits.GetComponents<Component>())
             {
-                if (component == null || component.GetType().Name != "LightOrbitGate") continue;
+                if (component == null) continue;
+                if (component.GetType().Name != "LightOrbitGate" && component is not BeatContent) continue;
+                Debug.Log($"[O1Payoff] removed {component.GetType().Name} from the Orbits group; " +
+                          "the timeline is the only thing that switches these lights now.");
                 Object.DestroyImmediate(component, true);
                 removed++;
             }
-
-            if (removed > 0)
-                Debug.Log($"[O1Payoff] removed {removed} LightOrbitGate from the Orbits group; " +
-                          "the timeline owns the cue now.");
 
             if (orbits.GetComponent<Animator>() == null)
             {
@@ -163,24 +215,24 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 Debug.Log("[O1Payoff] added an Animator to the Orbits group for the fade track.");
             }
 
-            // Switched ON, deliberately: the activation track hides it at runtime, and an
-            // object that is off in the prefab is one whose Awake never runs -- so its debug row
-            // would not exist until the moment it appeared.
-            if (!orbits.gameObject.activeSelf)
-            {
-                orbits.gameObject.SetActive(true);
-                Debug.Log("[O1Payoff] left the Orbits group ON; the activation track hides it " +
-                          "until the payoff.");
-            }
+            // OFF IN THE PREFAB. The activation track that switches these on lives on O-2's own
+            // timeline, and the master only drives that director during O-2's clip -- so nothing
+            // hides them before the beat, and the authored state is what the room shows until
+            // then. See the remarks on this class; the debug rows survive it.
+            Hide(orbits.gameObject, "Orbits");
 
             Transform footprints = content.Find("Footprints");
-            if (footprints != null && !footprints.gameObject.activeSelf)
-            {
-                footprints.gameObject.SetActive(true);
-                Debug.Log("[O1Payoff] left the Footprints group ON for the same reason.");
-            }
+            if (footprints != null) Hide(footprints.gameObject, "Footprints");
 
             return true;
+        }
+
+        static void Hide(GameObject group, string label)
+        {
+            if (!group.activeSelf) return;
+            group.SetActive(false);
+            Debug.Log($"[O1Payoff] switched the {label} group OFF; its activation track is what " +
+                      "brings it in, and nothing is driving that track before the beat.");
         }
     }
 }

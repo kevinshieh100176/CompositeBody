@@ -115,7 +115,25 @@ namespace CompositeBody.Experience
 
             Debug.LogWarning($"[FormationSync] no touch {m_Timeout}s after the show started; " +
                              "forming anyway so the other player is not left waiting.", this);
-            MarkFormed();
+            FormLocallyAndTell();
+        }
+
+        /// <summary>
+        /// The touch, as both the fallback and the debug button need it: grow the body on THIS
+        /// machine and tell the other one.
+        ///
+        /// NOT <see cref="MarkFormed"/> ON ITS OWN, which is only the telling. The owner's own
+        /// <see cref="AvatarFormation"/> never reads this stamp back -- its m_RemoteSync is set
+        /// only on someone else's avatar -- so the fallback calling MarkFormed directly formed
+        /// the player on the OTHER headset and left them unformed on their own. That is not a
+        /// cosmetic half: <see cref="ScanHandover"/> waits on the local body having arrived, so
+        /// a player rescued by the fallback watched their 真人 never leave and their object never
+        /// come. Form() does both halves -- it marks the stamp itself when it runs on the owner.
+        /// </summary>
+        void FormLocallyAndTell()
+        {
+            if (AvatarFormation.local != null) AvatarFormation.local.Form();
+            else MarkFormed();
         }
 
         /// <summary>
@@ -207,8 +225,7 @@ namespace CompositeBody.Experience
             {
                 // Form() rather than MarkFormed(): the touch has to grow the body on this
                 // machine as well as tell the other one, and Form is what the real touch calls.
-                if (AvatarFormation.local != null) AvatarFormation.local.Form();
-                else MarkFormed();
+                FormLocallyAndTell();
                 return;
             }
 

@@ -91,13 +91,29 @@ namespace CompositeBody.Experience
         /// <summary>
         /// Fire the whole thing without a hand, for testing from a desktop and for staff rescue
         /// if hand tracking has dropped out mid-show.
+        ///
+        /// THE WHOLE THING MEANS THE BODY TOO. The cloud shedding and the player's own arrival
+        /// used to sit in <see cref="PollForTouch"/> after the call to this, so a touch fired
+        /// from the panel spun the plates, formed the hands and left the body unformed -- and
+        /// <see cref="ScanHandover"/> waits on the local body having ARRIVED, so a debug touch
+        /// could never reach the handover: the 真人 stayed and the object never came. They are
+        /// in here now, which is what makes this fire what a person reaching out would.
         /// </summary>
-        public void ForceAwaken(Vector3 worldPoint)
+        public void ForceAwaken(Vector3 worldPoint) => Awaken(worldPoint, NearestStation(worldPoint));
+
+        /// <summary>
+        /// The touch, told which 真人 it landed on. A real touch knows; one fired from the panel
+        /// resolves the nearest station, because the cloud has to shed from the figure the point
+        /// is on and 「從真人身上剝落」 is wrong if it sheds from the other one.
+        /// </summary>
+        void Awaken(Vector3 worldPoint, Station touched)
         {
             if (m_Awakened) return;
             m_Awakened = true;
             m_TouchPoint = worldPoint;
             m_TouchTime = ExperienceClock.now;
+
+            if (touched != null) touched.touched = true;
 
             foreach (Station station in m_Stations)
             {
@@ -109,6 +125,46 @@ namespace CompositeBody.Experience
             {
                 if (hand != null) hand.FormFrom(worldPoint);
             }
+
+            // 「像從真人身上剝落出來的延伸」. The cloud sheds toward the hand rather than simply
+            // dissolving, so what arrives on the player looks like it came off the body they
+            // just put their hand on.
+            if (touched?.figure != null)
+            {
+                touched.figure.DriftToward(worldPoint);
+                touched.figure.GlitchBurst(0.55f, 0.5f);
+            }
+
+            // 「同時觀眾的手開始成形」 -- the player's own body starts arriving on the same touch.
+            // Local only: this is what they see of themselves. It is also what the rest of the
+            // beat hangs off, so it is the one line here that must not be skipped.
+            if (AvatarFormation.local != null) AvatarFormation.local.Form();
+        }
+
+        /// <summary>
+        /// The visible station nearest a point, or null when none is. Inactive stations are
+        /// skipped for the same reason the poll skips them: the other player's 真人 is not in
+        /// this player's room, and shedding a cloud off it would play the beat off an invisible
+        /// figure.
+        /// </summary>
+        Station NearestStation(Vector3 worldPoint)
+        {
+            Station best = null;
+            float bestDistance = float.MaxValue;
+
+            foreach (Station station in m_Stations)
+            {
+                if (station?.figure == null) continue;
+                if (!station.figure.gameObject.activeInHierarchy) continue;
+
+                float distance = Vector3.SqrMagnitude(station.figure.transform.position - worldPoint);
+                if (distance >= bestDistance) continue;
+
+                bestDistance = distance;
+                best = station;
+            }
+
+            return best;
         }
 
         // Awake rather than OnEnable, so an interaction that is switched off still has a row --
@@ -152,18 +208,9 @@ namespace CompositeBody.Experience
                     if (!station.figure.gameObject.activeInHierarchy) continue;
                     if (!Touching(station.figure, tip)) continue;
 
-                    station.touched = true;
-                    ForceAwaken(tip);
-
-                    // 「像從真人身上剝落出來的延伸」. The cloud sheds toward the hand rather than
-                    // simply dissolving, so what arrives on the player looks like it came off
-                    // the body they just put their hand on.
-                    station.figure.DriftToward(tip);
-                    station.figure.GlitchBurst(0.55f, 0.5f);
-
-                    // 「同時觀眾的手開始成形」 -- the player's own body starts arriving on the
-                    // same touch. Local only: this is what they see of themselves.
-                    if (AvatarFormation.local != null) AvatarFormation.local.Form();
+                    // The station it landed on, rather than the nearest one resolved from the
+                    // point: a hand knows which figure it reached for.
+                    Awaken(tip, station);
                     return;
                 }
             }
@@ -341,15 +388,19 @@ namespace CompositeBody.Experience
         }
 
         /// <summary>
-        /// Where a debug touch lands: the first station's own centre if there is one. The point
-        /// matters -- the hands shed from it and the cloud drifts toward it -- so a fabricated
-        /// touch at the origin would play the beat with its one piece of staging wrong.
+        /// Where a debug touch lands: the first VISIBLE station's own centre if there is one. The
+        /// point matters -- the hands shed from it and the cloud drifts toward it -- so a
+        /// fabricated touch at the origin would play the beat with its one piece of staging
+        /// wrong. Hidden stations are skipped because the other player's 真人 is not in this
+        /// player's room, and whichever one happens to come first in the array is not a decision
+        /// anybody made.
         /// </summary>
         Vector3 DebugTouchPoint()
         {
             foreach (Station station in m_Stations)
             {
                 if (station?.figure == null) continue;
+                if (!station.figure.gameObject.activeInHierarchy) continue;
                 var filter = station.figure.GetComponent<MeshFilter>();
                 if (filter == null || filter.sharedMesh == null) continue;
                 return station.figure.transform.TransformPoint(filter.sharedMesh.bounds.center);
