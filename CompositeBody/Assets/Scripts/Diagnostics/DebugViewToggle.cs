@@ -156,6 +156,7 @@ namespace CompositeBody.Diagnostics
 
         void OnGUI()
         {
+            if (!UiVisibility.visible) return;
             if (!m_ShowPanel) return;
             int rows = m_Resolved.Count + m_ResolvedBehaviours.Count;
             if (rows == 0 && !m_RoleSwitch) return;

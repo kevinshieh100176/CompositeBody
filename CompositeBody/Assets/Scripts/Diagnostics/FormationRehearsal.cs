@@ -74,6 +74,7 @@ namespace CompositeBody.Diagnostics
 
         void OnGUI()
         {
+            if (!UiVisibility.visible) return;
             if (m_Formation == null) return;
 
             const float w = 300f, h = 24f, gap = 4f;

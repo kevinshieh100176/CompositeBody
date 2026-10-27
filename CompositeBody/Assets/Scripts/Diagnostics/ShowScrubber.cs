@@ -84,6 +84,7 @@ namespace CompositeBody.Diagnostics
 
         void OnGUI()
         {
+            if (!UiVisibility.visible) return;
             if (!m_Visible) return;
 
             ShowTimelineDriver driver = Driver;
