@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Shards_Wall
+  m_Shader: {fileID: 4800000, guid: bfae743e1c644be78671d78a4b0f1eeb, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 3dd186f91ab727b47a0d38590a9b98a0, type: 3}
+        m_Scale: {x: 30, y: 30}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BaseFade: 0.15
+    - _CellScale: 3.5
+    - _ClusterScale: 0.35
+    - _CrackWidth: 0.035
+    - _Drift: 0.35
+    - _EdgeWidth: 0.03
+    - _Fade: 0.85
+    - _Flicker: 0.703
+    - _FlickerRate: 0
+    - _FrontOffset: 0
+    - _FrontScale: 0.3
+    - _FrontWeight: 0.45
+    - _NoiseSpeed: 0.15
+    - _Progress: 0.383
+    - _Randomness: 0.66
+    - _Seed: 0
+    - _Shrink: 0.227
+    - _Smoothness: 0.1
+    - _Softness: 0.25
+    - _Unstable: 0.03
+    - _UnstableSpeed: 0.5
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _CrackColor: {r: 0.24999997, g: 0.21999997, b: 0.19999996, a: 1}
+    - _EdgeColor: {r: 0.9, g: 0.62, b: 0.35, a: 1}
+    - _FrontDir: {r: 0, g: 1, b: 0, a: 0}
+    - _MemoryTint: {r: 0.86, g: 0.78, b: 0.65999997, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
