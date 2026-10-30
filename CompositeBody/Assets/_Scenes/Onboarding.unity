@@ -859,7 +859,7 @@ MonoBehaviour:
   GlobalWindTurbulence: 0.5
   GlobalFftWavesQuality: 256
   GlobalFftWavesCascades: 4
-  GlobalWavesAreaScale: 1
+  GlobalWavesAreaScale: 0.2
   GlobalTimeScale: 1
   LocalWindSpeed: 3.5
   LocalWindRotation: 0
@@ -1032,7 +1032,7 @@ MonoBehaviour:
   Settings: {fileID: 1789358106}
   WaterRenderingActive: 1
   WorldSpaceBounds:
-    m_Center: {x: 0, y: -4999.415, z: 0}
+    m_Center: {x: 0, y: -4999.731, z: 0}
     m_Extent: {x: 500000, y: 5000, z: 500000}
   ShowColorSettings: 1
   ShowExpertColorSettings: 0
@@ -1232,6 +1232,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalPosition.z
       value: -2.4482267
+      objectReference: {fileID: 0}
+    - target: {fileID: 8248837401561928424, guid: d97263180562d854491168aa4599cd3b,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
