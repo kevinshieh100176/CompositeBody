@@ -457,7 +457,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 672af4d5a5ed5c04398dd95316940d7d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Diagnostics.InteractionDebugPanel
-  m_ToggleKey: 94
+  m_ToggleKey: 96
   m_VisibleOnStart: 0
   m_RefreshInterval: 0.2
   m_Width: 520
@@ -638,6 +638,37 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 186988131}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &226772800
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 226772801}
+  m_Layer: 0
+  m_Name: HeadsetRest
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &226772801
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 226772800}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.11, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 502097547}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &262496471
 GameObject:
   m_ObjectHideFlags: 0
@@ -1332,6 +1363,7 @@ GameObject:
   - component: {fileID: 502097547}
   - component: {fileID: 502097546}
   - component: {fileID: 502097548}
+  - component: {fileID: 502097549}
   m_Layer: 0
   m_Name: CalibrationMarker
   m_TagString: Untagged
@@ -1351,9 +1383,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b20f1c6e09e7c94cbbe9d832fe3dd2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Multiplayer.CalibrationPoint
-  m_TestCalibrateKey: 17
+  m_TestCalibrateKey: 0
   m_AlignHeight: 0
-  m_HeadsetRest: {fileID: 0}
+  m_HeadsetRest: {fileID: 226772801}
   m_AlignRestHeight: 1
   m_MaxRestTilt: 20
 --- !u!4 &502097547
@@ -1368,7 +1400,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 226772801}
   m_Father: {fileID: 437994403}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &502097548
@@ -1389,6 +1422,26 @@ MonoBehaviour:
   m_PinchExit: 0.038
   m_HoldSeconds: 0.6
   m_ArmedInLobbyOnly: 1
+--- !u!114 &502097549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 502097545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15dedaf938f8cd645a8fd67a89201727, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Multiplayer.HeadsetRestCalibrator
+  m_Marker: {fileID: 502097546}
+  m_CalibrateKey: 17
+  m_ArmSeconds: 30
+  m_RequireStillness: 1
+  m_StillSeconds: 0.4
+  m_StillPosition: 0.001
+  m_StillAngle: 0.15
+  m_CompletionTaskId: 
 --- !u!1 &532151478
 GameObject:
   m_ObjectHideFlags: 0
@@ -6237,6 +6290,9 @@ MonoBehaviour:
   m_Namespace: /cb
   m_Rate: 60
   m_SendHands: 1
+  m_SendBeat: 1
+  m_SendBeatCode: 1
+  m_BeatCodeRepeats: 3
   m_HostOnly: 1
   m_ConvertToRightHanded: 1
   m_LogFirstPacket: 1

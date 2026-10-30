@@ -35,7 +35,7 @@ namespace CompositeBody.Diagnostics
     public class InteractionDebugPanel : MonoBehaviour
     {
         [SerializeField, Tooltip("Shows and hides the panel.")]
-        Key m_ToggleKey = Key.F1;
+        Key m_ToggleKey = Key.F3;
 
         [SerializeField, Tooltip("Open as soon as the scene starts. Off: the key opens it.")]
         bool m_VisibleOnStart;
@@ -47,6 +47,19 @@ namespace CompositeBody.Diagnostics
 
         [SerializeField, Min(200f), Tooltip("Panel width in reference pixels.")]
         float m_Width = 520f;
+
+        [Header("Hand correction")]
+        [SerializeField, Min(0.001f), Tooltip("Small step, in metres, for correcting an origin by hand. Small enough that holding the button down is the way to move a long way, so a stray click cannot.")]
+        float m_FineMetres = 0.01f;
+
+        [SerializeField, Min(0.001f), Tooltip("Large step, in metres. For an alignment that is visibly out rather than slightly off.")]
+        float m_CoarseMetres = 0.05f;
+
+        [SerializeField, Min(0.01f), Tooltip("Small step, in degrees.")]
+        float m_FineDegrees = 0.5f;
+
+        [SerializeField, Min(0.01f), Tooltip("Large step, in degrees.")]
+        float m_CoarseDegrees = 2f;
 
         const float k_Padding = 12f;
         const float k_Spacing = 6f;
@@ -63,6 +76,13 @@ namespace CompositeBody.Diagnostics
             public Text detail;
             public Button fire, player1, player2, both, reset;
             public Text fireLabel;
+
+            // Only on rows whose interaction can be hand-corrected, which is almost none of them.
+            public IDebugNudgeable nudgeable;
+            public Button nudgeStepButton, nudgeUndo;
+            public Text nudgeStepLabel;
+            public readonly List<Button> nudgeSteps = new();
+            public bool coarse;
         }
 
         readonly List<Row> m_Rows = new();
@@ -314,7 +334,77 @@ namespace CompositeBody.Diagnostics
             row.reset = CreateButton(buttons, "reset",
                                      () => Reset(interaction), new Vector2(54, 22));
 
+            if (interaction is IDebugNudgeable nudgeable) BuildNudgeRow(row, nudgeable);
+
             return row;
+        }
+
+        /// <summary>
+        /// The second button row, on the handful of interactions that can be corrected by hand.
+        ///
+        /// DIRECTIONS ARE THE ROOM'S: L/R/F/B are along the calibration marker, not along the
+        /// player's gaze, so the same button means the same direction however the player is
+        /// standing. The person pressing it is looking at a mirror window and thinking in the
+        /// room's terms, and that is the only frame both of them share.
+        ///
+        /// THIS MACHINE ONLY, and there is no button to change that. An origin belongs to the
+        /// headset in front of you: the person who can see whether a correction helped is the
+        /// one sitting at that PC, and the mistake a target selector invites -- correcting the
+        /// headset that was already right, from the other machine, while watching the wrong
+        /// mirror -- is both easy to make and invisible until the show is running.
+        /// </summary>
+        void BuildNudgeRow(Row row, IDebugNudgeable nudgeable)
+        {
+            row.nudgeable = nudgeable;
+
+            Transform nudge = CreateRow(row.root.transform, "Nudge");
+
+            row.nudgeStepButton = CreateButton(nudge, StepLabel(row), () => ToggleStep(row), new Vector2(62, 22));
+            row.nudgeStepLabel = row.nudgeStepButton.GetComponentInChildren<Text>();
+
+            row.nudgeSteps.Add(CreateButton(nudge, "L", () => Nudge(row, Vector3.left, 0f), new Vector2(26, 22)));
+            row.nudgeSteps.Add(CreateButton(nudge, "R", () => Nudge(row, Vector3.right, 0f), new Vector2(26, 22)));
+            row.nudgeSteps.Add(CreateButton(nudge, "F", () => Nudge(row, Vector3.forward, 0f), new Vector2(26, 22)));
+            row.nudgeSteps.Add(CreateButton(nudge, "B", () => Nudge(row, Vector3.back, 0f), new Vector2(26, 22)));
+            row.nudgeSteps.Add(CreateButton(nudge, "Up", () => Nudge(row, Vector3.up, 0f), new Vector2(30, 22)));
+            row.nudgeSteps.Add(CreateButton(nudge, "Dn", () => Nudge(row, Vector3.down, 0f), new Vector2(30, 22)));
+            row.nudgeSteps.Add(CreateButton(nudge, "CCW", () => Nudge(row, Vector3.zero, -1f), new Vector2(36, 22)));
+            row.nudgeSteps.Add(CreateButton(nudge, "CW", () => Nudge(row, Vector3.zero, 1f), new Vector2(34, 22)));
+
+            row.nudgeUndo = CreateButton(nudge, "undo", () => UndoNudge(row), new Vector2(44, 22));
+        }
+
+        string StepLabel(Row row) =>
+            row.coarse
+                ? $"{m_CoarseMetres * 100f:0.#}cm {m_CoarseDegrees:0.##}d"
+                : $"{m_FineMetres * 100f:0.#}cm {m_FineDegrees:0.##}d";
+
+        void ToggleStep(Row row)
+        {
+            row.coarse = !row.coarse;
+            m_NextRefresh = 0f;
+        }
+
+        void Nudge(Row row, Vector3 direction, float turn)
+        {
+            if (row.nudgeable == null || !InteractionDebug.fireEnabled) return;
+            if (!row.nudgeable.DebugCanNudge(DebugFireTarget.Local)) return;
+
+            float metres = row.coarse ? m_CoarseMetres : m_FineMetres;
+            float degrees = row.coarse ? m_CoarseDegrees : m_FineDegrees;
+
+            row.nudgeable.DebugNudge(DebugFireTarget.Local, direction * metres, turn * degrees);
+            m_NextRefresh = 0f;
+        }
+
+        void UndoNudge(Row row)
+        {
+            if (row.nudgeable == null || !InteractionDebug.fireEnabled) return;
+            if (!row.nudgeable.DebugCanUndoNudge(DebugFireTarget.Local)) return;
+
+            Debug.Log($"[InteractionDebug] undoing hand-correction of '{row.interaction.debugId}'.");
+            row.nudgeable.DebugUndoNudge(DebugFireTarget.Local);
+            m_NextRefresh = 0f;
         }
 
         void Fire(IDebugInteraction interaction, DebugFireTarget target)
@@ -419,6 +509,24 @@ namespace CompositeBody.Diagnostics
             SetButton(row.reset, row.interaction.DebugCanReset());
 
             if (row.fireLabel != null) row.fireLabel.text = row.interaction.debugFireLabel;
+
+            RefreshNudgeRow(row);
+        }
+
+        void RefreshNudgeRow(Row row)
+        {
+            if (row.nudgeable == null) return;
+
+            bool canNudge = row.nudgeable.DebugCanNudge(DebugFireTarget.Local);
+            foreach (Button button in row.nudgeSteps) SetButton(button, canNudge);
+
+            SetButton(row.nudgeUndo, row.nudgeable.DebugCanUndoNudge(DebugFireTarget.Local));
+
+            // The step size can be changed whether or not there is anything to nudge, so it does
+            // not go dead along with the arrows.
+            SetButton(row.nudgeStepButton, InteractionDebug.fireEnabled);
+
+            if (row.nudgeStepLabel != null) row.nudgeStepLabel.text = StepLabel(row);
         }
 
         void AppendRemoteLines(string debugId)
