@@ -63,11 +63,26 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 0d48eae1e5f682e41a3d2acd31945f70, type: 2}
+    - target: {fileID: 566860969287147491, guid: b8f8d3c771d40714b9c8524289b744ac,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0d48eae1e5f682e41a3d2acd31945f70, type: 2}
     - target: {fileID: 919132149155446097, guid: b8f8d3c771d40714b9c8524289b744ac,
         type: 3}
       propertyPath: m_Name
       value: Lamp
       objectReference: {fileID: 0}
+    - target: {fileID: 1391724132148829795, guid: b8f8d3c771d40714b9c8524289b744ac,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0d48eae1e5f682e41a3d2acd31945f70, type: 2}
+    - target: {fileID: 2771104482022425534, guid: b8f8d3c771d40714b9c8524289b744ac,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0d48eae1e5f682e41a3d2acd31945f70, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
