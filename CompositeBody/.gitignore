@@ -64,3 +64,15 @@ mono_crash.*
 # Auto-generated test scenes
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 InitTestScene*.unity*
+
+# AERO volumetric fog -- a 58 MB paid Asset Store package, re-imported by hand.
+# It carries a hand-applied Single Pass Instanced fix inside its own files: without that
+# the headset renders a flat grey frame. The patch is recorded in docs/AERO-Stereo-Fix.md
+# and MUST be reapplied after importing or updating the package.
+/[Aa]ssets/Mirza/
+/[Aa]ssets/Mirza.meta
+
+# Diagnostic stills, regenerated on demand by the render harnesses.
+# (Assets/_Generated is NOT ignored: the 1_1 scene references those baked river meshes.)
+/[Aa]ssets/_Renders/
+/[Aa]ssets/_Renders.meta

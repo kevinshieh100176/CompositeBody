@@ -41,6 +41,7 @@ Shader "CompositeBody/TraceParticle"
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "CompositeFog.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _Color;
@@ -64,6 +65,7 @@ Shader "CompositeBody/TraceParticle"
                 float2 uv          : TEXCOORD0;
                 float4 color       : COLOR;
                 float  fogCoord    : TEXCOORD1;
+                float3 positionWS  : TEXCOORD2;   // height fog needs to know where this is
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -76,6 +78,7 @@ Shader "CompositeBody/TraceParticle"
                 OUT.positionHCS = posInputs.positionCS;
                 OUT.uv = IN.uv;
                 OUT.color = IN.color;
+                OUT.positionWS = posInputs.positionWS;
                 OUT.fogCoord = ComputeFogFactor(posInputs.positionCS.z);
                 return OUT;
             }
@@ -105,7 +108,7 @@ Shader "CompositeBody/TraceParticle"
                 float3 rgb = _Color.rgb * IN.color.rgb * _Intensity;
                 float alpha = shape * _Color.a * IN.color.a;
 
-                rgb = MixFog(rgb, IN.fogCoord);
+                rgb = CompositeFogMix(rgb, IN.positionWS, IN.fogCoord);
                 return half4(rgb, alpha);
             }
             ENDHLSL

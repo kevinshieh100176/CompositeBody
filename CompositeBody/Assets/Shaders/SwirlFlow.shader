@@ -107,6 +107,10 @@ Shader "CompositeBody/SwirlFlow"
                 float4 probeOcclusion : TEXCOORD6;
             #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
+                // Carries which eye this vertex belongs to into the fragment stage. Both eyes
+                // are drawn in one pass with instancing, so without this channel the fragment
+                // stage shades whichever eye happened to be set last.
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             float Hash21(float2 p)
@@ -135,6 +139,7 @@ Shader "CompositeBody/SwirlFlow"
                 Varyings OUT;
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 VertexPositionInputs p = GetVertexPositionInputs(IN.positionOS.xyz);
                 OUT.positionCS = p.positionCS;
                 OUT.positionWS = p.positionWS;
@@ -152,6 +157,7 @@ Shader "CompositeBody/SwirlFlow"
             half4 frag(Varyings IN) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
 
                 // Work in a centred space where r = 1 is the edge of the effect.
                 float2 p = (IN.uv - _Center.xy) / _Radius;

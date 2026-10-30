@@ -66,6 +66,7 @@ Shader "CompositeBody/TensionSkin"
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "CompositeFog.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -333,7 +334,7 @@ Shader "CompositeBody/TensionSkin"
                 outRGB += _SkinTint.rgb * _SkinBleed * (1.0 - alpha)
                           * (ambient + mainLight.color * saturate(NoL) * atten * 0.35);
 
-                outRGB = MixFog(outRGB, IN.fogCoord);
+                outRGB = CompositeFogMix(outRGB, IN.positionWS, IN.fogCoord);
                 return half4(outRGB, alpha);
             }
             ENDHLSL

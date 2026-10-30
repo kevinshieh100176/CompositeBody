@@ -128,7 +128,19 @@ namespace XRMultiplayer
 
                 float appliedCurve = m_VoiceCurve.Evaluate(m_VoiceDestinationVolume);
                 voiceAmp.Value = appliedCurve;
-                m_HeadRend.SetBlendShapeWeight(0, 100 - appliedCurve * 100);
+
+                // MODIFIED: guarded. This drives a mouth blendshape from mic level, and the head
+                // mesh in this project has no blendshapes at all, so it threw
+                // "Array index (0) is out of bounds (size=0)" EVERY FRAME -- 4,989 times in one
+                // minute of sitting in the lobby. Unity's Development Console then sits over the
+                // player's view for the rest of the session. The voice amplitude above is still
+                // published, so anything else reading it is unaffected; only the mouth shape,
+                // which this mesh cannot make, is skipped.
+                if (m_HeadRend != null && m_HeadRend.sharedMesh != null &&
+                    m_HeadRend.sharedMesh.blendShapeCount > 0)
+                {
+                    m_HeadRend.SetBlendShapeWeight(0, 100 - appliedCurve * 100);
+                }
             }
             else
             {

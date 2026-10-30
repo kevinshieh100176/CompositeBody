@@ -97,8 +97,27 @@ namespace CompositeBody.Multiplayer
             m_StartButton.gameObject.SetActive(isServer);
             if (isServer)
             {
-                bool canStart = session.sessionState == SessionState.Lobby && session.connectedPlayerCount >= GameSessionManager.MaxPlayers;
+                // StartExperience is the authority on whether a solo run is allowed, so the
+                // button asks it rather than re-deciding here -- two places deciding the same
+                // thing is how a button comes to be greyed out for a start that would succeed.
+                bool canStart = session.sessionState == SessionState.Lobby && session.CanStart();
                 m_StartButton.interactable = canStart;
+
+                // AND SAY WHY NOT. A disabled button refuses in silence: the click does not reach
+                // OnStartClicked, so even its "waiting on players" line never runs, and the panel
+                // looks broken rather than strict. The usual cause is simply that a BUILD will
+                // not start a one-person show without -solo -- correct behaviour for the venue,
+                // and impossible to guess from a greyed-out button.
+                if (!canStart)
+                {
+                    m_StatusText.text += session.sessionState != SessionState.Lobby
+                        ? $"\n\nStart is off: the session is {session.sessionState}, not Lobby."
+                        : session.connectedPlayerCount < 1
+                            ? "\n\nStart is off: no player has spawned yet."
+                            : $"\n\nStart is off: {session.connectedPlayerCount} of " +
+                              $"{GameSessionManager.MaxPlayers} players, and this build was not " +
+                              "launched with -solo. Add -solo to run it single-handed.";
+                }
             }
 
             RefreshBeatPanel(isServer);

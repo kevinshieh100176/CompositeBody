@@ -19,7 +19,7 @@
             "define": "ENABLE_XR_MODULE"
         },
         {
-            "name": "com.unity.modules.vr",
+            "name": "com.unity.modules.xr",
             "expression": "0.0",
             "define": "ENABLE_VR_MODULE"
         }

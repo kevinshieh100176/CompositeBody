@@ -28,7 +28,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// </summary>
     public static class BuildExperienceScene
     {
-        public const string ScenePath = "Assets/_Scenes/CompositeBody_Experience.unity";
+        public const string ScenePath = "Assets/_Scenes/_Test/CompositeBody_Experience.unity";
 
         /// <summary>Where the markers sit: straight ahead of the spawn, at standing eye height.</summary>
         static readonly Vector3 k_MarkerPosition = new(0f, 1.55f, 2.2f);
@@ -170,6 +170,14 @@ namespace CompositeBody.Multiplayer.EditorSetup
                     arrivalSo.FindProperty("m_Beat").intValue = (int)beat;
                     arrivalSo.FindProperty("m_ContentRoot").objectReferenceValue = content;
                     arrivalSo.ApplyModifiedPropertiesWithoutUndo();
+
+                    // After the component exists and after the content is built: the cue drives
+                    // objects from both halves, and wiring it is what makes the two 光圈 come up.
+                    if (!BuildO0Arrival.Wire(arrival, content))
+                    {
+                        Debug.LogError("[Experience] RESULT: FAIL - could not wire O-0's cue.");
+                        return false;
+                    }
 
                     built++;
                 }
@@ -351,10 +359,14 @@ namespace CompositeBody.Multiplayer.EditorSetup
         }
 
         /// <summary>
-        /// Checks all five of O-0's layers actually landed. Each of these has a failure mode
-        /// that is invisible from the outside: a sea with no mesh renders nothing, a sound bed
+        /// Checks all of O-0's layers actually landed. Each of these has a failure mode that is
+        /// invisible from the outside: an unwired cue leaves the 光圈 dark forever, a sound bed
         /// with no clips plays silence, and a blob with no renderer simply never appears -- and
         /// all three look identical to "the beat has not started yet" from inside a headset.
+        ///
+        /// The sea and the drifting 「框」 are no longer checked for, because V.2 replaced them
+        /// with 「全灰平面」 and the two 光圈. <see cref="FrameDrift"/> is still in the project for
+        /// whichever S-act wants it.
         /// </summary>
         static bool VerifyO0()
         {
@@ -372,38 +384,64 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return false;
             }
 
-            var sea = content.GetComponentInChildren<MeshFilter>(true);
-            bool seaOk = false;
-            foreach (var mf in content.GetComponentsInChildren<MeshFilter>(true))
+            if (content.GetComponentInChildren<CompositeFogZone>(true) == null)
             {
-                if (mf.name != "SeaSurface") continue;
-                seaOk = mf.sharedMesh != null && mf.sharedMesh.vertexCount > 1000;
-                sea = mf;
-                break;
-            }
-            if (!seaOk)
-            {
-                Debug.LogError("[Experience] RESULT: FAIL - O-0 sea surface missing or too coarse to displace " +
-                               $"(mesh={(sea != null ? sea.sharedMesh?.vertexCount.ToString() : "none")} verts).");
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no Air zone, so nothing drives " +
+                               "the fog and the beams have no haze to be visible in.");
                 return false;
             }
-            Debug.Log($"[Experience] OK   O-0 sea ({sea.sharedMesh.vertexCount} verts)");
+            Debug.Log("[Experience] OK   O-0 air");
 
-            var frames = content.GetComponentsInChildren<FrameDrift>(true);
-            if (frames.Length == 0)
+            var spots = content.GetComponentsInChildren<VolumetricSpot>(true);
+            if (spots.Length != 3)
             {
-                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no drifting frames.");
+                Debug.LogError($"[Experience] RESULT: FAIL - O-0 wants 3 fixtures (one white, two " +
+                               $"光圈) and has {spots.Length}.");
                 return false;
             }
-            Debug.Log($"[Experience] OK   O-0 frames ({frames.Length})");
+            Debug.Log($"[Experience] OK   O-0 fixtures ({spots.Length})");
 
-            var motes = content.GetComponentInChildren<ParticleSystem>(true);
-            if (motes == null)
+            // The cue is the beat. An unwired reference is the one failure here that looks
+            // exactly like a correctly built scene until twelve seconds into a show.
+            var o0So = new SerializedObject(o0);
+            string[] wired = { "m_CentreBeam", "m_CentreLamp", "m_Slab" };
+            foreach (string field in wired)
             {
-                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no motes.");
+                if (o0So.FindProperty(field).objectReferenceValue == null)
+                {
+                    Debug.LogError($"[Experience] RESULT: FAIL - O-0 cue has no {field}.");
+                    return false;
+                }
+            }
+
+            SerializedProperty beams = o0So.FindProperty("m_ColourBeams");
+            SerializedProperty lamps = o0So.FindProperty("m_ColourLamps");
+            if (beams.arraySize != 2 || lamps.arraySize != 2)
+            {
+                Debug.LogError($"[Experience] RESULT: FAIL - O-0 cue drives {beams.arraySize} 光圈 " +
+                               $"and {lamps.arraySize} lamps; both should be 2.");
                 return false;
             }
-            Debug.Log("[Experience] OK   O-0 motes");
+            for (int i = 0; i < 2; i++)
+            {
+                if (beams.GetArrayElementAtIndex(i).objectReferenceValue == null ||
+                    lamps.GetArrayElementAtIndex(i).objectReferenceValue == null)
+                {
+                    Debug.LogError($"[Experience] RESULT: FAIL - O-0 光圈 {i} is not wired to the cue.");
+                    return false;
+                }
+            }
+            Debug.Log("[Experience] OK   O-0 cue wired");
+
+            var dust = content.GetComponentInChildren<UnityEngine.VFX.VisualEffect>(true);
+            if (dust == null || dust.visualEffectAsset == null)
+            {
+                Debug.LogError("[Experience] RESULT: FAIL - O-0 has no dust, or its VisualEffect " +
+                               "has no asset assigned. A VisualEffect with a null asset is a " +
+                               "component that renders nothing and reports nothing.");
+                return false;
+            }
+            Debug.Log($"[Experience] OK   O-0 dust ({dust.visualEffectAsset.name}, VFX Graph)");
 
             var soundBed = content.GetComponentInChildren<DistantSoundBed>(true);
             if (soundBed == null)

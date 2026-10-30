@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: O0MusicBox
+  m_Shader: {fileID: 4800000, guid: 0b636c29dd1b8de41bea6a3c615a4dd8, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _EdgeFade: 0.55
+    - _InnerFade: 0.06
+    - _Intensity: 1.1
+    - _Phase: 0
+    - _Radius: 0.5
+    - _RingWeight: 0.35
+    - _Rings: 11
+    - _Speed: 3.2
+    - _Spin: 0
+    - _Teeth: 18
+    - _ToothInner: 0.45
+    - _ToothWidth: 0.1
+    m_Colors:
+    - _Color: {r: 0.55, g: 0.6, b: 0.78, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

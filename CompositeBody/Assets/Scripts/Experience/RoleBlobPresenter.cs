@@ -21,6 +21,18 @@ namespace CompositeBody.Experience
     /// </summary>
     public class RoleBlobPresenter : MonoBehaviour
     {
+        [SerializeField, Tooltip("A volumetric light to stand in for the other player. Assigned, " +
+                                 "it is used instead of the blob below: before the touch the " +
+                                 "other person is a light in their own 代表色, not a shape.")]
+        VolumetricPoint m_PresenceLight;
+
+        [SerializeField, Min(0.1f), Tooltip("How far that light reaches, in metres.")]
+        float m_LightRange = 1.3f;
+
+        [SerializeField, Tooltip("Give the other player their body back once they have touched a " +
+                                 "真人. Off keeps them a light for the whole beat regardless.")]
+        bool m_RevealOnFormed = true;
+
         [SerializeField, Tooltip("The blob mesh. Expects a material on the CompositeBody/GhostHalf shader.")]
         Renderer m_BlobRenderer;
 
@@ -52,8 +64,11 @@ namespace CompositeBody.Experience
             {
                 // Instanced so two blobs in a scene cannot fight over one shared colour.
                 m_Material = m_BlobRenderer.material;
-                m_BlobRenderer.enabled = false;
             }
+
+            // Both stand-ins off until a remote player is actually found, so neither sits at the
+            // origin for the frames between this scene loading and the other headset connecting.
+            SetStandInVisible(false);
         }
 
         // The blob lives inside its beat's content root, so being switched on by
@@ -76,7 +91,7 @@ namespace CompositeBody.Experience
         {
             m_Shown = false;
 
-            if (m_BlobRenderer != null) m_BlobRenderer.enabled = false;
+            SetStandInVisible(false);
             RestoreRemoteAvatar();
             m_Remote = null;
         }
@@ -100,10 +115,32 @@ namespace CompositeBody.Experience
                 HideRemoteAvatar();
             }
 
+            // Once they have touched, they stop being a presence and become a person. The stand-in
+            // goes away and their own renderers come back -- their body then grows in on its own,
+            // driven by AvatarFormation from the same replicated stamp their machine used, so
+            // both players watch the same arrival rather than two that merely look alike.
+            if (m_RevealOnFormed && RemoteHasFormed())
+            {
+                SetStandInVisible(false);
+                RestoreRemoteAvatar();
+                return;
+            }
+
+            HideRemoteAvatar();
+
             Transform head = m_Remote.head;
             if (head == null) return;
 
             Vector3 target = head.position + Vector3.up * m_VerticalOffset;
+
+            if (m_PresenceLight != null)
+            {
+                Transform light = m_PresenceLight.transform;
+                light.position = m_Smoothing > 0f
+                    ? Vector3.Lerp(light.position, target, 1f - Mathf.Exp(-m_Smoothing * Time.deltaTime))
+                    : target;
+                m_PresenceLight.reveal = 1f;
+            }
 
             if (m_BlobRenderer != null)
             {
@@ -112,8 +149,23 @@ namespace CompositeBody.Experience
                     ? Vector3.Lerp(blob.position, target, 1f - Mathf.Exp(-m_Smoothing * Time.deltaTime))
                     : target;
                 blob.localScale = Vector3.one * m_Size;
-                m_BlobRenderer.enabled = true;
+
+                // The blob is the fallback, not a second stand-in: two of them at one head reads
+                // as a bug.
+                m_BlobRenderer.enabled = m_PresenceLight == null;
             }
+        }
+
+        bool RemoteHasFormed()
+        {
+            AvatarFormationSync sync = AvatarFormationSync.For(m_Remote);
+            return sync != null && sync.formed;
+        }
+
+        void SetStandInVisible(bool visible)
+        {
+            if (m_PresenceLight != null) m_PresenceLight.reveal = visible ? 1f : 0f;
+            if (m_BlobRenderer != null) m_BlobRenderer.enabled = visible && m_PresenceLight == null;
         }
 
         static XRINetworkPlayer FindRemotePlayer()
@@ -128,12 +180,22 @@ namespace CompositeBody.Experience
 
         void ApplyRoleColor()
         {
-            if (m_Material == null || m_Remote == null) return;
+            // Only the remote matters here. Guarding on the blob material as well would skip the
+            // light entirely whenever the blob is the thing that is absent -- which, now that the
+            // light is the stand-in, is the normal case.
+            if (m_Remote == null) return;
 
             var session = GameSessionManager.Instance;
             PlayerRole role = PlayerRole.Unassigned;
             if (session != null) session.TryGetRoleForClient(m_Remote.OwnerClientId, out role);
 
+            if (m_PresenceLight != null)
+            {
+                m_PresenceLight.SetRole(role);
+                m_PresenceLight.range = m_LightRange;
+            }
+
+            if (m_Material == null) return;
             m_Material.SetColor(k_GhostColorId, PlayerRoleColors.For(role));
         }
 
@@ -141,13 +203,21 @@ namespace CompositeBody.Experience
         {
             if (!m_HideRemoteAvatar || m_Remote == null) return;
 
+            // Idempotent, because LateUpdate calls this every frame now. A second pass would
+            // record renderers this component had already switched off, and then Restore would
+            // put back a list that no longer describes what was originally visible.
+            if (m_HiddenRenderers != null) return;
+
             var renderers = m_Remote.GetComponentsInChildren<Renderer>(true);
             var hidden = new System.Collections.Generic.List<Renderer>(renderers.Length);
 
+            Renderer lightRenderer = m_PresenceLight != null
+                ? m_PresenceLight.GetComponent<Renderer>() : null;
+
             foreach (var r in renderers)
             {
-                // Never touch the blob itself, in case it has been parented under the avatar.
-                if (r == m_BlobRenderer || !r.enabled) continue;
+                // Never touch a stand-in, in case it has been parented under the avatar.
+                if (r == m_BlobRenderer || r == lightRenderer || !r.enabled) continue;
                 r.enabled = false;
                 hidden.Add(r);
             }

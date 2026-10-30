@@ -557,5 +557,62 @@ namespace CompositeBody.Avatar.Body
             if (m_CollapseHeadForOwner)
                 m_HeadBone.localScale = m_OwnerView ? collapsed : Vector3.one;
         }
+
+        /// <summary>
+        /// How far each wrist ended up from the hand it was reaching for, in centimetres.
+        ///
+        /// "The arm does not follow my hand" has three quite different causes that look the same
+        /// from inside a headset, and this separates them in one glance:
+        ///
+        ///   - a gap that stays near zero while the hand moves: the arm IS following, and what
+        ///     looks wrong is the shoulder placement or the elbow hint, not the tracking.
+        ///   - a gap that grows as you reach out and shrinks as you bring the hand in: the arm
+        ///     is following but cannot reach. Raise Max Arm Stretch or Shoulder Follow.
+        ///   - a gap that changes with the hand even when you hold still, or never changes at
+        ///     all: the target is not being driven. That is XRINetworkPlayer's hand origins,
+        ///     not this component.
+        /// </summary>
+        public float leftReachGap => Gap(m_LeftArm, m_LeftHandTarget);
+        public float rightReachGap => Gap(m_RightArm, m_RightHandTarget);
+
+        static float Gap(Limb limb, Transform target)
+        {
+            if (!limb.valid || target == null) return -1f;
+            return Vector3.Distance(limb.end.position, target.position);
+        }
+
+        [Header("Diagnostics")]
+        [SerializeField, Tooltip("Draw the hand targets, the wrists, and the gap between them.")]
+        bool m_ShowReach;
+
+        void OnDrawGizmos()
+        {
+            if (!m_ShowReach || !m_Captured) return;
+
+            DrawReach(m_LeftArm, m_LeftHandTarget);
+            DrawReach(m_RightArm, m_RightHandTarget);
+        }
+
+        static void DrawReach(Limb limb, Transform target)
+        {
+            if (!limb.valid || target == null) return;
+
+            Vector3 wrist = limb.end.position;
+            Vector3 hand = target.position;
+            float gap = Vector3.Distance(wrist, hand);
+
+            // Green within a couple of centimetres, red past a hand's width. The colour is the
+            // reading; the number is only for when the colour is ambiguous.
+            Gizmos.color = Color.Lerp(Color.green, Color.red, Mathf.InverseLerp(0.02f, 0.15f, gap));
+            Gizmos.DrawLine(wrist, hand);
+            Gizmos.DrawWireSphere(hand, 0.04f);
+            Gizmos.DrawSphere(wrist, 0.02f);
+
+            // The shoulder the arm is solved from, because a shoulder in the wrong place is the
+            // usual reason an arm that is following still does not arrive.
+            Gizmos.color = new Color(0.4f, 0.7f, 1f, 0.8f);
+            Gizmos.DrawLine(limb.upper.position, wrist);
+            Gizmos.DrawWireSphere(limb.upper.position, 0.03f);
+        }
     }
 }

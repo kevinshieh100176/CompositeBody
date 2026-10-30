@@ -234,6 +234,7 @@ GameObject:
   - component: {fileID: 8430773068035086291}
   - component: {fileID: 4903258785222451143}
   - component: {fileID: 248222515929978210}
+  - component: {fileID: 6666817829392105043}
   m_Layer: 0
   m_Name: MembraneAvatar_Quest_RightHand_MembraneFilm
   m_TagString: Untagged
@@ -356,6 +357,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneFilmLink
   m_Source: {fileID: 147406205841549104}
   m_Film: {fileID: 4903258785222451143}
+--- !u!114 &6666817829392105043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1163993488429522538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 908621b7fc2bd1948b896daf647d0ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneReveal
+  m_Film: {fileID: 4903258785222451143}
+  m_Reveal: 1
+  m_GrowFrom: {fileID: 0}
+  m_GrowFromLocal: {x: 0, y: 0, z: 0}
+  m_GrowRadius: 0
+  m_AutoRadius: 1
+  m_FadeInSeconds: 6
+  m_FadeOutSeconds: 4
+  m_Shape:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_GrowOnEnable: 0
 --- !u!1 &1377933388214852719
 GameObject:
   m_ObjectHideFlags: 0
@@ -626,6 +672,7 @@ GameObject:
   - component: {fileID: 5461973636097210905}
   - component: {fileID: 5331261163416317105}
   - component: {fileID: 541269302861796555}
+  - component: {fileID: 1186533498307660461}
   m_Layer: 0
   m_Name: MembraneBody_Ch36_MembraneFilm
   m_TagString: Untagged
@@ -673,7 +720,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ae191b24299ed6642ab645840bf895c1, type: 2}
+  - {fileID: 2100000, guid: 6b38e0b335018804d802c39fc414ae57, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -774,6 +821,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneFilmLink
   m_Source: {fileID: 183949485512285324}
   m_Film: {fileID: 5331261163416317105}
+--- !u!114 &1186533498307660461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2370920530348353694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 908621b7fc2bd1948b896daf647d0ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneReveal
+  m_Film: {fileID: 5331261163416317105}
+  m_Reveal: 1
+  m_GrowFrom: {fileID: 0}
+  m_GrowFromLocal: {x: 0.00000020861626, y: -0.006354809, z: 0.02664122}
+  m_GrowRadius: 0
+  m_AutoRadius: 1
+  m_FadeInSeconds: 3.5
+  m_FadeOutSeconds: 2
+  m_Shape:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_GrowOnEnable: 0
 --- !u!1 &2371515319874769169
 GameObject:
   m_ObjectHideFlags: 0
@@ -831,7 +923,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 2b2691caa6357fb42b6c0039815d6cae, type: 2}
+  - {fileID: 2100000, guid: 84434c67b2221e64ebe1657992124d26, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1333,13 +1425,14 @@ GameObject:
   - component: {fileID: 6483350608161186694}
   - component: {fileID: 626990153247622543}
   - component: {fileID: 7205002883271958168}
+  - component: {fileID: 8428810329016103013}
   m_Layer: 0
   m_Name: MembraneAvatar_Avatar_Head_Head_MembraneFilm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6483350608161186694
 Transform:
   m_ObjectHideFlags: 0
@@ -1431,6 +1524,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneFilmLink
   m_Source: {fileID: 4004270285897414336}
   m_Film: {fileID: 626990153247622543}
+--- !u!114 &8428810329016103013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3549702362603228165}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 908621b7fc2bd1948b896daf647d0ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneReveal
+  m_Film: {fileID: 626990153247622543}
+  m_Reveal: 1
+  m_GrowFrom: {fileID: 0}
+  m_GrowFromLocal: {x: 0, y: 0, z: 0}
+  m_GrowRadius: 0
+  m_AutoRadius: 1
+  m_FadeInSeconds: 6
+  m_FadeOutSeconds: 4
+  m_Shape:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_GrowOnEnable: 0
 --- !u!1 &3661884629560605759
 GameObject:
   m_ObjectHideFlags: 0
@@ -1713,6 +1851,7 @@ GameObject:
   - component: {fileID: 5460932185249088732}
   - component: {fileID: 7568848586964129090}
   - component: {fileID: 4249749395883799784}
+  - component: {fileID: 7508348600279308944}
   m_Layer: 0
   m_Name: MembraneAvatar_Quest_LeftHand_MembraneFilm
   m_TagString: Untagged
@@ -1835,6 +1974,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneFilmLink
   m_Source: {fileID: 5915267321722912462}
   m_Film: {fileID: 7568848586964129090}
+--- !u!114 &7508348600279308944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4868903598634984838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 908621b7fc2bd1948b896daf647d0ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Skin.MembraneReveal
+  m_Film: {fileID: 7568848586964129090}
+  m_Reveal: 1
+  m_GrowFrom: {fileID: 0}
+  m_GrowFromLocal: {x: 0, y: 0, z: 0}
+  m_GrowRadius: 0
+  m_AutoRadius: 1
+  m_FadeInSeconds: 6
+  m_FadeOutSeconds: 4
+  m_Shape:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_GrowOnEnable: 0
 --- !u!1 &5018554818948276343
 GameObject:
   m_ObjectHideFlags: 0
@@ -2060,6 +2244,9 @@ GameObject:
   - component: {fileID: 4588994832583027022}
   - component: {fileID: 8435302620866516779}
   - component: {fileID: 2722608077457501448}
+  - component: {fileID: 7538410783069329818}
+  - component: {fileID: 2865954173015133850}
+  - component: {fileID: 1657360221749760027}
   m_Layer: 0
   m_Name: XRI_Network_Player_Avatar
   m_TagString: Untagged
@@ -2308,6 +2495,129 @@ MonoBehaviour:
   m_QuestColor: {r: 0.101960786, g: 0.101960786, b: 0.49803922, a: 1}
   m_AndroidColor: {r: 0.101960786, g: 0.34117648, b: 0.101960786, a: 1}
   m_OtherColor: {r: 0.53333336, g: 0.101960786, b: 0.101960786, a: 1}
+--- !u!114 &7538410783069329818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5358844088564582620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27d34c5fc945eb445a1d9e36125a9d67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.AvatarFormation
+  m_Membranes:
+  - {fileID: 8428810329016103013}
+  - {fileID: 7508348600279308944}
+  - {fileID: 6666817829392105043}
+  - {fileID: 1186533498307660461}
+  m_BodyRenderers: []
+  m_Progress: 0
+  m_Scrub: 0
+  m_TotalSeconds: 32
+  m_MembraneCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.45
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_BodyCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.5
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  m_FadeProperty: _MaxDistance
+  m_HiddenDistance: 40
+  m_NominalDistance: 0.9
+  m_StartUnformed: 1
+--- !u!114 &2865954173015133850
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5358844088564582620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1252ad6edbd093141b2b54513a292952, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.RoleBodyTint
+  m_Renderers:
+  - {fileID: 8561325738679868846}
+  - {fileID: 140780028616233943}
+  - {fileID: 183949485512285324}
+  m_ColorProperty: _BaseColor
+  m_Strength: 1
+--- !u!114 &1657360221749760027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5358844088564582620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1da2fc47753711e40a005aa72caf262f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.AvatarFormationSync
+  ShowTopMostFoldoutHeaderGroup: 1
+  m_Timeout: 180
 --- !u!1 &5403432624908423505
 GameObject:
   m_ObjectHideFlags: 0
@@ -2658,6 +2968,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5708979721171982362}
   - component: {fileID: 6418384102226439632}
+  - component: {fileID: 1813618676075704016}
   m_Layer: 0
   m_Name: MembraneBody
   m_TagString: Untagged
@@ -2728,9 +3039,31 @@ MonoBehaviour:
   m_ElbowHint: {x: 0.25, y: -0.85, z: -0.5}
   m_KneeHint: {x: 0, y: 0, z: 1}
   m_MaxArmStretch: 1.25
-  m_CollapseHands: 1
+  m_CollapseHands: 0
   m_CollapseHeadForOwner: 1
   m_CollapsedBoneScale: 0.01
+  m_ShowReach: 0
+--- !u!114 &1813618676075704016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6098846344955154017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e4847f22ca3da2478c58a671ca01ad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Avatar.Body.MembraneHandRetarget
+  m_Left:
+    driverRoot: {fileID: 1523342480417178809}
+    targetRoot: {fileID: 6465782884306784970}
+    hideDriverMesh: 1
+  m_Right:
+    driverRoot: {fileID: 908897919254213233}
+    targetRoot: {fileID: 4721948435793617482}
+    hideDriverMesh: 1
+  m_LogPairing: 1
 --- !u!1 &6207178478933732955
 GameObject:
   m_ObjectHideFlags: 0
@@ -3629,62 +3962,62 @@ PrefabInstance:
     - target: {fileID: 2314544479048901684, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2314544479048901684, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2314544479048901684, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 210.18
       objectReference: {fileID: 0}
     - target: {fileID: 2314544479048901684, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -30
       objectReference: {fileID: 0}
     - target: {fileID: 2775563243784301196, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2775563243784301196, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2775563243784301196, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 118.84
       objectReference: {fileID: 0}
     - target: {fileID: 2775563243784301196, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -30
       objectReference: {fileID: 0}
     - target: {fileID: 3455939876598951265, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3455939876598951265, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3455939876598951265, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 3455939876598951265, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -30
       objectReference: {fileID: 0}
     - target: {fileID: 4032951527684374079, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
@@ -3699,7 +4032,7 @@ PrefabInstance:
     - target: {fileID: 6949375553465245238, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 27.7
       objectReference: {fileID: 0}
     - target: {fileID: 7644345967948244596, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
@@ -3709,7 +4042,7 @@ PrefabInstance:
     - target: {fileID: 8046957161478388112, guid: 4ef4f26963257fc42a3db406d2c9a171,
         type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 242.68
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3841,7 +4174,7 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 2b2691caa6357fb42b6c0039815d6cae, type: 2}
+      objectReference: {fileID: 2100000, guid: 84434c67b2221e64ebe1657992124d26, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -4025,6 +4358,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 923971003697584695}
   m_PrefabAsset: {fileID: 0}
+--- !u!137 &8561325738679868846 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8799306747698988953, guid: fd7060ff12d07ca49b9a59dcd37883f5,
+    type: 3}
+  m_PrefabInstance: {fileID: 923971003697584695}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8751725453292360031 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8477680321143999336, guid: fd7060ff12d07ca49b9a59dcd37883f5,
@@ -4075,7 +4414,7 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 2b2691caa6357fb42b6c0039815d6cae, type: 2}
+      objectReference: {fileID: 2100000, guid: 84434c67b2221e64ebe1657992124d26, type: 2}
     - target: {fileID: 2400692196318737537, guid: cc80be4bc1a936a4fad64ab6fc6acd8c,
         type: 3}
       propertyPath: m_Name
@@ -4177,6 +4516,12 @@ PrefabInstance:
       addedObject: {fileID: 8430773068035086291}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cc80be4bc1a936a4fad64ab6fc6acd8c, type: 3}
+--- !u!137 &140780028616233943 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 1988984002956552773, guid: cc80be4bc1a936a4fad64ab6fc6acd8c,
+    type: 3}
+  m_PrefabInstance: {fileID: 1904579371906840978}
+  m_PrefabAsset: {fileID: 0}
 --- !u!137 &147406205841549104 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 1758055255738982050, guid: cc80be4bc1a936a4fad64ab6fc6acd8c,
@@ -4472,6 +4817,11 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: 46f10b6b79000b24c8eb08930a082a08, type: 2}
+    - target: {fileID: -259972160606440404, guid: 11aa239aa004f41ffaf96def6065ff4c,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 11aa239aa004f41ffaf96def6065ff4c,
         type: 3}
       propertyPath: m_Name

@@ -99,8 +99,116 @@ namespace XRMultiplayer
             }
         }
 
+        // MODIFIED: see RetryLocalHandSetup.
+        bool m_ModalityListenersAdded;
+        float m_NextHandSetupRetry;
+        bool m_WarnedNoHandOrigin;
+
+        /// <summary>
+        /// MODIFIED. Keeps looking for the rig and the hand references until the owner actually
+        /// has something to copy from.
+        ///
+        /// SetupLocalHands ran exactly once, from OnNetworkSpawn, behind three one-shot
+        /// conditions: the XROrigin being findable, it carrying an XRInputModalityManager, and a
+        /// hand skeleton existing on it. XR devices routinely finish coming up a moment AFTER the
+        /// player spawns, so any of the three can miss -- and then m_LeftHandOrigin stays null for
+        /// the whole session. XRINetworkPlayer.LateUpdate skips a null origin silently, so the
+        /// owner looks fine to itself while the other machine shows hands parked at the origin.
+        ///
+        /// This is the same failure the head had, in a second component with its own copy of the
+        /// same one-shot lookup.
+        /// </summary>
+        void RetryLocalHandSetup()
+        {
+            if (!IsOwner) return;
+            if (Time.unscaledTime < m_NextHandSetupRetry) return;
+            m_NextHandSetupRetry = Time.unscaledTime + 0.25f;
+
+            if (m_XROrigin == null)
+                m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
+            if (m_XROrigin == null) return;
+
+            if (m_XRModalityManager == null && !m_XROrigin.TryGetComponent(out m_XRModalityManager))
+                return;
+
+            // RESOLVED LIVE, NOT LATCHED. Twice now this settled on a reference that was non-null
+            // and permanently stationary -- a controller transform on a rig that was actually
+            // hand tracking -- and stopped looking, which is indistinguishable from never having
+            // resolved at all. Deciding every quarter second costs nothing and cannot get stuck:
+            // whatever is tracking right now is what the hands follow.
+            Transform left = PreferredOrigin(m_XRModalityManager.leftHand,
+                                             m_XRModalityManager.leftController);
+            Transform right = PreferredOrigin(m_XRModalityManager.rightHand,
+                                              m_XRModalityManager.rightController);
+
+            if (left == null && right == null)
+            {
+                // Said out loud, once, because the silent version of this is a player whose
+                // hands sit at their hips with nothing in any log to explain it. Neither the
+                // hand nor the controller being ACTIVE is the modality manager reporting that
+                // nothing is being tracked -- which is the honest answer in a headless run and
+                // a real fault in a headset.
+                if (!m_WarnedNoHandOrigin)
+                {
+                    m_WarnedNoHandOrigin = true;
+                    Utils.LogWarning("XRHandPoseReplicator: neither a tracked hand nor a " +
+                                     "controller is active, so there is nothing for the hands " +
+                                     "to follow. The arms will hang.");
+                }
+                return;
+            }
+
+            m_WarnedNoHandOrigin = false;
+            if (left == m_LeftHandOrigin && right == m_RightHandOrigin) return;
+
+            m_LeftHandOrigin = left != null ? left : m_LeftHandOrigin;
+            m_RightHandOrigin = right != null ? right : m_RightHandOrigin;
+
+            if (XRINetworkPlayer.LocalPlayer != null)
+                XRINetworkPlayer.LocalPlayer.SetHandOrigins(m_LeftHandOrigin, m_RightHandOrigin);
+
+            Utils.Log($"XRHandPoseReplicator: hand origins -> " +
+                      $"left='{(m_LeftHandOrigin != null ? m_LeftHandOrigin.name : "NONE")}' " +
+                      $"right='{(m_RightHandOrigin != null ? m_RightHandOrigin.name : "NONE")}'");
+        }
+
+        /// <summary>
+        /// Whichever of the two is actually live, preferring a tracked hand's skeleton root over
+        /// the controller.
+        ///
+        /// XRInputModalityManager switches these objects on and off as the player picks up or
+        /// puts down a controller, so "is it active" is the question that matters -- not what the
+        /// mode enum said once at spawn. The skeleton ROOT is taken rather than the hand object,
+        /// because that is the transform the wrist actually tracks; the hand object above it does
+        /// not move.
+        /// </summary>
+        static Transform PreferredOrigin(GameObject hand, GameObject controller)
+        {
+            // The tracked hand wins whenever it exists AT ALL, not only while it is switched on.
+            //
+            // Holding a controller for locomotion while hand tracking is also running makes the
+            // modality manager flick between the two, and preferring whichever was active this
+            // frame made the origin alternate 87 times in one session -- the hand jumping between
+            // two skeletons, and every consumer downstream jumping with it. One stable choice is
+            // worth more here than the most current one.
+            if (hand != null)
+            {
+                var skeleton = hand.GetComponentInChildren<XRHandSkeletonDriver>(true);
+                if (skeleton != null && skeleton.rootTransform != null) return skeleton.rootTransform;
+                if (hand.activeInHierarchy) return hand.transform;
+            }
+
+            if (controller != null && controller.activeInHierarchy) return controller.transform;
+
+            return null;
+        }
+
         private void Update()
         {
+            // MODIFIED: before the early-out below, which is gated on m_IsInitialized and would
+            // otherwise keep the retry from ever running.
+            RetryLocalHandSetup();
+
             if (!m_IsInitialized.Value || !NetworkManager.IsConnectedClient || NetworkManager.ShutdownInProgress) return;
 
             if (trackingType == XRInputModalityManager.InputMode.TrackedHand)
@@ -130,8 +238,12 @@ namespace XRMultiplayer
 
             if (IsOwner)
             {
+                // MODIFIED: null-guarded. FindFirstObjectByType returns null when the rig is not
+                // in the scene yet, and the original went straight into m_XROrigin.TryGetComponent
+                // -- a NullReferenceException inside OnNetworkSpawn, which also skipped
+                // SetupLocalFingerReferences below it. RetryLocalHandSetup picks it up later.
                 m_XROrigin = FindFirstObjectByType<XROrigin>();
-                if (m_XROrigin.TryGetComponent(out m_XRModalityManager))
+                if (m_XROrigin != null && m_XROrigin.TryGetComponent(out m_XRModalityManager))
                 {
                     SetupLocalHands();
                 }
@@ -173,13 +285,31 @@ namespace XRMultiplayer
                 if (rightHandSkeleton != null)
                     m_RightHandTransformReference = rightHandSkeleton.rootTransform;
 
-                // Setup tracking listening if either hand is tracked (hopefully to slightly future proof synchronous multimodality)
+                // MODIFIED: the listeners are registered whatever happened above. The original
+                // only added them when a skeleton already existed, so a rig that had not brought
+                // hand tracking up yet got no origins AND no way to be told later. Guarded
+                // because this method is now retried and AddListener will happily register the
+                // same callback twice.
+                if (!m_ModalityListenersAdded)
+                {
+                    m_ModalityListenersAdded = true;
+                    m_XRModalityManager.trackedHandModeStarted.AddListener(SwapToHands);
+                    m_XRModalityManager.motionControllerModeStarted.AddListener(SwapToControllers);
+                }
+
                 if (rightHandSkeleton != null || leftHandSkeleton != null)
                 {
                     SetTrackingType(XRInputModalityManager.currentInputMode.Value);
-
-                    m_XRModalityManager.trackedHandModeStarted.AddListener(SwapToHands);
-                    m_XRModalityManager.motionControllerModeStarted.AddListener(SwapToControllers);
+                }
+                else
+                {
+                    // No skeleton yet. Fall back to the controllers so the hands are not frozen
+                    // in the meantime -- but do NOT treat this as settled. A controller transform
+                    // on a rig that is actually running hand tracking never moves, so latching
+                    // here would swap one kind of stuck hand for another. RetryLocalHandSetup
+                    // keeps looking, and the listeners above will swap modes if that happens
+                    // first.
+                    SetTrackingType(XRInputModalityManager.InputMode.MotionController);
                 }
             }
         }
@@ -208,6 +338,10 @@ namespace XRMultiplayer
             XRHandSkeletonDriver localRightHandSkeleton = modalityMangager.rightHand.GetComponentInChildren<XRHandSkeletonDriver>();
             if (localLeftHandSkeleton == null || localRightHandSkeleton == null)
                 return;
+
+            // MODIFIED: kept, so LocalRigJoints below can answer with the WHOLE skeleton rather
+            // than the five fingers assembled underneath. See the note there.
+            m_LocalSkeletons = new[] { localLeftHandSkeleton, localRightHandSkeleton };
 
             m_LocalHandFidelityOptions = new HandFidelityOption[2];
             for (int i = 0; i < m_LocalHandFidelityOptions.Length; i++)
@@ -270,6 +404,60 @@ namespace XRMultiplayer
 
             SetFidelity(m_FidelityLevel);
         }
+
+        // MODIFIED: the two accessors below. Nothing in the template needs them; MembraneHandRetarget
+        // does, and the alternative was it re-deriving the same two skeletons for itself. It did,
+        // and it got different answers: SetupLocalFingerReferences above looks the local skeleton
+        // up with GetComponentInChildren<XRHandSkeletonDriver>() -- ACTIVE ONLY -- while the
+        // retarget passed `true` and so could pick up a second, inactive skeleton whose bones
+        // carry identical names. PC B's log is the proof: hand tracking was live and the origins
+        // resolved to 'L_Wrist', yet the retarget watched its own 'L_IndexProximal' sit at 0.0
+        // degrees for eight seconds. Whichever list is right, there is no argument about which
+        // one is READ if the reader hands it over.
+
+        XRHandSkeletonDriver[] m_LocalSkeletons;
+
+        /// <summary>
+        /// The LOCAL RIG joints this replicator reads the owner's finger poses from, keyed by
+        /// XRHandJointID name ("IndexProximal", "Wrist", ...). Null on a machine that does not
+        /// own this player, and before the references are resolved.
+        ///
+        /// THE WHOLE SKELETON, NOT JUST THE FINGERS IT SENDS. The first version of this returned
+        /// m_LocalHandFidelityOptions, which is the five fingers and nothing else -- 19 joints,
+        /// no wrist. The caller retargets each finger RELATIVE TO ITS OWN WRIST, so with no wrist
+        /// in the list it fell back to searching the avatar and found the NETWORKED hand's
+        /// 'L_Wrist - Quest': local-rig fingers measured against a different skeleton's wrist,
+        /// which is precisely the mismatch the relative measurement exists to cancel. The result
+        /// was fingers at impossible angles. These are the same transform objects either way --
+        /// m_LocalHandFidelityOptions is assembled from this very skeleton -- so handing over the
+        /// full list costs nothing and keeps every joint in one frame of reference.
+        /// </summary>
+        /// <param name="side">0 left, 1 right.</param>
+        public Dictionary<string, Transform> LocalRigJoints(int side)
+        {
+            if (m_LocalSkeletons == null || side < 0 || side >= m_LocalSkeletons.Length) return null;
+
+            XRHandSkeletonDriver skeleton = m_LocalSkeletons[side];
+            if (skeleton?.jointTransformReferences == null) return null;
+
+            var map = new Dictionary<string, Transform>();
+            foreach (var reference in skeleton.jointTransformReferences)
+            {
+                if (reference.jointTransform == null) continue;
+                map[reference.xrHandJointID.ToString()] = reference.jointTransform;
+            }
+            return map.Count > 0 ? map : null;
+        }
+
+        /// <summary>
+        /// The networked hand this replicator WRITES the other player's finger poses onto -- the
+        /// skeleton that moves on a machine watching someone else.
+        /// </summary>
+        /// <param name="side">0 left, 1 right.</param>
+        public JointBasedHand NetworkedHand(int side) =>
+            m_HandCurler != null && side >= 0 && side < m_HandCurler.Length
+                ? m_HandCurler[side]
+                : null;
 
         public void ChangeControllerType(XRInputModalityManager.InputMode inputMode)
         {
@@ -582,7 +770,11 @@ namespace XRMultiplayer
                 m_RightHandOrigin = m_RightHandTransformReference;
             }
 
-            XRINetworkPlayer.LocalPlayer.SetHandOrigins(m_LeftHandOrigin, m_RightHandOrigin);
+            // MODIFIED: guarded. This is now reached from a retry that can run before
+            // XRINetworkPlayer has registered itself as LocalPlayer, and an unguarded dereference
+            // there would throw twice a second for as long as it took to come up.
+            if (XRINetworkPlayer.LocalPlayer != null)
+                XRINetworkPlayer.LocalPlayer.SetHandOrigins(m_LeftHandOrigin, m_RightHandOrigin);
         }
 
         void ResetHandsToStart()

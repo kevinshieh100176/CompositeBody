@@ -82,6 +82,9 @@ namespace CompositeBody.Experience
             if (m_Renderer != null) m_Renderer.enabled = m_Current > 0.001f;
         }
 
+        /// <summary>Static, so a reload or a second instance does not restart the spam.</summary>
+        static bool s_WarnedNoShader;
+
         void EnsureQuad()
         {
             if (m_Quad != null) return;
@@ -94,7 +97,21 @@ namespace CompositeBody.Experience
                 var shader = Shader.Find("CompositeBody/ScreenFade");
                 if (shader == null)
                 {
-                    Debug.LogError("[ScreenFade] Shader 'CompositeBody/ScreenFade' not found; no fade will be drawn.");
+                    // ONCE. This runs from LateUpdate and the lookup keeps failing, so the
+                    // original logged every frame: PC B's Player.log came back 90 MB, 76,913
+                    // copies of this one line, with everything else in the session buried in it.
+                    // A missing resource is one fact, not one per frame.
+                    if (!s_WarnedNoShader)
+                    {
+                        s_WarnedNoShader = true;
+                        Debug.LogError(
+                            "[ScreenFade] Shader 'CompositeBody/ScreenFade' not found; no fade " +
+                            "will be drawn. In a built player Shader.Find only sees shaders the " +
+                            "build kept, and this one is referenced by nothing in a scene -- it " +
+                            "has to be listed in Project Settings > Graphics > Always Included " +
+                            "Shaders, or moved into a Resources folder. Said once; it will not " +
+                            "repeat.");
+                    }
                     return;
                 }
                 m_Material = new Material(shader) { name = "ScreenFade (runtime)" };

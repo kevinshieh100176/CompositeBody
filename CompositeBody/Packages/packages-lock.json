@@ -481,6 +481,17 @@
         "com.unity.searcher": "4.9.3"
       }
     },
+    "com.unity.splines": {
+      "version": "2.9.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.mathematics": "1.2.1",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.settings-manager": "1.0.3"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.terrain-tools": {
       "version": "5.3.3",
       "depth": 0,
@@ -530,8 +541,8 @@
       }
     },
     "com.unity.timeline": {
-      "version": "1.8.12",
-      "depth": 1,
+      "version": "1.8.13",
+      "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.modules.audio": "1.0.0",

@@ -59,6 +59,7 @@ Shader "CompositeBody/GooJelly"
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "CompositeFog.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -268,7 +269,7 @@ Shader "CompositeBody/GooJelly"
 
                 float3 color = bodyTerms * alpha + reflectedTerms;
 
-                color = MixFog(color, IN.fogCoord);
+                color = CompositeFogMix(color, IN.positionWS, IN.fogCoord);
                 return half4(color, alpha);
             }
             ENDHLSL

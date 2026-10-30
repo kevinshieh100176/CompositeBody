@@ -10,6 +10,7 @@ using XRMultiplayer;
 using CompositeBody.Avatar.Skin;
 using CompositeBody.Avatar.Cloth.EditorTools;
 using CompositeBody.Multiplayer;
+using CompositeBody.Assembly.EditorTools;
 
 namespace CompositeBody.Multiplayer.EditorSetup
 {
@@ -38,7 +39,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_FilmMeshPath = "Assets/_models/Ch36_CombineTestFilm.asset";
         const string k_Player1FilmMaterial = "Assets/Materials/MembraneFilm_Player1.mat";
         const string k_Player2FilmMaterial = "Assets/Materials/MembraneFilm_Player2.mat";
-        const string k_HalfMaterialPath = "Assets/Materials/CombineHalfSolid.mat";
+
         const string k_GhostMaterialPath = "Assets/Materials/GhostHalf.mat";
 
         // Same relaxation settings the membrane preview scene was tuned with.
@@ -46,9 +47,6 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const float k_MinOffset = 0.006f;
         const int k_SmoothIterations = 900;
         const float k_SmoothLambda = 0.60f;
-
-        const string k_PairId = "sample_box";
-        const float k_HalfWidth = 0.18f;
 
         public static void Run()
         {
@@ -100,7 +98,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             BuildMembraneFigure(fbx, filmMesh, membraneShader, PlayerRole.Player2,
                                 new Vector3(0.9f, 0f, 1.6f), 200f, k_Player2FilmMaterial);
 
-            BuildCombinePair(litShader, ghostShader);
+            if (!BuildCombinePair(ghostShader)) return;
 
             Directory.CreateDirectory("Assets/_Scenes");
             EditorSceneManager.MarkAllScenesDirty();
@@ -359,41 +357,68 @@ namespace CompositeBody.Multiplayer.EditorSetup
         #region Combine pair
 
         /// <summary>
-        /// Two halves of one box, one per role. Each gets the template's networked physics stack
-        /// so that grabbing transfers ownership and the holder's pose replicates; the server
-        /// needs that to measure the gap between the halves at all.
+        /// The rustic chair cut down the middle, one half per role. Each gets the template's
+        /// networked physics stack so that grabbing transfers ownership and the holder's pose
+        /// replicates; the server needs that to measure the gap between the halves at all.
+        ///
+        /// A real prop rather than the two boxes this used to build. The boxes proved the
+        /// plumbing, but they could not answer the question the scene exists for: whether half an
+        /// object is legible as half of that object while someone else holds the rest of it.
         /// </summary>
-        static void BuildCombinePair(Shader litShader, Shader ghostShader)
+        static bool BuildCombinePair(Shader ghostShader)
         {
-            var solid = LoadOrCreate(k_HalfMaterialPath, litShader, "CombineHalfSolid");
-            solid.SetColor("_BaseColor", new Color(0.56f, 0.47f, 0.37f));
-            solid.SetFloat("_Smoothness", 0.2f);
-            EditorUtility.SetDirty(solid);
+            var chair = ChairHalves.Build();
+            if (chair == null)
+            {
+                Debug.LogError("[Combine] RESULT: FAIL - the chair could not be cut.");
+                return false;
+            }
 
             var ghost = LoadOrCreateGhostMaterial(ghostShader);
 
-            // Set apart and at a comfortable height, each in front of its own player's spawn, so
-            // neither player has to be told which half is theirs.
-            var left = BuildHalf("CombineHalf_P1", new Vector3(-0.55f, 0.95f, 0.35f), solid);
-            var right = BuildHalf("CombineHalf_P2", new Vector3(0.55f, 0.95f, 0.35f), solid);
+            // Standing on the floor, apart, each in front of its own player's spawn, so neither
+            // player has to be told which half is theirs. On the floor rather than floating at
+            // chest height: a chair half hanging in the air reads as debris, and a seat at its
+            // real height is already exactly where a hand expects to find it.
+            Vector3 leftHome = chair.AnchorStandingAt(new Vector3(-0.62f, 0f, 0.45f));
+            Vector3 rightHome = chair.AnchorStandingAt(new Vector3(0.62f, 0f, 0.45f)) + chair.socketOffset;
+
+            var left = BuildHalf("ChairHalf_P1", chair.left, chair.materials, leftHome);
+            var right = BuildHalf("ChairHalf_P2", chair.right, chair.materials, rightHome);
 
             var socket = new GameObject("AssemblySocket").transform;
             socket.SetParent(left.transform, false);
-            socket.localPosition = new Vector3(k_HalfWidth * 2f, 0f, 0f);
+            socket.localPosition = chair.socketOffset;
 
             Configure(left, PlayerRole.Player1, true, socket, ghost);
             Configure(right, PlayerRole.Player2, false, null, ghost);
 
-            Debug.Log("[Combine] Built one assembly pair (P1 anchor, P2 follower).");
+            Debug.Log($"[Combine] Built one chair pair (P1 anchor, P2 follower), socket offset " +
+                      $"{chair.socketOffset:F4}.");
+            return true;
         }
 
-        static GameObject BuildHalf(string name, Vector3 position, Material solid)
+        static GameObject BuildHalf(string name, Mesh mesh, Material[] materials, Vector3 position)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = name;
+            var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
             go.transform.position = position;
-            go.transform.localScale = new Vector3(k_HalfWidth * 2f, 0.22f, 0.22f);
-            go.GetComponent<MeshRenderer>().sharedMaterial = solid;
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+
+            // One slot per submesh: the body takes the chair's own wood, the cut face takes raw
+            // sawn timber, so which edge to bring to the other half is obvious across the room.
+            go.GetComponent<MeshRenderer>().sharedMaterials = mesh.subMeshCount > 1
+                ? materials
+                : new[] { materials[0] };
+
+            // Convex, because a non-kinematic Rigidbody cannot carry a concave one. The hull is
+            // fatter than the chair -- it fills in between the legs and the spindles -- but it
+            // stops dead at the cut plane, since no vertex of this half lies past it. That is the
+            // only face that matters here: the two hulls meet exactly where the halves do, so
+            // they cannot hold each other apart short of the snap.
+            var collider = go.AddComponent<MeshCollider>();
+            collider.sharedMesh = mesh;
+            collider.convex = true;
+
             return go;
         }
 
@@ -431,10 +456,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             var half = go.AddComponent<CompositeHalf>();
             var so = new SerializedObject(half);
-            so.FindProperty("m_PairId").stringValue = k_PairId;
+            so.FindProperty("m_PairId").stringValue = ChairHalves.PairId;
             so.FindProperty("m_OwnedBy").intValue = (int)role;
             so.FindProperty("m_IsAnchor").boolValue = isAnchor;
-            so.FindProperty("m_SnapRadius").floatValue = 0.22f;
+            so.FindProperty("m_SnapRadius").floatValue = 0.12f;
             so.FindProperty("m_Ghost").objectReferenceValue = roleGhost;
             so.FindProperty("m_Interactable").objectReferenceValue = grab;
             so.FindProperty("m_Rigidbody").objectReferenceValue = rb;

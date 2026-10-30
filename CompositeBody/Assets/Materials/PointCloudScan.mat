@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PointCloudScan
+  m_Shader: {fileID: 4800000, guid: 22f89732a26bea04385b79c0911b6611, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _ROUND_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _Desaturate: 0
+    - _Dissolve: 0
+    - _DissolveDrift: 0.6
+    - _DissolveRadius: 1.8
+    - _DissolveScatter: 0.35
+    - _DissolveShrink: 1
+    - _DissolveSpread: 0.08
+    - _Glitch: 0
+    - _GlitchChroma: 0.5
+    - _GlitchDropout: 0.25
+    - _GlitchRate: 11
+    - _GlitchScatter: 0.18
+    - _GlitchSeed: 3
+    - _GlitchShift: 0.05
+    - _GlitchSlabs: 48
+    - _Intensity: 1.3
+    - _MinPixels: 1.5
+    - _Phase: 0
+    - _PointSize: 0.0045
+    - _Reveal: 1
+    - _RevealRadius: 0
+    - _Round: 1
+    - _Softness: 0.35
+    - _Tinted: 0
+    - _Turbulence: 0.003
+    - _TurbulenceScale: 6
+    - _TurbulenceSpeed: 0.9
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _DissolveDir: {r: 0, g: 1, b: 0, a: 0}
+    - _DissolveFrom: {r: 0, g: 1, b: 0, a: 0}
+    - _RevealFrom: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
