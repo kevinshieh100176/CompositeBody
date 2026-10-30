@@ -130,13 +130,16 @@ namespace CompositeBody.Multiplayer.EditorSetup
         }
 
         /// <summary>
-        /// Pair each 真人 with the object that replaces it, and hand the pairs to ScanHandover.
+        /// Hand the two 真人 to ScanHandover, which is what dissolves them.
         ///
-        /// Paired by ROLE rather than by order in the hierarchy: Human A belongs to Player 1 and
-        /// so does the coat, and both facts are already written down -- on the figure's
-        /// O0FigureRoleView and on the prop's RoleVisibility. Reading them back is why a future
-        /// reshuffle of the Content hierarchy cannot silently swap a player's coat for the other
-        /// player's mug.
+        /// IT NO LONGER PAIRS THEM WITH A PROP. Each figure used to be paired with the object
+        /// that took its place, and both halves ran off one curve. The objects belong to O-1 now
+        /// -- they arrive with the boxes, on that beat's own timeline, through PropPresence -- so
+        /// the only thing this has to know is which clouds go.
+        ///
+        /// Found by ROLE rather than by order in the hierarchy, from the view component that
+        /// already says so, so a future reshuffle of the Content hierarchy cannot quietly leave
+        /// one of them behind.
         /// </summary>
         static void WireHandover(GameObject root, Transform beats, Transform grabGroup)
         {
@@ -156,40 +159,26 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 if (figure != null) figureFor[role] = figure;
             }
 
-            // And which prop, from the visibility rule on the prop's own station.
-            var propFor = new System.Collections.Generic.Dictionary<PlayerRole, Transform>();
-            foreach (var vis in grabGroup.GetComponentsInChildren<RoleVisibility>(true))
-            {
-                var so = new SerializedObject(vis);
-                SerializedProperty roles = so.FindProperty("m_VisibleToRoles");
-                if (roles.arraySize == 0) continue;
-                propFor[(PlayerRole)roles.GetArrayElementAtIndex(0).intValue] = vis.transform;
-            }
-
-            var pairs = new System.Collections.Generic.List<(PointCloudFigure, Transform)>();
+            var figures = new System.Collections.Generic.List<PointCloudFigure>();
             foreach (PlayerRole role in new[] { PlayerRole.Player1, PlayerRole.Player2 })
             {
-                if (figureFor.TryGetValue(role, out var fig) && propFor.TryGetValue(role, out var prop))
-                    pairs.Add((fig, prop));
+                if (figureFor.TryGetValue(role, out PointCloudFigure figure)) figures.Add(figure);
                 else
-                    Debug.LogWarning($"[Onboarding] no figure/prop pair for {role}; that player's " +
-                                     "object will not take its 真人's place.");
+                    Debug.LogWarning($"[Onboarding] no 真人 found for {role}; that player's scan " +
+                                     "will not dissolve when O-0's timeline asks it to.");
             }
 
             var hso = new SerializedObject(handover);
             SerializedProperty list = hso.FindProperty("m_Stations");
-            list.arraySize = pairs.Count;
-            for (int i = 0; i < pairs.Count; i++)
+            list.arraySize = figures.Count;
+            for (int i = 0; i < figures.Count; i++)
             {
-                SerializedProperty entry = list.GetArrayElementAtIndex(i);
-                entry.FindPropertyRelative("figure").objectReferenceValue = pairs[i].Item1;
-                entry.FindPropertyRelative("prop").objectReferenceValue = pairs[i].Item2;
-                entry.FindPropertyRelative("propRenderers").arraySize = 0;
-                entry.FindPropertyRelative("grab").objectReferenceValue = null;
+                list.GetArrayElementAtIndex(i)
+                    .FindPropertyRelative("figure").objectReferenceValue = figures[i];
             }
             hso.ApplyModifiedPropertiesWithoutUndo();
 
-            Debug.Log($"[Onboarding] ScanHandover wired with {pairs.Count} figure/prop pair(s).");
+            Debug.Log($"[Onboarding] ScanHandover wired with {figures.Count} 真人.");
         }
 
         /// <summary>

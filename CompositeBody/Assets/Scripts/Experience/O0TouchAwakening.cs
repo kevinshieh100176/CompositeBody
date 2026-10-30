@@ -11,10 +11,17 @@ namespace CompositeBody.Experience
     /// 「觀眾和真人觸碰後，觀眾與真人的地面似乎在旋轉，像是音樂盒。同時觀眾的手開始成形，雙手從粒子與
     /// 膜的流動裡出現，像從真人身上剝落出來的延伸。」
     ///
-    /// The one interactive moment in O-0, and the only thing in the beat that is NOT on the
-    /// Timeline. The opening is authored and runs to a clock; this waits for a person to reach
-    /// out, which may be ten seconds after the 光圈 come up or may be two minutes. Putting it on
-    /// the timeline would mean deciding for them when they were curious.
+    /// THE TOUCH IS NO LONGER WHAT STARTS IT. This waited for a person to reach out, on the
+    /// argument that putting the moment on the timeline would mean deciding for them when they
+    /// were curious. The cost was that a player who did not reach out -- or whose hand tracking
+    /// dropped, which in this room it does -- stood in an opening that never moved on, with
+    /// everything downstream of it waiting: their own body, the 真人 leaving, O-1. So O-0's
+    /// timeline fires it: <see cref="m_Cue"/> is a serialized field an AnimationTrack writes, and
+    /// the moment the player's body begins to arrive is a clip you drag.
+    ///
+    /// THE HAND STILL WORKS, as a way in rather than the only one -- set
+    /// <see cref="m_RequireTouch"/> and the poll below is what fires the beat again, which is
+    /// what the authoring scene and a staff rescue want.
     ///
     /// THE TOUCH TEST IS ANALYTIC, not a collider. The 真人 are point clouds of several hundred
     /// thousand loose points with no surface to collide against, and a mesh collider built from
@@ -65,6 +72,23 @@ namespace CompositeBody.Experience
                                                      "as a fraction of its width.")]
         float m_BodyRadius = 0.32f;
 
+        [Header("Cue")]
+        [SerializeField, Range(0f, 1f), Tooltip("DRIVEN BY O-0'S TIMELINE. Crossing a half fires " +
+                                                "the whole arrival -- the plates, the hands and " +
+                                                "the player's own body -- once. A ramp rather " +
+                                                "than a signal because this show's directors are " +
+                                                "scrubbed and resynced from a shared clock, and " +
+                                                "a notification that was dropped or doubled " +
+                                                "would leave one headset with a body and the " +
+                                                "other without.")]
+        float m_Cue;
+
+        [SerializeField, Tooltip("Wait for a hand on a 真人 instead of taking the cue above. For " +
+                                 "the authoring scene and for a beat rehearsed without the show " +
+                                 "running; off in the venue, where nothing may depend on a " +
+                                 "gesture that hand tracking can miss.")]
+        bool m_RequireTouch;
+
         [Header("Timing")]
         [SerializeField, Min(0.1f)] float m_SpinSeconds = 7f;
         [SerializeField, Min(0.1f)] float m_HandSeconds = 5.5f;
@@ -79,6 +103,7 @@ namespace CompositeBody.Experience
         XRHandSubsystem m_Subsystem;
         XROrigin m_Origin;
         bool m_Awakened;
+        bool m_BodyPending;
         float m_TouchTime;
         Vector3 m_TouchPoint;
 
@@ -135,10 +160,17 @@ namespace CompositeBody.Experience
                 touched.figure.GlitchBurst(0.55f, 0.5f);
             }
 
-            // 「同時觀眾的手開始成形」 -- the player's own body starts arriving on the same touch.
+            // 「同時觀眾的手開始成形」 -- the player's own body starts arriving on the same cue.
             // Local only: this is what they see of themselves. It is also what the rest of the
             // beat hangs off, so it is the one line here that must not be skipped.
-            if (AvatarFormation.local != null) AvatarFormation.local.Form();
+            //
+            // AND IT IS KEPT PENDING IF THE AVATAR IS NOT THERE YET. A touch could only happen
+            // once somebody was standing in the room; a cue on the timeline fires at forty-five
+            // seconds whether this machine's avatar has spawned or not, and a late join or a
+            // slow spawn would have latched the beat as done with no body ever arriving. The
+            // retry in LateUpdate is what makes the cue safe to fire blind.
+            m_BodyPending = true;
+            TryFormBody();
         }
 
         /// <summary>
@@ -175,10 +207,35 @@ namespace CompositeBody.Experience
 
         void LateUpdate()
         {
-            if (!m_Awakened) PollForTouch();
-            else DriveForming();
+            if (!m_Awakened)
+            {
+                // The timeline first: with both wired, whichever comes first wins, and a player
+                // who did reach out early should not then have the beat fired at them again.
+                if (m_Cue >= 0.5f) ForceAwaken(DebugTouchPoint());
+                else if (m_RequireTouch) PollForTouch();
+            }
+            else
+            {
+                if (m_BodyPending) TryFormBody();
+                DriveForming();
+            }
 
             FollowPlayer();
+        }
+
+        /// <summary>
+        /// Start the player's own body arriving, as soon as there is one to start.
+        ///
+        /// The ramp is written against <see cref="ExperienceClock"/> rather than against the
+        /// moment Form() is called, so an avatar that spawns a second late does not arrive a
+        /// second late -- it picks up partway along. See AvatarFormation.FormAt.
+        /// </summary>
+        void TryFormBody()
+        {
+            if (AvatarFormation.local == null) return;
+
+            m_BodyPending = false;
+            AvatarFormation.local.Form();
         }
 
         void PollForTouch()
@@ -302,7 +359,7 @@ namespace CompositeBody.Experience
         public string debugId => "o0.awakening";
 
         // ASCII, because the panel's font has no CJK glyphs; see AvatarFormationSync.debugLabel.
-        public string debugLabel => "Touch the scan figure -- hands, plate, body";
+        public string debugLabel => "O-0 arrival -- hands, plate, body";
 
         public DebugInteractionScope debugScope => DebugInteractionScope.LocalMachine;
 
@@ -317,7 +374,14 @@ namespace CompositeBody.Experience
             {
                 float since = ExperienceClock.now - m_TouchTime;
                 float reveal = Mathf.Clamp01((since - m_HandDelay) / Mathf.Max(m_HandSeconds, 0.01f));
-                state.detail = $"{TouchedStations()} touched, hands {reveal * 100f:0}%";
+
+                // The pending case is the one worth a row of its own: everything in the room has
+                // happened, and the player still has no body, because this machine's avatar had
+                // not spawned when the cue fired.
+                state.detail = m_BodyPending
+                    ? $"{TouchedStations()} touched, hands {reveal * 100f:0}% -- STILL WAITING " +
+                      "for a local avatar to give a body to"
+                    : $"{TouchedStations()} touched, hands {reveal * 100f:0}%";
             }
             else if (!isActiveAndEnabled)
             {
@@ -325,12 +389,18 @@ namespace CompositeBody.Experience
             }
             else
             {
-                // Says WHY nothing can happen, which is the question someone asks of a touch
-                // that will not fire: without hand tracking the poll never gets as far as the
-                // capsule test, and that looks identical to a capsule that is too small.
+                // Says WHY nothing has happened, which is the question someone asks of an
+                // arrival that has not fired: waiting for the timeline and waiting for a hand
+                // are different problems, and without hand tracking the poll never gets as far
+                // as the capsule test at all -- which looks identical to a capsule that is too
+                // small.
                 state.detail = m_Stations.Length == 0
                     ? "no stations wired"
-                    : (TryGetSubsystem() ? "waiting for a hand on a scan figure" : "no hand tracking on this machine");
+                    : !m_RequireTouch
+                        ? $"waiting for O-0's timeline cue ({m_Cue:0.00})"
+                        : TryGetSubsystem()
+                            ? "waiting for a hand on a scan figure"
+                            : "no hand tracking on this machine";
             }
 
             return state;

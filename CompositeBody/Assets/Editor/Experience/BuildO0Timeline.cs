@@ -33,10 +33,38 @@ namespace CompositeBody.Multiplayer.EditorSetup
     public static class BuildO0Timeline
     {
         const string k_Timeline = "Assets/_Timeline/O_0.playable";
-        const string k_Prefab = "Assets/_Scenes/O_0.prefab";
+        /// <summary>
+        /// The prefab that is actually in the show.
+        ///
+        /// NOT O_0.prefab, WHICH IS ONLY THE SEED. BuildOnboarding copied it once into
+        /// Onboarding.prefab and merged the other onboarding beats into that; MainScene has
+        /// instanced Onboarding.prefab ever since. This builder went on wiring the seed, so
+        /// everything it did to a prefab -- the Animator, the director, the bindings -- landed in
+        /// an asset nothing plays. The timeline ASSET is shared, which is why the cue still
+        /// worked and why nobody noticed.
+        /// </summary>
+        const string k_Prefab = "Assets/_Scenes/Onboarding.prefab";
+
+        /// <summary>
+        /// The seed, still wired so O_0.unity keeps previewing. It has no Beats group and no
+        /// Interaction object, so the handover is skipped there rather than failing.
+        /// </summary>
+        const string k_SeedPrefab = "Assets/_Scenes/O_0.prefab";
         const string k_TrackName = "O-0 Cue";
         const string k_ClipName = "O_0_Cue";
         const string k_AudioTrackName = "Cue Tone";
+        const string k_HandoverTrackName = "O-0 Handover";
+        const string k_ScansClipName = "O_0_ScansOut";
+        const string k_BodyClipName = "O_0_BodyCue";
+
+        /// <summary>
+        /// Where the two components the handover drives sit, relative to the Animator on the
+        /// prefab root. Animation paths are strings and fail silently when they are wrong, so
+        /// they are named once and <see cref="Verify"/> drives the finished timeline to prove
+        /// they still resolve.
+        /// </summary>
+        const string k_HandoverPath = "Beats";
+        const string k_AwakeningPath = "Content/Interaction";
 
         const string k_TitleTex = "Assets/_Art/O0/Title_CompositeBody_PLACEHOLDER.png";
         const string k_LineTex = "Assets/_Art/O0/O0_OpeningLine.png";
@@ -94,6 +122,33 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const float k_CentreDown = 5f;    // white falling:          25 -> 30
         const float k_Tail = 2f;          // a little hold at the end so the clip is not clipped
 
+        // THE HANDOVER, which used to be earned by touching a 真人 and is now authored here.
+        //
+        // 「玩家不需要去觸摸scan, 而是改在o_0 timeline上達成 scan dissolve, scan dissolve後 玩家身體
+        // 按照原本計畫出現」. Two clips on one track, because the two are a sequence and not an
+        // overlap: the scans leave, and THEN the body starts arriving. Drag either clip to
+        // re-cut the pacing; stretch the first to make the scans take longer.
+        //
+        // The scans go after the cue above has finished, not during it. The 光圈 are the 真人's
+        // own lights -- dissolving a figure while its colour is still rising reads as a fault in
+        // the light rather than as the figure leaving.
+        const float k_ScansOutAt = 34f;   // the 真人 begin to go:    34 -> 44
+        const float k_ScansOut = 10f;
+        const float k_BodyAt = 45f;       // the player's own body begins to arrive
+
+        // Only long enough to cross a half, which is what O0TouchAwakening latches on. It is a
+        // ramp rather than a signal marker because this show's directors are scrubbed and
+        // resynced from a shared clock, and a notification that was dropped or doubled would
+        // leave one headset with a body and the other without. See ShowHoldMarker's remarks.
+        const float k_BodyCue = 0.5f;
+
+        /// <summary>
+        /// AvatarFormation's own ramp, read off XRI_Network_Player_Avatar.prefab. Not used to
+        /// drive anything -- the body arrives on its own clock once it is told to -- but O-0 has
+        /// to be long enough to contain it, so the number has to be written down somewhere.
+        /// </summary>
+        const float k_BodySeconds = 32f;
+
         // Full values, matching what BuildO0Arrival authored.
         const float k_CentreLamp = 24f;
         const float k_ColourLamp = 6f;
@@ -131,11 +186,20 @@ namespace CompositeBody.Multiplayer.EditorSetup
             AudioTrack audioTrack = BuildAudioTrack(timeline);
             if (audioTrack == null) return;
 
+            MuteStrayAnimationTracks(timeline);
+
+            AnimationTrack handover = BuildHandoverTrack(timeline);
+            if (handover == null) return;
+
             EditorUtility.SetDirty(timeline);
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(k_Timeline, ImportAssetOptions.ForceSynchronousImport);
 
-            if (!WirePrefab(timeline, track, audioTrack)) return;
+            // The live prefab first, and then the seed -- so O_0.unity keeps previewing the cue
+            // without the show depending on an asset nothing instances.
+            if (!WirePrefab(timeline, track, audioTrack, handover, k_Prefab, true)) return;
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(k_SeedPrefab) != null)
+                WirePrefab(timeline, track, audioTrack, handover, k_SeedPrefab, false);
 
             // Flush the prefab before the scene is opened. WirePrefab has just added an Animator
             // to the prefab asset, and an instance already sitting in a scene does not grow one
@@ -143,6 +207,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             // looks for an Animator that does not exist yet and quietly gives up.
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(k_Prefab, ImportAssetOptions.ForceSynchronousImport);
+            AssetDatabase.ImportAsset(k_SeedPrefab, ImportAssetOptions.ForceSynchronousImport);
 
             BindAuthoringScene();
             if (!Verify()) return;
@@ -153,7 +218,11 @@ namespace CompositeBody.Multiplayer.EditorSetup
                       $"line {k_LineInAt}-{k_LineOutAt + k_LineOut}s, room full {k_Open}s, " +
                       $"halos up {colourAt}-{colourAt + k_ColourUp}s, white out " +
                       $"{colourAt + k_CentreDelay}-{colourAt + k_CentreDelay + k_CentreDown}s, " +
-                      $"clip {end}s.\n[Timeline] RESULT: PASS");
+                      $"clip {end}s.\n" +
+                      $"[Timeline] handover: 真人 out {k_ScansOutAt}-{k_ScansOutAt + k_ScansOut}s, " +
+                      $"body cue {k_BodyAt}s, body arrived by " +
+                      $"{k_BodyAt + k_BodySeconds}s -- so O-0 has to run at least that long.\n" +
+                      "[Timeline] RESULT: PASS");
         }
 
         /// <summary>
@@ -272,6 +341,132 @@ namespace CompositeBody.Multiplayer.EditorSetup
         }
 
         /// <summary>
+        /// Mute animation tracks this builder did not author, so two tracks are not writing
+        /// m_Dissolve at once.
+        ///
+        /// THERE WAS ONE, AND IT WAS FIGHTING THIS. A track called "Animation Track" carried a
+        /// recorded infinite clip with m_Dissolve on both 真人 -- 1 at twenty seconds and 0 at
+        /// twenty-five, with both ends clamped, so the figures were FULLY DISSOLVED from the
+        /// first frame of the show and came back five seconds later.
+        ///
+        /// MUTED, NOT DELETED, which is the correction. An earlier version of this deleted it
+        /// and destroyed its clip, on the reasoning that the recording was broken and had been
+        /// superseded. Both halves of that were true and neither is this tool's call to make:
+        /// somebody sat down and recorded those curves, and a builder that quietly throws away
+        /// hand work is a builder nobody can afford to run. Muted, it is still there, still
+        /// visible in the Timeline window, and one click from being looked at again.
+        ///
+        /// By name, because that is what distinguishes authored from recorded here: a track added
+        /// by dragging a component into the Timeline window is called "Animation Track".
+        /// </summary>
+        static void MuteStrayAnimationTracks(TimelineAsset timeline)
+        {
+            var mine = new System.Collections.Generic.HashSet<string>
+            {
+                k_TrackName, k_HandoverTrackName
+            };
+
+            foreach (TrackAsset candidate in
+                     new System.Collections.Generic.List<TrackAsset>(timeline.GetRootTracks()))
+            {
+                if (candidate is not AnimationTrack || mine.Contains(candidate.name)) continue;
+                if (candidate.muted) continue;
+
+                candidate.muted = true;
+                EditorUtility.SetDirty(candidate);
+
+                Debug.LogWarning($"[Timeline] MUTED the hand-recorded track '{candidate.name}' " +
+                                 "-- the handover below writes m_Dissolve too, and two tracks " +
+                                 "on it would layer over each other. Nothing was deleted: " +
+                                 "unmute it in the Timeline window if it is the one you want.");
+            }
+        }
+
+        /// <summary>
+        /// The handover: the 真人 leaving, and then the player's own body being told to arrive.
+        ///
+        /// TWO CLIPS ON ONE TRACK, each one draggable on its own. The first ramps
+        /// <c>ScanHandover.m_Progress</c> from nothing to all of it; the second crosses
+        /// <c>O0TouchAwakening.m_Cue</c> past a half, which is the latch that fires the plates,
+        /// the hands and the body. One track rather than two because they never overlap and
+        /// because a second animation track bound to the same Animator is a blend nobody asked
+        /// for.
+        ///
+        /// EACH CLIP IS EXACTLY AS LONG AS ITS CUE, which is only safe because both components
+        /// latch. An animation track reverts the properties it drives to their authored values
+        /// the moment its clip ends, so a dissolve clip that stopped at 44 s would walk the 真人
+        /// straight back into the room; ScanHandover holds its end state and O0TouchAwakening
+        /// latches on the first crossing, so neither can be undone by the track letting go. That
+        /// is what lets these be two short clips you can drag and stretch rather than two long
+        /// ones that have to reach the end of the beat.
+        /// </summary>
+        static AnimationTrack BuildHandoverTrack(TimelineAsset timeline)
+        {
+            AnimationTrack track = null;
+            foreach (TrackAsset existing in timeline.GetOutputTracks())
+            {
+                if (existing is AnimationTrack a && a.name == k_HandoverTrackName) track = a;
+            }
+
+            if (track == null) track = timeline.CreateTrack<AnimationTrack>(null, k_HandoverTrackName);
+            if (track == null)
+            {
+                Debug.LogError("[Timeline] RESULT: FAIL - could not create the handover track.");
+                return null;
+            }
+
+            foreach (TimelineClip old in
+                     new System.Collections.Generic.List<TimelineClip>(track.GetClips()))
+                timeline.DeleteClip(old);
+
+            AnimationClip scans = SubClip(timeline, k_ScansClipName);
+            SetCurve(scans, k_HandoverPath, typeof(ScanHandover), "m_Progress",
+                     (0f, 0f), (k_ScansOut, 1f));
+
+            TimelineClip scansClip = track.CreateClip(scans);
+            scansClip.start = k_ScansOutAt;
+            scansClip.duration = k_ScansOut;
+            scansClip.displayName = "真人 dissolve";
+
+            AnimationClip body = SubClip(timeline, k_BodyClipName);
+            SetCurve(body, k_AwakeningPath, typeof(O0TouchAwakening), "m_Cue",
+                     (0f, 0f), (k_BodyCue, 1f));
+
+            TimelineClip bodyClip = track.CreateClip(body);
+            bodyClip.start = k_BodyAt;
+            bodyClip.duration = k_BodyCue;
+            bodyClip.displayName = "Body arrives";
+
+            Debug.Log($"[Timeline] track '{track.name}': 真人 dissolve " +
+                      $"{k_ScansOutAt}-{k_ScansOutAt + k_ScansOut}s, body cue at {k_BodyAt}s.");
+            return track;
+        }
+
+        /// <summary>
+        /// An animation clip kept inside the timeline asset, reused across runs so the Timeline
+        /// window does not accumulate orphans and so a clip someone has re-shaped by hand keeps
+        /// its identity.
+        /// </summary>
+        static AnimationClip SubClip(TimelineAsset timeline, string name)
+        {
+            foreach (Object sub in AssetDatabase.LoadAllAssetsAtPath(k_Timeline))
+            {
+                if (sub is AnimationClip existing && existing.name == name)
+                {
+                    existing.ClearCurves();
+                    existing.frameRate = 60f;
+                    EditorUtility.SetDirty(existing);
+                    return existing;
+                }
+            }
+
+            var clip = new AnimationClip { name = name, frameRate = 60f };
+            AssetDatabase.AddObjectToAsset(clip, timeline);
+            EditorUtility.SetDirty(clip);
+            return clip;
+        }
+
+        /// <summary>
         /// Give the authoring scene's own director a binding, so the Timeline window actually
         /// scrubs something.
         ///
@@ -286,7 +481,19 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// </summary>
         static void BindAuthoringScene()
         {
-            const string k_Scene = "Assets/_Scenes/O_0.unity";
+            // ONBOARDING.UNITY, NOT O_0.UNITY. The beats were merged and the old authoring scene
+            // went with them; this still opened it, and OpenScene THROWS on a path that is not
+            // there rather than returning an invalid scene -- so the builder died here, after
+            // writing everything, with "Scene file not found" and no RESULT line at all.
+            const string k_Scene = "Assets/_Scenes/Onboarding.unity";
+
+            if (!System.IO.File.Exists(k_Scene))
+            {
+                Debug.LogWarning($"[Timeline] no {k_Scene}; the preview director is not bound. " +
+                                 "Run Tools/Onboarding/Build Onboarding to make the authoring " +
+                                 "scene again.");
+                return;
+            }
 
             // Reloaded from the path rather than passed in. Run() reimports the timeline asset
             // before this point, and a ForceSynchronousImport can replace the loaded instance --
@@ -294,9 +501,12 @@ namespace CompositeBody.Multiplayer.EditorSetup
             // from. The director was found and rejected for being "a different timeline".
             var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(k_Timeline);
             AnimationTrack track = null;
+            AnimationTrack handover = null;
             foreach (TrackAsset candidate in timeline.GetOutputTracks())
             {
-                if (candidate is AnimationTrack a && a.name == k_TrackName) track = a;
+                if (candidate is not AnimationTrack a) continue;
+                if (a.name == k_TrackName) track = a;
+                else if (a.name == k_HandoverTrackName) handover = a;
             }
             if (track == null)
             {
@@ -354,6 +564,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
             if (loose.gameObject.name == "Timeline") loose.gameObject.name = "Timeline (Preview)";
 
             loose.SetGenericBinding(track, animator);
+
+            // And the handover, or scrubbing past the cue in the authoring scene leaves the 真人
+            // standing there and the track looks like it failed to build.
+            if (handover != null) loose.SetGenericBinding(handover, animator);
 
             // The tone as well, or scrubbing past 8 s in the authoring scene is silent and the
             // audio track looks like it failed to build.
@@ -478,13 +692,139 @@ namespace CompositeBody.Multiplayer.EditorSetup
                     ok = false;
                 }
 
-                if (ok) Debug.Log("[Timeline] OK   the opening and the cue drive everything.");
+                ok &= VerifyHandover(instance, director);
+
+                if (ok) Debug.Log("[Timeline] OK   the opening, the cue and the handover drive " +
+                                  "everything.");
                 return ok;
             }
             finally
             {
                 Object.DestroyImmediate(instance);
             }
+        }
+
+        /// <summary>
+        /// Put the two components the handover drives into the state the clips assume.
+        ///
+        /// THE SCAN CURVE IS FLATTENED TO A STRAIGHT RAMP. It was authored as 0 to 1 by 0.7 and
+        /// held, which made sense while a second curve was fading an object up underneath it --
+        /// the knee was the overlap. The object is O-1's now, so the knee is left over from an
+        /// arrangement that no longer exists, and it would quietly make the dissolve finish at
+        /// seven tenths of whatever length the clip is dragged to. A straight ramp is what makes
+        /// "the clip is as long as the dissolve" true.
+        ///
+        /// AND THE TOUCH STANDS DOWN. The beat is fired from the timeline; leaving the hand poll
+        /// armed as well would mean a player who reached out early got the arrival twice over --
+        /// once from their hand, once from the cue. It is a checkbox, for the authoring scene.
+        /// </summary>
+        static bool PrepareHandover(Transform handoverOn, Transform awakeningOn)
+        {
+            var handover = handoverOn.GetComponent<ScanHandover>();
+            var awakening = awakeningOn.GetComponent<O0TouchAwakening>();
+
+            if (handover == null || awakening == null)
+            {
+                Debug.LogError("[Timeline] RESULT: FAIL - the prefab has no " +
+                               $"{(handover == null ? $"ScanHandover on '{k_HandoverPath}'" : $"O0TouchAwakening on '{k_AwakeningPath}'")}.");
+                return false;
+            }
+
+            var hso = new SerializedObject(handover);
+            hso.FindProperty("m_Progress").floatValue = 0f;
+            hso.FindProperty("m_ScanCurve").animationCurveValue = new AnimationCurve(
+                new Keyframe(0f, 0f, 0f, 0f), new Keyframe(1f, 1f, 0f, 0f));
+            hso.ApplyModifiedPropertiesWithoutUndo();
+
+            var aso = new SerializedObject(awakening);
+            aso.FindProperty("m_Cue").floatValue = 0f;
+            aso.FindProperty("m_RequireTouch").boolValue = false;
+            aso.ApplyModifiedPropertiesWithoutUndo();
+
+            Debug.Log("[Timeline] handover prepared: scan curve straightened, cue at 0, the " +
+                      "touch poll off -- O-0's timeline fires the arrival.");
+            return true;
+        }
+
+        /// <summary>
+        /// Drive the handover and read the two values it writes back.
+        ///
+        /// The one check worth having, because an animation path is a string: the whole beat now
+        /// depends on two of them, and a path that no longer matches the hierarchy leaves a
+        /// timeline that looks right in the window, animates nothing, and opens the show on two
+        /// 真人 that never leave and a player with no body.
+        ///
+        /// The cue is read off the serialized field rather than through a property, because
+        /// nothing exposes it: it exists to be animated and latched in LateUpdate, which does
+        /// not run while a director is merely evaluated.
+        /// </summary>
+        static bool VerifyHandover(GameObject instance, PlayableDirector director)
+        {
+            var handover = instance.GetComponentInChildren<ScanHandover>(true);
+            var awakening = instance.GetComponentInChildren<O0TouchAwakening>(true);
+
+            if (handover == null || awakening == null)
+            {
+                Debug.LogError("[Timeline] RESULT: FAIL - the prefab instance has no " +
+                               $"{(handover == null ? "ScanHandover" : "O0TouchAwakening")}, so " +
+                               "the handover curves have nothing to write to.");
+                return false;
+            }
+
+            var so = new SerializedObject(awakening);
+            SerializedProperty cue = so.FindProperty("m_Cue");
+            if (cue == null)
+            {
+                Debug.LogError("[Timeline] RESULT: FAIL - O0TouchAwakening has no m_Cue field; " +
+                               "the body would never be told to arrive.");
+                return false;
+            }
+
+            bool ok = true;
+
+            foreach ((float t, float progress, bool fired) in new[]
+                     {
+                         (k_ScansOutAt, 0f, false),
+                         (k_ScansOutAt + k_ScansOut * 0.5f, 0.5f, false),
+                         (k_ScansOutAt + k_ScansOut, 1f, false),
+                         (k_BodyAt + k_BodyCue, 1f, true),
+                     })
+            {
+                director.time = t;
+                director.Evaluate();
+
+                // Update, because a SerializedObject caches: without it every read after the
+                // first would report the value the field had before the director was moved.
+                so.Update();
+
+                float read = handover.progress;
+                float cueRead = cue.floatValue;
+
+                Debug.Log($"[Timeline] t={t,5:F1}s  真人 dissolve {read:F2}   |   body cue {cueRead:F2}");
+
+                if (Mathf.Abs(read - progress) > 0.05f)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - at t={t:F1}s the 真人 dissolve " +
+                                   $"reads {read:F2}, not {progress:F2}.");
+                    ok = false;
+                }
+
+                if (fired && cueRead < 0.5f)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - at t={t:F1}s the body cue reads " +
+                                   $"{cueRead:F2}; it has to cross a half or the body never arrives.");
+                    ok = false;
+                }
+
+                if (!fired && cueRead >= 0.5f)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - the body cue is already up at " +
+                                   $"t={t:F1}s, before the 真人 have gone.");
+                    ok = false;
+                }
+            }
+
+            return ok;
         }
 
         static T Find<T>(GameObject root, string path) where T : Component
@@ -651,12 +991,13 @@ namespace CompositeBody.Multiplayer.EditorSetup
             return true;
         }
 
-        static bool WirePrefab(TimelineAsset timeline, AnimationTrack track, AudioTrack audioTrack)
+        static bool WirePrefab(TimelineAsset timeline, AnimationTrack track, AudioTrack audioTrack,
+                               AnimationTrack handover, string prefabPath, bool requireHandover)
         {
-            GameObject root = PrefabUtility.LoadPrefabContents(k_Prefab);
+            GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
             if (root == null)
             {
-                Debug.LogError($"[Timeline] RESULT: FAIL - could not open {k_Prefab}.");
+                Debug.LogError($"[Timeline] RESULT: FAIL - could not open {prefabPath}.");
                 return false;
             }
 
@@ -686,6 +1027,31 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 director.extrapolationMode = DirectorWrapMode.Hold;
                 director.SetGenericBinding(track, animator);
 
+                // The same Animator for the handover: both tracks' paths are written relative to
+                // the prefab root, which is where it lives.
+                director.SetGenericBinding(handover, animator);
+
+                Transform handoverOn = root.transform.Find(k_HandoverPath);
+                Transform awakeningOn = root.transform.Find(k_AwakeningPath);
+                if (handoverOn == null || awakeningOn == null)
+                {
+                    if (requireHandover)
+                    {
+                        Debug.LogError($"[Timeline] RESULT: FAIL - {prefabPath} needs " +
+                                       $"'{k_HandoverPath}' and '{k_AwakeningPath}'; the handover " +
+                                       "curves address them by path and would animate nothing.");
+                        return false;
+                    }
+
+                    Debug.Log($"[Timeline] {prefabPath} has no '{k_HandoverPath}' or " +
+                              $"'{k_AwakeningPath}'; it is the seed, so the handover is left to " +
+                              "the merged prefab.");
+                }
+                else if (!PrepareHandover(handoverOn, awakeningOn))
+                {
+                    return false;
+                }
+
                 Transform tone = root.transform.Find("Content/Opening/Tone");
                 if (tone == null || tone.GetComponent<AudioSource>() == null)
                 {
@@ -706,9 +1072,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 so.FindProperty("m_Director").objectReferenceValue = director;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
-                PrefabUtility.SaveAsPrefabAsset(root, k_Prefab);
-                Debug.Log("[Timeline] prefab wired: Animator on the root, PlayableDirector on " +
-                          "Timeline, manual update mode.");
+                PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                Debug.Log($"[Timeline] {prefabPath} wired: Animator on the root, " +
+                          "PlayableDirector on Timeline, manual update mode.");
                 return true;
             }
             finally

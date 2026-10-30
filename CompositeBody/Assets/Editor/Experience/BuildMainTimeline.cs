@@ -25,9 +25,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// the show there and starts it again when the task is reported complete. Moving a hold is
     /// dragging a marker.
     ///
-    /// O-1 AND O-2 ARE EMPTY. Their scenes are a camera and a light -- there is no content and no
-    /// sub-timeline to nest yet. Their clips are placeholders with an authored guess at a duration,
-    /// wired so that dropping content into the holder is all that is needed later.
+    /// THE THREE ONBOARDING BEATS ALL NEST THEIR OWN TIMELINE NOW -- O-0's cue and handover,
+    /// O-1's dissolves, O-2's orbit lights -- and all three directors live in the onboarding
+    /// prefab beside the content they drive. The S beats are still empty holders with an authored
+    /// guess at a duration, wired so that dropping content in is all that is needed later.
     ///
     /// Unity.exe -batchmode -quit -projectPath &lt;path&gt;
     ///   -executeMethod CompositeBody.Multiplayer.EditorSetup.BuildMainTimeline.Run
@@ -45,8 +46,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
         ///
         /// DURATIONS ARE THE DOCUMENT'S, NOT THE CODE'S. When the two disagree the document wins:
         /// it is what the other departments are building to. O-0 is the one place that still
-        /// disagrees on purpose -- the document gives the scene 60s while the cue authored in
-        /// BuildO0Timeline is 32s long, so the cue holds its last frame for the remaining 28.
+        /// disagrees on purpose, and it now disagrees the other way: the document gives the scene
+        /// 60s and the beat needs 80, because the player's body arrives inside it. See the note
+        /// on that row. Everything after O-0 therefore starts twenty seconds later than the
+        /// sheet says, which is a conversation to have with it rather than a number to hide.
         ///
         /// Gates sit only on the Onboarding beats, which is where the sheet puts its one explicit
         /// 停頓點 ("互動需要做完兩個", after O-1) and where the 完成條件 column asks for both
@@ -61,15 +64,25 @@ namespace CompositeBody.Multiplayer.EditorSetup
             // lookup found no object called "O_0", quietly made an empty holder and nested
             // nothing -- so the cue was driven by nobody at all: O0ArrivalBeat stands down
             // whenever a master driver exists, and the master was pointing at a stub.
-            ("Onboarding/Timeline", "O-0 進入", 60d, null, 0d),
+            // EIGHTY SECONDS, WHERE THE DOCUMENT SAYS SIXTY, and this is the one entry that
+            // overruns on purpose. The beat no longer ends with the 光圈 up: the 真人 dissolve on
+            // O-0's own timeline and the player's body then arrives over AvatarFormation's
+            // authored 32 seconds, which cannot start until the scans have gone. BuildO0Timeline
+            // fires the body at 45s, so the arrival finishes at 77 -- and 「出現後 來到 O-1」 means
+            // the beat has to contain it rather than hand a half-formed body to the next one.
+            ("Onboarding/Timeline", "O-0 進入", 80d, null, 0d),
 
-            // O-1 holds at the end of its clip, and what the two grabs earn -- the orbit lights,
-            // the footprints, S0-2 -- opens the NEXT beat rather than closing this one. Those
-            // cues used to be authored here, in a ten-second tail kept back after the hold; they
-            // live in O-2's own timeline now, which is where a beat's content belongs.
-            ("Beat_O1",    "O-1 鬼的抓取",         90d,  "beat.O1_Control", 0d),
+            // O-1 HOLDS NINE SECONDS BEFORE ITS END, not at it. The objects, the cartons and the
+            // wall of boxes dissolve out on O-1's own timeline once both players have filled
+            // every box and the lines they are owed have finished -- so the tail after the hold
+            // is exactly that dissolve, and O-2 starts in an empty room. The lead is O-1's own
+            // number; see BuildO1Timeline.
+            ("Onboarding/Timeline O_1", "O-1 鬼的控制", 90d, "beat.O1_Control",
+             BuildO1Timeline.k_OutLead),
 
-            ("Onboarding/Timeline O_2", "O-2 鬼魂交流", 120d, "beat.O2_Grasp", 0d),
+            // 鬼的抓取, not 鬼魂交流: the gate has always been called beat.O2_Grasp and the label
+            // was the odd one out.
+            ("Onboarding/Timeline O_2", "O-2 鬼的抓取", 120d, "beat.O2_Grasp", 0d),
             ("Beat_O3",    "O-3 Onboarding結束",   20d,  "beat.O3_Communion", 0d),
 
             ("Beat_S1-1",  "S1-1 記憶痕跡成形",     40d,  null, 0d),
@@ -141,11 +154,36 @@ namespace CompositeBody.Multiplayer.EditorSetup
         ///
         /// The asset is reused rather than deleted and remade, because deleting it would give the
         /// new file a new GUID and the director in the scene would be left pointing at nothing.
+        ///
+        /// ONLY THE TRACKS THIS BUILDER AUTHORS. It used to delete every root track, which meant
+        /// running it threw away anything anyone had put on the master timeline by hand -- and
+        /// people had: an activation track holding the onboarding room up for its whole 290
+        /// seconds, another doing the same for S1, and a Fade track with the 黑場 that covers the
+        /// Onboarding -> S1 handover. All three went on one run, silently, and the running order
+        /// that came back looked perfectly correct.
+        ///
+        /// So the rule is now the obvious one: this tool owns the Control tracks and its own hold
+        /// markers, and nothing else on the asset is its business.
         /// </summary>
         static void Clear(TimelineAsset timeline)
         {
-            var tracks = new List<TrackAsset>(timeline.GetRootTracks());
-            foreach (TrackAsset track in tracks) timeline.DeleteTrack(track);
+            var kept = new List<string>();
+
+            foreach (TrackAsset track in new List<TrackAsset>(timeline.GetRootTracks()))
+            {
+                if (track is ControlTrack)
+                {
+                    timeline.DeleteTrack(track);
+                    continue;
+                }
+
+                if (track is MarkerTrack) continue;
+                kept.Add($"{track.name} ({track.GetType().Name})");
+            }
+
+            if (kept.Count > 0)
+                Debug.Log($"[MainTimeline] left {kept.Count} hand-authored track(s) alone: " +
+                          $"{string.Join(", ", kept)}.");
 
             if (timeline.markerTrack != null)
             {
@@ -462,6 +500,14 @@ namespace CompositeBody.Multiplayer.EditorSetup
             foreach (TrackAsset track in timeline.GetOutputTracks())
             {
                 if (track is ControlTrack || track is MarkerTrack) continue;
+
+                // A PLAYABLE TRACK HAS NOTHING TO BIND, and demanding one failed the build over
+                // a track that was working perfectly. The Fade track carries ScreenFadeClip,
+                // whose behaviour reaches ScreenFade.Instance in ProcessFrame rather than being
+                // handed an object -- so it has no generic binding, has never had one, and the
+                // check above was reading "unbound" as "broken" for a whole class of track that
+                // is never bound.
+                if (track is PlayableTrack) continue;
 
                 if (director.GetGenericBinding(track) != null) bound++;
                 else

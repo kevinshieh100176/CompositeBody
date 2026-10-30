@@ -5387,6 +5387,8 @@ MonoBehaviour:
   - {fileID: 5690726627735228252}
   m_TouchSlack: 0.12
   m_BodyRadius: 0.32
+  m_Cue: 0
+  m_RequireTouch: 0
   m_SpinSeconds: 7
   m_HandSeconds: 5.5
   m_HandDelay: 0.6
@@ -5609,7 +5611,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.PointCloudFigure
   m_Cloud: {fileID: 2108321318186377886}
-  m_Turbulence: 0.003
+  m_Turbulence: 0.012
+  m_TurbulenceDrift: 0.75
   m_TurbulenceScale: 6
   m_TurbulenceSpeed: 0.9
   m_Reveal: 1
@@ -5913,6 +5916,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.O0ArrivalBeat
   m_Beat: 10
+  m_AlsoActiveFor: 
   m_ContentRoot: {fileID: 6121941658284153921}
   m_FadeInSeconds: 6
   m_FadeOutSeconds: 2.5
@@ -11576,6 +11580,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7bc0fd7dde3eef41a682fb4f3551ddd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.RoleBlobPresenter
+  m_PresenceLight: {fileID: 0}
+  m_LightRange: 1.3
+  m_RevealOnFormed: 1
   m_BlobRenderer: {fileID: 3948191364913507744}
   m_Size: 0.62
   m_VerticalOffset: -0.18
@@ -11808,7 +11815,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1.55, z: 0}
-  m_LocalScale: {x: 0.918, y: 0.272, z: 1}
+  m_LocalScale: {x: 0.85, y: 0.425, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 872586274507102953}
@@ -11936,6 +11943,10 @@ PlayableDirector:
   - key: {fileID: 580431427195278301, guid: 12fe8f500b32377479bf7b274eccbb6f, type: 2}
     value: {fileID: 2714259801134315228}
   - key: {fileID: -3035022636400130701, guid: 12fe8f500b32377479bf7b274eccbb6f, type: 2}
+    value: {fileID: 5361826416420039797}
+  - key: {fileID: -191176303852746526, guid: 12fe8f500b32377479bf7b274eccbb6f, type: 2}
+    value: {fileID: 5361826416420039797}
+  - key: {fileID: -1709836538462587854, guid: 12fe8f500b32377479bf7b274eccbb6f, type: 2}
     value: {fileID: 5361826416420039797}
   m_ExposedReferences:
     m_References: []
@@ -12958,7 +12969,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.PointCloudFigure
   m_Cloud: {fileID: 728961354071417412}
-  m_Turbulence: 0.003
+  m_Turbulence: 0.012
+  m_TurbulenceDrift: 0.75
   m_TurbulenceScale: 6
   m_TurbulenceSpeed: 0.9
   m_Reveal: 1
