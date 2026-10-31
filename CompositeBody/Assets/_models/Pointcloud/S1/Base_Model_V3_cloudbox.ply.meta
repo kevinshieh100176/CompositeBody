@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 40526359064d99c4a97c732ac5a18f72
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 58aa88295104d584683a6d4c58a4e1d4, type: 3}
+  topology: 1
+  scale: 1
+  flipZ: 0
+  recenter: 0
+  maxPoints: 0
+  convertColorSpace: 1
+  computeDensity: 0
+  densityRadius: 0.01
+  estimateNormals: 0
+  normalRadius: 0.015
+  useFileNormals: 1
+  shader: {instanceID: 0}

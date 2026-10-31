@@ -33,16 +33,20 @@ Shader "CompositeBody/PointCloudLit"
         _ScanColorMix ("Scan Colour Mix", Range(0, 1)) = 0.25
 
         [Header(Size)]
-        _PointSize ("Point Size (m)", Range(0.0002, 0.05)) = 0.0045
+        // 50 cm rather than 5, for the clouds baked from rooms and landscapes: their points land
+        // tens of centimetres apart, and a point smaller than its own spacing leaves holes. A
+        // Range only bounds the slider, so no material already authored moves.
+        _PointSize ("Point Size (m)", Range(0.0002, 0.5)) = 0.0045
         _MinPixels ("Minimum Size (px)", Range(0, 8)) = 1.5
         [Toggle] _Round ("Round Points", Float) = 1
         _Softness ("Edge Softness", Range(0, 1)) = 0.3
 
         [Header(Idle Turbulence)]
         _Phase ("Phase (seconds, driven)", Float) = 0
-        _Turbulence ("Amplitude (m)", Range(0, 0.08)) = 0.003
+        _Turbulence ("Amplitude (m)", Range(0, 0.08)) = 0.012
         _TurbulenceScale ("Spatial Scale", Range(0.1, 30)) = 6
         _TurbulenceSpeed ("Speed", Range(0, 6)) = 0.9
+        _TurbulenceDrift ("Flow vs Shimmer", Range(0, 1)) = 0.75
 
         [Header(Glitch)]
         _Glitch ("Glitch Amount", Range(0, 1)) = 0
@@ -128,6 +132,7 @@ Shader "CompositeBody/PointCloudLit"
                 float _Turbulence;
                 float _TurbulenceScale;
                 float _TurbulenceSpeed;
+                float _TurbulenceDrift;
                 float _Glitch;
                 float _GlitchSlabs;
                 float _GlitchShift;
@@ -178,8 +183,16 @@ Shader "CompositeBody/PointCloudLit"
                 float3 basePosition = IN.positionOS.xyz;
                 float hash = PointHash(basePosition);
 
-                float3 positionOS = basePosition + PointTurbulence(
-                    basePosition, hash, _Phase, _Turbulence, _TurbulenceScale, _TurbulenceSpeed);
+                // Two layers. PointIdleFlow moves neighbouring points together, which is
+                // what reads as motion; PointTurbulence keeps the grain alive underneath it.
+                // _TurbulenceDrift splits the authored amplitude between them, so setting it
+                // to 0 leaves exactly the shimmer this was before.
+                float3 positionOS = basePosition
+                    + PointIdleFlow(basePosition, _Phase, _Turbulence * _TurbulenceDrift,
+                                    _TurbulenceScale, _TurbulenceSpeed)
+                    + PointTurbulence(basePosition, hash, _Phase,
+                                      _Turbulence * (1.0 - _TurbulenceDrift),
+                                      _TurbulenceScale, _TurbulenceSpeed);
 
                 float3 glitchOffset;
                 float glitchDropped;
@@ -326,6 +339,7 @@ Shader "CompositeBody/PointCloudLit"
                 float _Turbulence;
                 float _TurbulenceScale;
                 float _TurbulenceSpeed;
+                float _TurbulenceDrift;
                 float _Glitch;
                 float _GlitchSlabs;
                 float _GlitchShift;
@@ -370,8 +384,16 @@ Shader "CompositeBody/PointCloudLit"
                 float3 basePosition = IN.positionOS.xyz;
                 float hash = PointHash(basePosition);
 
-                float3 positionOS = basePosition + PointTurbulence(
-                    basePosition, hash, _Phase, _Turbulence, _TurbulenceScale, _TurbulenceSpeed);
+                // Two layers. PointIdleFlow moves neighbouring points together, which is
+                // what reads as motion; PointTurbulence keeps the grain alive underneath it.
+                // _TurbulenceDrift splits the authored amplitude between them, so setting it
+                // to 0 leaves exactly the shimmer this was before.
+                float3 positionOS = basePosition
+                    + PointIdleFlow(basePosition, _Phase, _Turbulence * _TurbulenceDrift,
+                                    _TurbulenceScale, _TurbulenceSpeed)
+                    + PointTurbulence(basePosition, hash, _Phase,
+                                      _Turbulence * (1.0 - _TurbulenceDrift),
+                                      _TurbulenceScale, _TurbulenceSpeed);
 
                 float3 glitchOffset;
                 float glitchDropped;

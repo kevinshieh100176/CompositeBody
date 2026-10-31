@@ -52,7 +52,8 @@ Material:
     - _Smoothness: 0.35
     - _Softness: 0.3
     - _Specular: 0.25
-    - _Turbulence: 0.003
+    - _Turbulence: 0.012
+    - _TurbulenceDrift: 0.75
     - _TurbulenceScale: 6
     - _TurbulenceSpeed: 0.9
     - _Wrap: 0.35

@@ -104,6 +104,10 @@ namespace CompositeBody.Experience
         // Authored hold points, read once off the asset and kept sorted by time.
         readonly List<(double time, string taskId)> m_Holds = new();
 
+        // The running order itself: one entry per Control clip, read once off the asset and kept
+        // sorted by start time.
+        readonly List<(double start, double end, string code)> m_Scenes = new();
+
         // Server-owned show time. Banked is how much show has run; ResumedAt is the server time
         // it last started running from that point. Held freezes the pair.
         readonly NetworkVariable<float> m_Banked =
@@ -117,6 +121,9 @@ namespace CompositeBody.Experience
         float m_LocalBanked;
         float m_LocalResumedAt;
         bool m_LocalHeld;
+
+        // Latched once the three above are found to have no NetworkBehaviour; see CanWrite.
+        bool m_Unbound;
 
         bool m_WarnedNoProgress;
 
@@ -196,11 +203,16 @@ namespace CompositeBody.Experience
             }
 
             CollectHolds();
+            CollectScenes();
             m_LocalResumedAt = Time.time;
         }
 
         public override void OnNetworkSpawn()
         {
+            // A fresh spawn binds the variables again, so a driver that stood down in a previous
+            // session is allowed to drive -- and to complain again if it happens twice.
+            m_Unbound = false;
+
             // Carry whatever the local fallback had already run across to the shared numbers, so
             // starting a session does not snap the show back to zero.
             if (IsServer)
@@ -217,6 +229,88 @@ namespace CompositeBody.Experience
         {
             if (Instance == this) Instance = null;
             base.OnDestroy();
+        }
+
+        /// <summary>
+        /// Reads the running order off the timeline's Control tracks: one clip per scene, each
+        /// track named with the script's own code and title.
+        ///
+        /// WHY READ IT HERE RATHER THAN KEEP A LIST IN CODE. The running order already lives in
+        /// this asset -- that is the point of nesting each scene as a Control clip -- and a second
+        /// copy in C# is a second thing to keep in step. That is not hypothetical: the beat list
+        /// this class was written beside fell behind this timeline, and anything reading the beat
+        /// list was describing a show that is no longer the one playing. Adding a scene is adding
+        /// a track, and the numbering follows it.
+        ///
+        /// Sorted by start time, not by track order: the track list is an authoring convenience
+        /// and can be dragged around without changing when anything actually plays.
+        /// </summary>
+        void CollectScenes()
+        {
+            m_Scenes.Clear();
+            if (m_Timeline == null) return;
+
+            foreach (TrackAsset track in m_Timeline.GetOutputTracks())
+            {
+                if (track is not ControlTrack) continue;
+
+                foreach (TimelineClip clip in track.GetClips())
+                    m_Scenes.Add((clip.start, clip.end, CodeOf(track.name)));
+            }
+
+            m_Scenes.Sort((a, b) => a.start.CompareTo(b.start));
+
+            if (m_LogTransitions)
+                Utils.Log($"[ShowTimeline] {m_Scenes.Count} scene(s) on the running order.");
+        }
+
+        /// <summary>
+        /// 'S1-2 吊掛的家' becomes 'S1-2'. The track's name is the label the script uses, and the
+        /// code is everything up to the first space.
+        ///
+        /// The code half is ASCII, which matters because it leaves the machine over OSC: the
+        /// title after it is CJK and would arrive as question marks, so only the code is sent.
+        /// </summary>
+        static string CodeOf(string trackName)
+        {
+            if (string.IsNullOrWhiteSpace(trackName)) return string.Empty;
+
+            string trimmed = trackName.Trim();
+            int space = trimmed.IndexOf(' ');
+            return space < 0 ? trimmed : trimmed.Substring(0, space);
+        }
+
+        /// <summary>Scenes on the running order.</summary>
+        public int sceneCount => m_Scenes.Count;
+
+        /// <summary>
+        /// 1-based position of the scene playing now, or 0 when the clock is not inside any of
+        /// them -- before the first one, or past the end.
+        /// </summary>
+        public int sceneNumber => SceneIndexAt(showTime) + 1;
+
+        /// <summary>The script's code for the scene playing now ('O-0', 'S2-3'), or empty.</summary>
+        public string sceneCode
+        {
+            get
+            {
+                int index = SceneIndexAt(showTime);
+                return index < 0 ? string.Empty : m_Scenes[index].code;
+            }
+        }
+
+        /// <summary>
+        /// A linear scan, which is the right shape here: the running order is a couple of dozen
+        /// entries, and a scan over a sorted list that short beats a binary search's branches in
+        /// practice while staying obvious.
+        /// </summary>
+        int SceneIndexAt(float time)
+        {
+            for (int i = 0; i < m_Scenes.Count; i++)
+            {
+                if (time >= m_Scenes[i].start && time < m_Scenes[i].end) return i;
+            }
+            return -1;
         }
 
         /// <summary>
@@ -249,7 +343,7 @@ namespace CompositeBody.Experience
             // Only the server moves the numbers; everyone else just reads them.
             if (shared)
             {
-                if (IsServer) ServerStep();
+                if (IsServer && CanWrite()) ServerStep();
             }
             else
             {
@@ -365,8 +459,39 @@ namespace CompositeBody.Experience
         {
             m_Begun = true;
             m_LocalResumedAt = Time.time;
-            if (IsSpawned && IsServer) m_ResumedAt.Value = ServerNow;
+            if (IsSpawned && IsServer && CanWrite()) m_ResumedAt.Value = ServerNow;
             Utils.Log("[ShowTimeline] begun manually.");
+        }
+
+        /// <summary>
+        /// Whether the shared numbers can actually be written to.
+        ///
+        /// A NetworkVariable IS NOT ALWAYS BOUND WHEN IsSpawned SAYS SO. Netcode hands each
+        /// variable its NetworkBehaviour when the object spawns and takes it away again when the
+        /// object goes, and there are frames either side -- a host shutting down, a spawn that
+        /// did not finish -- where <see cref="shared"/> reads true and the variables have
+        /// nobody. Every write in that window logs a warning AND a null reference, each with a
+        /// full stack trace, EVERY FRAME. A batch run that hit it wrote 4.7 GB of log and
+        /// crawled to a stop; the test it was running never finished.
+        ///
+        /// So the server stops driving the clock at the first frame it cannot, and says so once.
+        /// Reading is left alone: an unbound variable still reports what it last held, which is
+        /// exactly what every client in the session is doing anyway.
+        /// </summary>
+        bool CanWrite()
+        {
+            if (m_Banked.GetBehaviour() != null) return true;
+
+            if (!m_Unbound)
+            {
+                m_Unbound = true;
+                Utils.LogError("[ShowTimeline] the shared clock's NetworkVariables have lost " +
+                               "their NetworkBehaviour -- the object is despawning, or never " +
+                               "finished spawning. The server has stopped driving the clock; " +
+                               "the show holds at whatever the numbers last read.");
+            }
+
+            return false;
         }
 
         void ServerStep()

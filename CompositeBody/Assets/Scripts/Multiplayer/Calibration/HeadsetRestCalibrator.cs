@@ -38,7 +38,7 @@ namespace CompositeBody.Multiplayer
     /// cradle, which is what being on someone's head looks like from here. A refusal moves
     /// nothing and says why.
     /// </summary>
-    public class HeadsetRestCalibrator : MonoBehaviour, IDebugInteraction, IDebugNudgeable
+    public class HeadsetRestCalibrator : MonoBehaviour, IDebugInteraction
     {
         [SerializeField, Tooltip("The marker whose rest pose the headset is lined up with. Found in the scene if left empty.")]
         CalibrationPoint m_Marker;
@@ -311,9 +311,9 @@ namespace CompositeBody.Multiplayer
         /// and at three metres out a single degree about the marker is five centimetres of
         /// position error introduced to fix a rotation one.
         /// </summary>
-        public void DebugNudge(DebugFireTarget target, Vector3 roomMetres, float degrees)
+        public void Nudge(Vector3 roomMetres, float degrees)
         {
-            if (!DebugCanNudge(target)) return;
+            if (!canNudge) return;
             if (!TryGetCamera(out Transform cam)) return;
 
             DropStaleSnapshot();
@@ -335,16 +335,21 @@ namespace CompositeBody.Multiplayer
         }
 
         /// <summary>
-        /// This machine only. An origin belongs to the headset in front of you, and the person
-        /// who can tell whether a correction helped is the one watching that headset's own
-        /// mirror -- so there is no path from here to the other machine's origin, by design
-        /// rather than by omission.
+        /// Whether a correction can be applied at all.
+        ///
+        /// THIS MACHINE ONLY, and that is not enforced here but by there being nowhere else to
+        /// call it from: the panel that drives this is a local component reading a local
+        /// calibrator, and nothing carries a correction over the network. An origin belongs to
+        /// the headset in front of you, and the person who can tell whether a correction helped
+        /// is the one watching that headset's own mirror.
         /// </summary>
-        public bool DebugCanNudge(DebugFireTarget target) =>
-            target == DebugFireTarget.Local && isActiveAndEnabled && TryGetCamera(out _);
+        public bool canNudge => isActiveAndEnabled && TryGetCamera(out _);
 
-        public bool DebugCanUndoNudge(DebugFireTarget target) =>
-            target == DebugFireTarget.Local && hasLiveCorrection;
+        /// <summary>True when there is a hand correction that can still be taken back.</summary>
+        public bool hasCorrection => hasLiveCorrection;
+
+        /// <summary>The running total, for a panel to show. Empty when there is none.</summary>
+        public string correctionSummary => hasLiveCorrection ? NudgeSummary() : "";
 
         /// <summary>
         /// Back to where calibration left it, in one press.
@@ -354,9 +359,9 @@ namespace CompositeBody.Multiplayer
         /// a residue that grows with every correction -- and the one moment this button is
         /// pressed is the moment someone has made it worse and wants out cleanly.
         /// </summary>
-        public void DebugUndoNudge(DebugFireTarget target)
+        public void UndoCorrection()
         {
-            if (!DebugCanUndoNudge(target)) return;
+            if (!hasLiveCorrection) return;
             if (m_XROrigin == null && !TryGetCamera(out _)) return;
 
             m_XROrigin.transform.localPosition = m_PreNudgePosition;
@@ -469,10 +474,14 @@ namespace CompositeBody.Multiplayer
         /// fabricated pinch would be a point nobody's hand was ever at; this one reads the
         /// headset's own pose, which is just as real whoever asked for it to be read.
         ///
-        /// THIS MACHINE ONLY, THOUGH. Each PC calibrates its own headset, and the panel offers
-        /// no way to reach across -- see <see cref="DebugCanNudge"/> for why. It means someone
-        /// walks between the two PCs, which is the right trade: both machines are calibrated by
-        /// whoever can see the headset they are calibrating.
+        /// THIS MACHINE ONLY, THOUGH. Each PC calibrates its own headset, and nothing reaches
+        /// across -- see <see cref="canNudge"/> for why. It means someone walks between the two
+        /// PCs, which is the right trade: both machines are calibrated by whoever can see the
+        /// headset they are calibrating.
+        ///
+        /// This row remains the place the OTHER machine's calibration state shows up, mirrored
+        /// over the debug relay. The controls staff actually press live on
+        /// <see cref="CalibrationPanel"/>, which is about the headset in front of them.
         /// </summary>
         public string debugFireLabel => "Calibrate";
 
@@ -480,37 +489,60 @@ namespace CompositeBody.Multiplayer
         {
             var state = DebugInteractionState.Idle;
             state.fired = hasCalibrated;
-
-            if (!isActiveAndEnabled)
-            {
-                state.detail = "component disabled -- the key does nothing";
-                return state;
-            }
-
-            if (m_Marker == null)
-            {
-                state.detail = "no CalibrationPoint in the scene";
-                return state;
-            }
-
-            if (m_Armed)
-            {
-                state.secondsToTimeout = Mathf.Max(0f, m_ArmedUntil - Time.unscaledTime);
-                state.detail = m_LastFailure ?? "armed, waiting for a still headset";
-                return state;
-            }
-
-            state.detail = m_LastFailure != null
-                ? "last attempt refused: " + m_LastFailure
-                : hasCalibrated ? "calibrated" : $"idle -- press {m_CalibrateKey}";
-
-            // Said on the row rather than left implicit, because a world that has been moved by
-            // hand is no longer where the cradle says it is, and the next person to wonder why
-            // the two headsets disagree needs to know someone already corrected one of them.
-            if (hasLiveCorrection) state.detail += $" · hand-corrected {NudgeSummary()}";
-
+            state.detail = statusDetail;
+            if (m_Armed) state.secondsToTimeout = armSecondsRemaining;
             return state;
         }
+
+        /// <summary>
+        /// One line of what this calibrator is doing, shared by the debug row and the
+        /// calibration panel so the two cannot disagree about the same machine.
+        /// </summary>
+        public string statusDetail
+        {
+            get
+            {
+                if (!isActiveAndEnabled) return "component disabled -- the key does nothing";
+                if (m_Marker == null) return "no CalibrationPoint in the scene";
+                if (m_Armed) return m_LastFailure ?? "armed, waiting for a still headset";
+
+                string detail = m_LastFailure != null
+                    ? "last attempt refused: " + m_LastFailure
+                    : hasCalibrated ? "calibrated" : $"idle -- press {m_CalibrateKey}";
+
+                // Said out loud rather than left implicit, because a world that has been moved
+                // by hand is no longer where the cradle says it is, and the next person to
+                // wonder why the two headsets disagree needs to know someone corrected one.
+                if (hasLiveCorrection) detail += $" · hand-corrected {NudgeSummary()}";
+
+                return detail;
+            }
+        }
+
+        /// <summary>Seconds before an armed capture gives up. Zero when not armed.</summary>
+        public float armSecondsRemaining =>
+            m_Armed ? Mathf.Max(0f, m_ArmedUntil - Time.unscaledTime) : 0f;
+
+        /// <summary>How far through the stillness window the headset is, 0..1.</summary>
+        public float settleProgress =>
+            m_StillSeconds > 0f ? Mathf.Clamp01(m_StillFor / m_StillSeconds) : 1f;
+
+        /// <summary>
+        /// False only when a headset IS present and says it is not tracking. No headset at all
+        /// is a desk test, not a fault, and must not read as one on the panel.
+        /// </summary>
+        public bool isTracking
+        {
+            get
+            {
+                XRInputDevice head = XRInputDevices.GetDeviceAtXRNode(XRNode.CenterEye);
+                if (!head.isValid) return true;
+                return !head.TryGetFeatureValue(XRCommonUsages.isTracked, out bool tracked) || tracked;
+            }
+        }
+
+        /// <summary>The key staff press on this machine, for a panel to name rather than guess.</summary>
+        public Key calibrateKey => m_CalibrateKey;
 
         public bool DebugCanFire(DebugFireTarget target)
         {

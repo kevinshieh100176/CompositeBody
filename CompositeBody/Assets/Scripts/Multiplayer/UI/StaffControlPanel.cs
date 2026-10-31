@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using XRMultiplayer;
+using CompositeBody.Experience;
 
 namespace CompositeBody.Multiplayer
 {
@@ -36,6 +37,10 @@ namespace CompositeBody.Multiplayer
         GameObject m_CalibrationPanel;
         Text m_CalibrationText;
         HandPinchCalibrator m_PinchCalibrator;
+        GameObject m_TouchDesignerPanel;
+        InputField m_TdHostInput;
+        Text m_TdHostText;
+        TouchDesignerSender m_TdSender;
 
         readonly List<GameObject> m_SessionRows = new();
 
@@ -52,6 +57,18 @@ namespace CompositeBody.Multiplayer
 
             m_Discovery.onSessionsUpdated += HandleSessionsUpdated;
             m_Discovery.StartListening();
+
+            // Resolved here and not in Awake: the sender opens its socket in its own OnEnable, so
+            // asking it where it is pointed is only meaningful once every Awake/OnEnable has run.
+            m_TdSender = FindAnyObjectByType<TouchDesignerSender>();
+            if (m_TouchDesignerPanel != null)
+                m_TouchDesignerPanel.SetActive(m_TdSender != null);
+
+            if (m_TdSender != null)
+            {
+                m_TdHostInput.text = m_TdSender.activeHost ?? string.Empty;
+                ShowTdStatus();
+            }
         }
 
         void Update()
@@ -311,6 +328,40 @@ namespace CompositeBody.Multiplayer
                 m_StatusText.text = "Cannot start yet -- waiting on players.";
         }
 
+        void OnSetTdHostClicked()
+        {
+            if (m_TdSender == null)
+            {
+                m_TdHostText.text = "No TouchDesignerSender in this scene.";
+                return;
+            }
+
+            bool ok = m_TdSender.SetHost(m_TdHostInput.text, out string message);
+
+            if (ok)
+            {
+                // Read back from the sender rather than echoing what was typed, so a trimmed
+                // address shows as the thing actually in use.
+                m_TdHostInput.text = m_TdSender.activeHost;
+            }
+
+            m_TdHostText.color = ok
+                ? new Color(0.62f, 0.84f, 0.98f)
+                : new Color(0.98f, 0.70f, 0.55f);
+            m_TdHostText.text = message;
+        }
+
+        /// <summary>Where the stream is pointed before anyone has typed anything.</summary>
+        void ShowTdStatus()
+        {
+            // activeHost stays null until the sender has opened a socket once, which it does in
+            // its own OnEnable -- so null here means the component is sitting in the scene
+            // disabled, and claiming an address would be worse than saying nothing is going out.
+            m_TdHostText.text = string.IsNullOrEmpty(m_TdSender.activeHost)
+                ? "Sender is disabled -- nothing is being sent."
+                : $"Sending to {m_TdSender.activeHost}:{m_TdSender.port}.";
+        }
+
         static void EnsureEventSystem()
         {
             if (FindAnyObjectByType<EventSystem>() != null) return;
@@ -395,8 +446,36 @@ namespace CompositeBody.Multiplayer
             BuildBeatPanel(m_ConnectedPanel.transform);
             BuildCalibrationPanel(m_ConnectedPanel.transform);
 
+            // On the root rather than inside either panel: the sender streams with no session at
+            // all, so the one moment staff most need this -- pointing a freshly started build at
+            // TD before anyone has connected -- is exactly when the connected panel is hidden.
+            BuildTouchDesignerPanel(root.transform);
+
             m_PreConnectPanel.SetActive(true);
             m_ConnectedPanel.SetActive(false);
+        }
+
+        void BuildTouchDesignerPanel(Transform parent)
+        {
+            m_TouchDesignerPanel = CreatePanel(parent, "TouchDesignerPanel", new Vector2(360, 0));
+            var layout = m_TouchDesignerPanel.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 4;
+            layout.childControlHeight = false;
+            layout.childForceExpandHeight = false;
+            m_TouchDesignerPanel.AddComponent<ContentSizeFitter>().verticalFit =
+                ContentSizeFitter.FitMode.PreferredSize;
+
+            CreateText(m_TouchDesignerPanel.transform, "TouchDesigner", 16, FontStyle.Bold);
+            m_TdHostText = CreateText(m_TouchDesignerPanel.transform, "", 13, FontStyle.Normal);
+            m_TdHostText.color = new Color(0.62f, 0.84f, 0.98f);
+
+            m_TdHostInput = CreateInputField(m_TouchDesignerPanel.transform, string.Empty, "TdHostInput");
+            CreateButton(m_TouchDesignerPanel.transform, "Set TD Host", OnSetTdHostClicked);
+
+            // Hidden until Start() has had a chance to find a sender: a control for something
+            // that is not in the scene is worse than no control, because it invites someone to
+            // type an address and believe it took effect.
+            m_TouchDesignerPanel.SetActive(false);
         }
 
         void BuildCalibrationPanel(Transform parent)
@@ -506,9 +585,9 @@ namespace CompositeBody.Multiplayer
             return text;
         }
 
-        static InputField CreateInputField(Transform parent, string placeholder)
+        static InputField CreateInputField(Transform parent, string placeholder, string name = "IpInput")
         {
-            var go = new GameObject("IpInput", typeof(RectTransform));
+            var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             go.GetComponent<RectTransform>().sizeDelta = new Vector2(280, 30);
 

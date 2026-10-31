@@ -29,8 +29,11 @@ namespace CompositeBody.PointClouds
         Renderer m_Cloud;
 
         [Header("Idle")]
-        [SerializeField, Tooltip("Shimmer amplitude in metres. A scan reads as alive at a millimetre or two; past about a centimetre it reads as wind.")]
-        float m_Turbulence = 0.003f;
+        [SerializeField, Tooltip("Total idle amplitude in metres, split between flow and shimmer by Turbulence Drift. A centimetre or so reads as a current passing through the figure; past about three the body starts to come apart.")]
+        float m_Turbulence = 0.012f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("How much of the amplitude is coherent flow, where neighbouring points move together, rather than per-point shimmer. Flow is what stops a scan reading as a statue; shimmer alone only buzzes. 0 is the pre-flow behaviour.")]
+        float m_TurbulenceDrift = 0.75f;
 
         [SerializeField, Range(0.1f, 30f), Tooltip("Spatial scale of the shimmer. High values make neighbouring points disagree, low values move whole limbs together.")]
         float m_TurbulenceScale = 6f;
@@ -98,6 +101,7 @@ namespace CompositeBody.PointClouds
 
         static readonly int k_Phase = Shader.PropertyToID("_Phase");
         static readonly int k_Turbulence = Shader.PropertyToID("_Turbulence");
+        static readonly int k_TurbulenceDrift = Shader.PropertyToID("_TurbulenceDrift");
         static readonly int k_TurbulenceScale = Shader.PropertyToID("_TurbulenceScale");
         static readonly int k_TurbulenceSpeed = Shader.PropertyToID("_TurbulenceSpeed");
         static readonly int k_Reveal = Shader.PropertyToID("_Reveal");
@@ -298,6 +302,7 @@ namespace CompositeBody.PointClouds
 
             m_Block.SetFloat(k_Phase, ExperienceClock.now);
             m_Block.SetFloat(k_Turbulence, m_Turbulence);
+            m_Block.SetFloat(k_TurbulenceDrift, m_TurbulenceDrift);
             m_Block.SetFloat(k_TurbulenceScale, m_TurbulenceScale);
             m_Block.SetFloat(k_TurbulenceSpeed, m_TurbulenceSpeed);
 

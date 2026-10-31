@@ -45,7 +45,10 @@ namespace CompositeBody.Diagnostics
             yield return null;
 
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.Exit(m_Failures.Count == 0 ? 0 : 1);
+            // The status code is the result of the batch run. In an editor somebody is sitting in
+            // front of, that same exit would close it out from under them: leave play mode instead.
+            if (Application.isBatchMode) UnityEditor.EditorApplication.Exit(m_Failures.Count == 0 ? 0 : 1);
+            else UnityEditor.EditorApplication.isPlaying = false;
 #else
             Application.Quit(m_Failures.Count == 0 ? 0 : 1);
 #endif

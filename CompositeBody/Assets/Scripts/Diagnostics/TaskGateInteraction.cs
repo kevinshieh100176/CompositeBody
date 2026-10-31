@@ -29,7 +29,7 @@ namespace CompositeBody.Diagnostics
         /// Optional: where this gate's timeout comes from, in seconds remaining.
         ///
         /// A TASK HAS NO CLOCK OF ITS OWN. The fallback that eventually clears a gate belongs to
-        /// whatever reports it -- O1GrabStation counts down while the show waits on its gate --
+        /// whatever reports it -- O1DropBox counts down while the show waits on its gate --
         /// so a gate row that wants to show a countdown is told where to read one.
         /// </summary>
         public Func<float> timeoutSource { get; set; }

@@ -39,19 +39,41 @@ namespace CompositeBody.Diagnostics
         /// <summary>
         /// Seconds before each point of interest to drop the show at, so the test is not four
         /// minutes long. These are show time, and they follow BuildMainTimeline's running order:
-        /// O-0 runs 0-80s with its handover at 34-45s, O-1 runs 80-170s and holds at 161s, and
-        /// O-2 runs 170-290s.
+        /// O-0 runs 0-140s with its handover at 109-119s, O-1 runs 140-230s and holds at 221s,
+        /// and O-2 runs 230-350s.
+        ///
+        /// THEY ARE A SECOND COPY OF THAT TABLE AND THEY WILL GO STALE. They were written for an
+        /// 80-second O-0 and stayed behind when the two 自白 made it 185 and then the second pair
+        /// was moved under the body's arrival to bring it back to 140 -- a run in between would
+        /// have scrubbed into the middle of the first 自白 and reported that the 真人 were not
+        /// dissolving. Nothing can read the durations from here (the runner is play-mode code and
+        /// BuildMainTimeline is an editor script), so when O-0's length moves, these move.
         /// </summary>
-        [SerializeField] float m_ScrubToHandover = 33f;
+        [SerializeField] float m_ScrubToEmptyRoom = 10f;
 
-        [SerializeField] float m_ScrubToO1 = 80f;
+        [SerializeField] float m_ScrubToHandover = 108f;
 
-        [SerializeField] float m_ScrubTo = 158f;
+        [SerializeField] float m_ScrubToO1 = 140f;
+
+        [SerializeField] float m_ScrubTo = 218f;
 
         /// <summary>Where O-1's hold sits, and where O-2 starts. From the running order.</summary>
-        const float k_HoldAt = 161f;
-        const float k_O2At = 170f;
-        const float k_AfterO2 = 292f;
+        const float k_HoldAt = 221f;
+        const float k_O2At = 230f;
+        const float k_AfterO2 = 352f;
+
+        /// <summary>
+        /// Halfway through the 真人 dissolve, which is where "they come apart rather than
+        /// vanishing" is sampled. O-0's dissolve runs 109-119s.
+        /// </summary>
+        const float k_HalfGoneAt = 114f;
+
+        /// <summary>
+        /// Where AvatarFormation's authored m_BodyCurve leaves zero. Below this the player has a
+        /// membrane forming and no body under it, which is the half of the arrival that is
+        /// allowed to overlap the dissolve.
+        /// </summary>
+        const float k_MembraneShare = 0.5f;
 
         readonly List<string> m_Failures = new();
         int m_Checks;
@@ -430,12 +452,17 @@ namespace CompositeBody.Diagnostics
         }
 
         /// <summary>
-        /// O-0's handover, with nobody touching anything: the 真人 dissolve on the timeline, and
-        /// the player's own body is cued after them rather than before.
+        /// O-0's handover, with nobody touching anything: the room is empty, the 真人 arrive with
+        /// the first 自白, they dissolve on the timeline, and the player's own body comes in
+        /// behind them.
         ///
-        /// THE ORDER IS THE POINT. 「scan dissolve後 玩家身體按照原本計畫出現」 -- a cue that fired
-        /// while the figures were still coming apart would read as the body being shed off them,
-        /// which is the OLD beat, and the two are indistinguishable from a built asset.
+        /// THE ORDER IS THE POINT, AND IT IS NOT THE ORDER OF THE CUES ANY MORE. The body is cued
+        /// at 109.75s, while the figures are still coming apart, so that the formation lands on
+        /// the last word of the second 自白 at 140s. What must still be true is the picture rather
+        /// than the schedule: AvatarFormation grows the membrane over the first half of its ramp
+        /// and only then fades the Ch36 body in, so while a 真人 is still in the room the player
+        /// has a film forming and no body under it. 「scan dissolve後 玩家身體按照原本計畫出現」 is
+        /// checked as that, and asserting the cue is still down would be asserting the old beat.
         /// </summary>
         IEnumerator CheckHandover()
         {
@@ -445,6 +472,22 @@ namespace CompositeBody.Diagnostics
             var awakening = FindFirstObjectByType<O0TouchAwakening>(FindObjectsInactive.Include);
             if (!Check(awakening != null, "and the arrival its timeline cue fires")) yield break;
 
+            // --- the empty room, before they arrive ---
+            //
+            // 「現在O_0的SCAN 一開始就在 改成跟第一段VO(A1/B1)一起出現」. Read off the clouds and not off
+            // ScanHandover's own field, because the field being 0 is what "a whole 真人" looked
+            // like when they were there from the first frame: the arrival composes with the
+            // dissolve inside the component, so only the figures can say whether anyone is in
+            // the room.
+            m_Driver.ScrubTo(m_ScrubToEmptyRoom);
+            yield return WaitUntil(() => m_Driver.showTime >= m_ScrubToEmptyRoom,
+                                   "the show to reach the top of O-0");
+            yield return null;
+
+            Check(FigureDissolve() > 0.95f,
+                  $"the room is empty at {m_Driver.showTime:0.0}s, before the 真人 arrive " +
+                  $"(dissolve {FigureDissolve():0.00})");
+
             m_Driver.ScrubTo(m_ScrubToHandover);
             yield return WaitUntil(() => m_Driver.showTime >= m_ScrubToHandover,
                                    "the show to reach O-0's handover");
@@ -453,10 +496,18 @@ namespace CompositeBody.Diagnostics
             Check(handover.progress < 0.05f,
                   $"the 真人 are still whole at {m_Driver.showTime:0.0}s " +
                   $"(dissolve {handover.progress:0.00})");
+
+            // AND THEY ARE ACTUALLY IN THE ROOM, eighty seconds after the seven-second clip that
+            // brought them in. That clip carries a flat tail to the end of the dissolve for
+            // exactly this reason; if it is ever shortened to its ramp, the 真人 spend the whole
+            // first 自白 invisible and every other check here still passes.
+            Check(FigureDissolve() < 0.05f,
+                  $"and they are in the room to be spoken over (dissolve {FigureDissolve():0.00})");
             Check(!awakening.awakened, "and nobody has touched anything");
 
             // --- half gone ---
-            yield return WaitUntil(() => m_Driver.showTime >= 39f, "the 真人 to be half gone", 25f);
+            yield return WaitUntil(() => m_Driver.showTime >= k_HalfGoneAt,
+                                   "the 真人 to be half gone", 25f);
 
             float half = handover.progress;
             Check(half > 0.2f && half < 0.8f,
@@ -464,11 +515,16 @@ namespace CompositeBody.Diagnostics
             Check(FigureDissolve() > 0.05f,
                   $"and the dissolve reaches the clouds themselves ({FigureDissolve():0.00})");
 
-            // THE BODY IS NOT THERE YET, read while the figures are still going. This is the
-            // whole ordering assertion, and it has to be sampled somewhere unambiguous rather
-            // than on the frame the dissolve finishes.
-            Check(AvatarFormation.local == null || !AvatarFormation.local.formed,
-                  "the player has no body while the 真人 are still leaving");
+            // THE BODY ITSELF IS NOT THERE YET, read while the figures are still going. This is
+            // the whole ordering assertion, and it has to be sampled somewhere unambiguous rather
+            // than on the frame the dissolve finishes. Not !formed, which is true the instant the
+            // cue fires and is now meant to be: what is asserted is that the arrival has not got
+            // past its membrane half, so there is no Ch36 body in a room that still has a 真人 in
+            // it.
+            float formation = AvatarFormation.local == null ? 0f : AvatarFormation.local.progress;
+            Check(formation < k_MembraneShare,
+                  "the player's body has not begun to show while the 真人 are still leaving " +
+                  $"(formation {formation:0.00})");
 
             yield return WaitUntil(() => handover.complete, "the 真人 to go", 25f);
             Check(handover.complete, $"the 真人 are gone by {m_Driver.showTime:0.0}s");

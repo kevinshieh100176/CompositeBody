@@ -48,9 +48,10 @@ Shader "CompositeBody/PointCloudFro"
         _NearFade ("Near Fade (m)", Range(0, 2)) = 0.18
 
         [Header(Idle)]
-        _Turbulence ("Amplitude (m)", Range(0, 0.08)) = 0.002
+        _Turbulence ("Amplitude (m)", Range(0, 0.08)) = 0.008
         _TurbulenceScale ("Spatial Scale", Range(0.1, 30)) = 6
         _TurbulenceSpeed ("Speed", Range(0, 6)) = 0.7
+        _TurbulenceDrift ("Flow vs Shimmer", Range(0, 1)) = 0.75
 
         [Header(Reveal)]
         _Reveal ("Reveal", Range(0, 1)) = 1
@@ -116,6 +117,7 @@ Shader "CompositeBody/PointCloudFro"
                 float _Turbulence;
                 float _TurbulenceScale;
                 float _TurbulenceSpeed;
+                float _TurbulenceDrift;
                 float _Reveal;
                 float4 _RevealFrom;
                 float _RevealRadius;
@@ -161,8 +163,16 @@ Shader "CompositeBody/PointCloudFro"
                 // luminance alone instead of treating every point as an isolated speck.
                 float density = IN.attrib.x > 0.0 ? IN.attrib.x : 1.0;
 
-                float3 positionOS = basePosition + PointTurbulence(
-                    basePosition, hash, _Phase, _Turbulence, _TurbulenceScale, _TurbulenceSpeed);
+                // Two layers. PointIdleFlow moves neighbouring points together, which is
+                // what reads as motion; PointTurbulence keeps the grain alive underneath it.
+                // _TurbulenceDrift splits the authored amplitude between them, so setting it
+                // to 0 leaves exactly the shimmer this was before.
+                float3 positionOS = basePosition
+                    + PointIdleFlow(basePosition, _Phase, _Turbulence * _TurbulenceDrift,
+                                    _TurbulenceScale, _TurbulenceSpeed)
+                    + PointTurbulence(basePosition, hash, _Phase,
+                                      _Turbulence * (1.0 - _TurbulenceDrift),
+                                      _TurbulenceScale, _TurbulenceSpeed);
 
                 // --- how close the viewer is to THIS point -------------------------------
                 // Measured per point rather than to the object's pivot, so walking up to a

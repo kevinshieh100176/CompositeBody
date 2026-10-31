@@ -48,6 +48,11 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Camera camera = BuildCamera();
             int written = 0;
 
+            // ARRIVED FIRST, OR THERE IS NOTHING TO PHOTOGRAPH. The prefab is authored at an
+            // empty room now -- the 真人 are brought in by a clip on O-0's timeline, which does
+            // not run here -- so every frame of the dissolve below would have come out empty.
+            handover.SetArrivalForEditor(1f);
+
             // The handover: the 真人 dissolving and the object arriving in its place.
             foreach (float t in k_Steps)
             {

@@ -105,6 +105,25 @@ namespace CompositeBody.Experience
             CloseElement();
         }
 
+        /// <summary>
+        /// A string argument, which goes on the wire exactly like an address: terminated and
+        /// padded to a 4-byte boundary.
+        ///
+        /// TouchDesigner's OSC In CHOP only makes channels out of numbers, so a string reaches an
+        /// OSC In DAT instead -- and a DAT appends a row per message, which is why a caller should
+        /// send strings on a change rather than once a frame. ASCII, like every other string here:
+        /// a CJK label would arrive as question marks, so the codes sent over this are ASCII by
+        /// design.
+        /// </summary>
+        public void Message(string addressA, string addressB, string value)
+        {
+            OpenElement();
+            WriteString(addressA, addressB);
+            WriteString(",s", null);
+            WriteString(value ?? string.Empty, null);
+            CloseElement();
+        }
+
         // --- bundle element framing -------------------------------------------------------------
         // Each element in a bundle is preceded by its own size, which is only known once it has
         // been written. OpenElement leaves a hole; CloseElement patches it.

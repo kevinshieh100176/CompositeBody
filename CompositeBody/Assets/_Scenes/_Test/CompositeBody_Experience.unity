@@ -170,7 +170,7 @@ MonoBehaviour:
   m_ConeAngle: 24
   m_UseRoleColor: 0
   m_Role: 1
-  m_Color: {r: 1, g: 0.78, b: 0.12, a: 1}
+  m_Color: {r: 0.24, g: 0.42, b: 0.85, a: 1}
   m_Intensity: 1.35
   m_Density: 0.95
   m_Anisotropy: 0.65
@@ -490,7 +490,7 @@ MonoBehaviour:
   m_ConeAngle: 24
   m_UseRoleColor: 0
   m_Role: 1
-  m_Color: {r: 0.62, g: 0.22, b: 1, a: 1}
+  m_Color: {r: 0.3, g: 0.78, b: 0.7, a: 1}
   m_Intensity: 1.35
   m_Density: 0.95
   m_Anisotropy: 0.65
@@ -1763,7 +1763,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 0.62, g: 0.22, b: 1, a: 1}
+  m_Color: {r: 0.3, g: 0.78, b: 0.7, a: 1}
   m_Intensity: 0
   m_Range: 5
   m_SpotAngle: 24
@@ -2158,7 +2158,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 1, g: 0.78, b: 0.12, a: 1}
+  m_Color: {r: 0.24, g: 0.42, b: 0.85, a: 1}
   m_Intensity: 0
   m_Range: 5
   m_SpotAngle: 24

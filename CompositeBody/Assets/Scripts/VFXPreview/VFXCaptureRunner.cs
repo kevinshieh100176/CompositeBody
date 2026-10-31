@@ -67,7 +67,11 @@ namespace VFXPreview
             if (quitWhenDone)
             {
 #if UNITY_EDITOR
-                UnityEditor.EditorApplication.Exit(0);
+                // quitWhenDone is about the batch run, where quitting is how the capture ends. In
+                // an editor somebody is sitting in front of, that exit would close it out from
+                // under them, so that run just leaves play mode with the capture already written.
+                if (Application.isBatchMode) UnityEditor.EditorApplication.Exit(0);
+                else UnityEditor.EditorApplication.isPlaying = false;
 #else
                 Application.Quit();
 #endif

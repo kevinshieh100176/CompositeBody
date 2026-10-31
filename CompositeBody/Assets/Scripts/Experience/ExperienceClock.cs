@@ -24,6 +24,13 @@ namespace CompositeBody.Experience
             {
                 var nm = NetworkManager.Singleton;
                 if (nm != null && nm.IsListening) return (float)nm.ServerTime.Time;
+#if UNITY_EDITOR
+                // Time.time belongs to the game loop and does not run while the editor is
+                // merely open, so every [ExecuteAlways] effect driven from here sits frozen in
+                // the scene view and reads as broken rather than as subtle. Judging idle motion
+                // is most of what the scene view is for here, so give it a clock that moves.
+                if (!Application.isPlaying) return Time.realtimeSinceStartup;
+#endif
                 return Time.time;
             }
         }

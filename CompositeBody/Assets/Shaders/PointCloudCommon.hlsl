@@ -57,6 +57,63 @@ float3 PointTurbulence(float3 positionOS, float hash, float phase, float amplitu
 }
 
 // --------------------------------------------------------------------------------------
+// Idle flow
+//
+// The other half of the idle motion, and the half that makes a scan stop reading as a statue.
+//
+// PointTurbulence above gives every point its own phase, so neighbours never agree and the
+// result is grain-level fizz -- at the two or three millimetres it was tuned for that is a
+// surface staying alive, but turning it up does not turn it into movement. It becomes a body
+// buzzing in place, because a field where adjacent points disagree has no direction anywhere.
+//
+// This one deliberately has no per-point term. Everything at the same place moves the same way,
+// so the field has lobes the size of a limb and what you see is a current passing through the
+// figure: a forearm drifting one way while the shoulder above it goes the other. That reads as
+// air moving over a person rather than as a person vibrating, which is why it carries a visible
+// centimetre where the shimmer cannot carry three millimetres.
+//
+// Two octaves, with frequencies that share no common factor so the pattern does not visibly
+// repeat. The second is finer and smaller: it breaks up the first one's regularity without
+// reintroducing the fizz, which is the whole point of keeping it coherent.
+//
+// Driven by the same explicit phase as everything else here, so two headsets agree.
+// --------------------------------------------------------------------------------------
+float3 PointIdleFlow(float3 positionOS, float phase, float amplitude,
+                     float spatialScale, float speed)
+{
+    if (amplitude <= 0.00001) return float3(0, 0, 0);
+
+    float3 p = positionOS * spatialScale;
+    float t = phase * speed;
+
+    // Broad: about one lobe per 70 cm at the default scale, so limbs move as limbs.
+    //
+    // Every component reads the height, because height is the only axis a standing figure has
+    // much of. A term built from x and z alone varies by almost nothing across a body half a
+    // metre deep, and a field that is constant over the figure translates it rather than
+    // flowing through it -- which looks like the scan sliding on the floor.
+    float3 broad;
+    broad.x = sin(p.y * 1.50 + t * 0.61) + sin(p.z * 1.10 - t * 0.44);
+    broad.y = sin(p.y * 0.90 + t * 0.53) + sin(p.x * 1.05 - t * 0.38);
+    broad.z = sin(p.y * 1.35 + t * 0.47) + sin(p.x * 1.60 - t * 0.56);
+
+    // Fine: a third of a lobe, moving half again as fast. Two axes inside one sine, which
+    // costs the same as one and keeps the layer from stratifying into horizontal bands.
+    float3 fine;
+    fine.x = sin(p.y * 3.30 + p.z * 1.70 - t * 0.87);
+    fine.y = sin(p.y * 2.60 + p.x * 2.10 + t * 0.79);
+    fine.z = sin(p.y * 2.90 + p.x * 1.30 - t * 0.93);
+
+    // Weights sum to one at full swing, so amplitude stays the metres it says it is.
+    float3 flow = broad * 0.33 + fine * 0.34;
+
+    // Vertical is halved. Sideways drift reads as air moving past a person; the same amount
+    // up and down reads as the person bobbing, which is a different and much worse idea.
+    flow.y *= 0.5;
+    return flow * amplitude;
+}
+
+// --------------------------------------------------------------------------------------
 // Spatial ordering, shared by reveal and dissolve
 //
 // Returns 0 at the origin point and 1 at the radius, so a sweep of the control from 0 to 1

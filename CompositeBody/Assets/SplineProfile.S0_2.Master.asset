@@ -17,19 +17,19 @@ MonoBehaviour:
     ID: 0
     SplinePoints:
     - ID: 4
-      WorldPosition: {x: 0.0805161, y: 5.276975, z: 104.12189}
+      WorldPosition: {x: -0.080525205, y: 5.276975, z: -104.12189}
       Width: 2.2175784
     - ID: 9
-      WorldPosition: {x: -0.22972977, y: 5.183013, z: 88.90482}
+      WorldPosition: {x: 0.229722, y: 5.183013, z: -88.90482}
       Width: 2.079348
     - ID: 12
-      WorldPosition: {x: 0.01944685, y: -1.0725899, z: 73.53623}
+      WorldPosition: {x: -0.019453278, y: -1.0725899, z: -73.53623}
       Width: 0.25
     - ID: 13
-      WorldPosition: {x: -0.27386832, y: -0.02533114, z: 61.01856}
+      WorldPosition: {x: 0.273863, y: -0.02533114, z: -61.01856}
       Width: 1.9782726
     - ID: 42
-      WorldPosition: {x: 0.4, y: -0.35632133, z: -5}
+      WorldPosition: {x: -0.39999956, y: -0.35632133, z: 5}
       Width: 2.1511278
     VertexCountBetweenPoints: 20
     Depth: 10

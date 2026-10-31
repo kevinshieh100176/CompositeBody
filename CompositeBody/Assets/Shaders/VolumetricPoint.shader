@@ -28,7 +28,7 @@ Shader "CompositeBody/VolumetricPoint"
 
     Properties
     {
-        [HDR] _Color ("Colour", Color) = (0.62, 0.22, 1.0, 1)
+        [HDR] _Color ("Colour", Color) = (0.30, 0.78, 0.70, 1)
         _Intensity ("Intensity", Range(0, 8)) = 1.6
         _Density ("Density (per metre)", Range(0, 4)) = 1
 

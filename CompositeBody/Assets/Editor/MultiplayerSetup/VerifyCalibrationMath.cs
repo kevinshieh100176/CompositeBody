@@ -2,7 +2,6 @@ using Unity.XR.CoreUtils;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using CompositeBody.Diagnostics;
 using CompositeBody.Multiplayer;
 
 namespace CompositeBody.Multiplayer.EditorSetup
@@ -332,12 +331,12 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Vector3 calibratedPosition = camGO.transform.position;
             Quaternion calibratedRotation = camGO.transform.rotation;
 
-            Check(!calibrator.DebugCanUndoNudge(DebugFireTarget.Local),
+            Check(!calibrator.hasCorrection,
                   "nothing to undo before anything has been nudged");
 
             // 1. Sideways is the ROOM's sideways: five centimetres along the marker's own right,
             // not along world X.
-            calibrator.DebugNudge(DebugFireTarget.Local, new Vector3(0.05f, 0f, 0f), 0f);
+            calibrator.Nudge(new Vector3(0.05f, 0f, 0f), 0f);
             Vector3 moved = camGO.transform.position - calibratedPosition;
             Vector3 markerRight = markerGO.transform.right;
             Check(Mathf.Abs(moved.magnitude - 0.05f) <= k_PositionTolerance,
@@ -346,17 +345,17 @@ namespace CompositeBody.Multiplayer.EditorSetup
                   $"and it moves along the marker's right, not world right " +
                   $"(off by {Vector3.Angle(moved, markerRight):0.##}deg)");
 
-            Check(calibrator.DebugCanUndoNudge(DebugFireTarget.Local),
+            Check(calibrator.hasCorrection,
                   "there is now a correction to undo");
 
             // 2. Forward likewise, and height is plain world up.
             Vector3 beforeForward = camGO.transform.position;
-            calibrator.DebugNudge(DebugFireTarget.Local, new Vector3(0f, 0f, 0.05f), 0f);
+            calibrator.Nudge(new Vector3(0f, 0f, 0.05f), 0f);
             Check(Vector3.Angle(camGO.transform.position - beforeForward, markerGO.transform.forward) <= 0.1f,
                   "forward follows the marker's forward");
 
             Vector3 beforeUp = camGO.transform.position;
-            calibrator.DebugNudge(DebugFireTarget.Local, new Vector3(0f, 0.05f, 0f), 0f);
+            calibrator.Nudge(new Vector3(0f, 0.05f, 0f), 0f);
             Check(Vector3.Angle(camGO.transform.position - beforeUp, Vector3.up) <= 0.1f,
                   "up is world up");
 
@@ -364,7 +363,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             // can be fixed without being swung across the room.
             Vector3 beforeTurn = camGO.transform.position;
             float yawBefore = camGO.transform.eulerAngles.y;
-            calibrator.DebugNudge(DebugFireTarget.Local, Vector3.zero, 2f);
+            calibrator.Nudge(Vector3.zero, 2f);
             Check(Vector3.Distance(camGO.transform.position, beforeTurn) <= k_PositionTolerance,
                   "turning leaves the head where it was");
             Check(Mathf.Abs(Mathf.DeltaAngle(camGO.transform.eulerAngles.y, yawBefore + 2f)) <= k_AngleTolerance,
@@ -372,21 +371,21 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             // 4. The one that matters: back to calibrated, exactly, after a mixed sequence of
             // moves and turns that do not commute.
-            calibrator.DebugUndoNudge(DebugFireTarget.Local);
+            calibrator.UndoCorrection();
             float positionBack = Vector3.Distance(camGO.transform.position, calibratedPosition);
             float rotationBack = Quaternion.Angle(camGO.transform.rotation, calibratedRotation);
             Check(positionBack <= k_PositionTolerance,
                   $"undo puts the origin back exactly (off by {positionBack * 1000f:0.##}mm)");
             Check(rotationBack <= k_AngleTolerance,
                   $"undo puts the facing back exactly (off by {rotationBack:0.###}deg)");
-            Check(!calibrator.DebugCanUndoNudge(DebugFireTarget.Local),
+            Check(!calibrator.hasCorrection,
                   "and there is nothing left to undo");
 
             // 5. A fresh calibration is the new zero, so undo cannot reach back past it into a
             // pose from before the headset was last in the cradle.
-            calibrator.DebugNudge(DebugFireTarget.Local, new Vector3(0.05f, 0f, 0f), 0f);
+            calibrator.Nudge(new Vector3(0.05f, 0f, 0f), 0f);
             marker.CalibrateFromHeadsetRest(out _);
-            Check(!calibrator.DebugCanUndoNudge(DebugFireTarget.Local),
+            Check(!calibrator.hasCorrection,
                   "re-calibrating clears the hand correction");
         }
 

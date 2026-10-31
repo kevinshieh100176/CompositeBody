@@ -25,7 +25,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
             if (!scene.IsValid())
             {
                 Debug.LogError($"[MembraneTest] RESULT: FAIL - could not open {BuildMembraneCombineScene.ScenePath}");
-                EditorApplication.Exit(1);
+                // Only the batch run may exit; a live editor keeps the error in the console.
+                if (Application.isBatchMode) EditorApplication.Exit(1);
                 return;
             }
 

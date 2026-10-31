@@ -140,8 +140,8 @@ namespace CompositeBody.Diagnostics
         {
             PlayerRole? role = LocalRolePresenter.debugRole;
             if (!role.HasValue) return "own view";
-            if (role.Value == PlayerRole.Player1) return "Player A (purple)";
-            if (role.Value == PlayerRole.Player2) return "Player B (yellow)";
+            if (role.Value == PlayerRole.Player1) return "Player A (湖水綠)";
+            if (role.Value == PlayerRole.Player2) return "Player B (藍色)";
             return "unassigned";
         }
 
@@ -149,8 +149,8 @@ namespace CompositeBody.Diagnostics
         {
             PlayerRole? role = LocalRolePresenter.debugRole;
             if (!role.HasValue) return new Color(0.35f, 0.35f, 0.38f);
-            if (role.Value == PlayerRole.Player1) return new Color(0.62f, 0.35f, 1f);
-            if (role.Value == PlayerRole.Player2) return new Color(0.95f, 0.85f, 0.35f);
+            if (role.Value == PlayerRole.Player1) return PlayerRoleColors.Player1;
+            if (role.Value == PlayerRole.Player2) return PlayerRoleColors.Player2;
             return new Color(0.5f, 0.5f, 0.55f);
         }
 

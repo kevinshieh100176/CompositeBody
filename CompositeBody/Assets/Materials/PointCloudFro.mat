@@ -45,7 +45,8 @@ Material:
     - _Reveal: 1
     - _RevealRadius: 0
     - _Softness: 0.6
-    - _Turbulence: 0.002
+    - _Turbulence: 0.008
+    - _TurbulenceDrift: 0.75
     - _TurbulenceScale: 6
     - _TurbulenceSpeed: 0.7
     m_Colors:

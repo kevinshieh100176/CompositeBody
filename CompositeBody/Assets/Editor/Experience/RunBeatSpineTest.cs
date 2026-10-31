@@ -26,7 +26,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
             if (!scene.IsValid())
             {
                 Debug.LogError($"[SpineTest] RESULT: FAIL - could not open {BuildBaseScene.ScenePath}");
-                EditorApplication.Exit(1);
+                // Only the batch run may exit; a live editor keeps the error in the console.
+                if (Application.isBatchMode) EditorApplication.Exit(1);
                 return;
             }
 

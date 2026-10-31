@@ -45,7 +45,8 @@ namespace VFXPreview
             if (vfxAsset == null)
             {
                 Debug.LogError($"[VFXCapture] FAILED to load VisualEffectAsset at {asset}");
-                EditorApplication.Exit(2);
+                // Only the batch run may exit; a live editor keeps the error in the console.
+                if (Application.isBatchMode) EditorApplication.Exit(2);
                 return;
             }
 

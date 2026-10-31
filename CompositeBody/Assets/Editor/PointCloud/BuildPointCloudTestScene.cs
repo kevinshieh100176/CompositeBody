@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using CompositeBody.Multiplayer;
 using CompositeBody.PointClouds;
 
 namespace CompositeBody.PointClouds.EditorTools
@@ -300,25 +301,25 @@ namespace CompositeBody.PointClouds.EditorTools
         /// <summary>The two 光區 lamps, so the white station shows what the zones do to it.</summary>
         static void BuildZoneLamps(Vector3 centre)
         {
-            var purpleGO = new GameObject("Zone Purple");
-            var purple = purpleGO.AddComponent<Light>();
-            purple.type = LightType.Point;
-            purple.color = new Color(0.62f, 0.22f, 1.00f);
+            var roleAGO = new GameObject("Zone Role A");
+            var roleA = roleAGO.AddComponent<Light>();
+            roleA.type = LightType.Point;
+            roleA.color = PlayerRoleColors.Player1;
             // Dim, and with a range that stops short of the next station. At the first
             // settings these two blew the white figure to flat white and spilled far enough
             // right to light the sparse station gold, so the comparison was between one
             // overexposed figure and one wrongly coloured one.
-            purple.intensity = 4.5f;
-            purple.range = 2.1f;
-            purpleGO.transform.position = centre + new Vector3(-0.55f, 0.9f, -0.45f);
+            roleA.intensity = 4.5f;
+            roleA.range = 2.1f;
+            roleAGO.transform.position = centre + new Vector3(-0.55f, 0.9f, -0.45f);
 
-            var yellowGO = new GameObject("Zone Yellow");
-            var yellow = yellowGO.AddComponent<Light>();
-            yellow.type = LightType.Point;
-            yellow.color = new Color(1.00f, 0.78f, 0.12f);
-            yellow.intensity = 4.5f;
-            yellow.range = 2.1f;
-            yellowGO.transform.position = centre + new Vector3(0.55f, 0.9f, -0.45f);
+            var roleBGO = new GameObject("Zone Role B");
+            var roleB = roleBGO.AddComponent<Light>();
+            roleB.type = LightType.Point;
+            roleB.color = PlayerRoleColors.Player2;
+            roleB.intensity = 4.5f;
+            roleB.range = 2.1f;
+            roleBGO.transform.position = centre + new Vector3(0.55f, 0.9f, -0.45f);
         }
 
         static Camera BuildCamera()

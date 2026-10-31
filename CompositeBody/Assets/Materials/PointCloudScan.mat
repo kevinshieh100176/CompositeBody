@@ -50,7 +50,8 @@ Material:
     - _Round: 1
     - _Softness: 0.35
     - _Tinted: 0
-    - _Turbulence: 0.003
+    - _Turbulence: 0.012
+    - _TurbulenceDrift: 0.75
     - _TurbulenceScale: 6
     - _TurbulenceSpeed: 0.9
     m_Colors:

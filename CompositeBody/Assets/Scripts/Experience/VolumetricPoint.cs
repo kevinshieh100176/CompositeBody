@@ -26,7 +26,7 @@ namespace CompositeBody.Experience
                                              "by the light's range when one is matched.")]
         float m_Range = 3f;
 
-        [SerializeField] Color m_Color = new(0.62f, 0.22f, 1f);
+        [SerializeField] Color m_Color = new(0.30f, 0.78f, 0.70f);
 
         [SerializeField, Tooltip("Use the player's 代表色 instead of the colour above.")]
         bool m_UseRoleColor;

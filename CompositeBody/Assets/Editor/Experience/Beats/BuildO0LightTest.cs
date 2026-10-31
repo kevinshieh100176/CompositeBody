@@ -5,6 +5,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using CompositeBody.Experience;
+using CompositeBody.Multiplayer;
 using CompositeBody.PointClouds;
 
 namespace CompositeBody.Experience.EditorTools
@@ -52,8 +53,8 @@ namespace CompositeBody.Experience.EditorTools
         const float k_LampHeight = 3.3f;
         const float k_LampRange = 5f;
 
-        static readonly Color k_Purple = new(0.62f, 0.22f, 1.00f);
-        static readonly Color k_Yellow = new(1.00f, 0.78f, 0.12f);
+        static readonly Color k_RoleA = PlayerRoleColors.Player1;
+        static readonly Color k_RoleB = PlayerRoleColors.Player2;
 
         // 「原先空無一物，完全灰色的空間」. Grey, and that is the correction: the first version of this
         // scene faded to 0.075, which reads as darkness rather than as an empty grey room. Dark
@@ -121,9 +122,9 @@ namespace CompositeBody.Experience.EditorTools
             figureMat.SetFloat("_Wrap", 0.4f);
             Save(figureMat, k_MatFigure);
 
-            BuildStation("Human A", new Vector3(-0.85f, 0f, 0f), k_Purple,
+            BuildStation("Human A", new Vector3(-0.85f, 0f, 0f), k_RoleA,
                          figureMesh, figureMat, spotMat, 22f);
-            BuildStation("Human B", new Vector3(0.85f, 0f, 0f), k_Yellow,
+            BuildStation("Human B", new Vector3(0.85f, 0f, 0f), k_RoleB,
                          figureMesh, figureMat, spotMat, -22f);
 
             BuildDust();

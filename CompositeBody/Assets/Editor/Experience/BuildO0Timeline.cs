@@ -54,6 +54,29 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_ClipName = "O_0_Cue";
         const string k_AudioTrackName = "Cue Tone";
         const string k_HandoverTrackName = "O-0 Handover";
+
+        /// <summary>
+        /// The body cue's own row, because it now starts while the 真人 are still dissolving.
+        ///
+        /// TWO CLIPS THAT OVERLAP ON ONE ANIMATION TRACK ARE A BLEND, not two things happening
+        /// at once. Timeline crossfades them, and the first run with the cue moved under the
+        /// dissolve read the 真人 at 0.04 where the curve says 0.13 and the cue at 0.00 where it
+        /// has to cross a half -- so the 真人 half-left and the body was never told to arrive at
+        /// all. Separate rows do not blend, and the two may now sit wherever the pacing wants
+        /// them.
+        /// </summary>
+        const string k_BodyTrackName = "O-0 Body cue";
+
+        /// <summary>
+        /// The 真人's arrival, on a row of its own above the dissolve.
+        ///
+        /// A ROW OF ITS OWN BECAUSE IT HAS TO HOLD. The clip is seven seconds long and the 真人
+        /// then stand there for eighty more, so the property has to keep reading 1 long after the
+        /// clip has ended -- that is the clip's post-extrapolation, and extrapolation is a
+        /// property of a row rather than of a moment, so the row can hold nothing else.
+        /// </summary>
+        const string k_ArriveTrackName = "O-0 真人 arrive";
+        const string k_ScansInClipName = "O_0_ScansIn";
         const string k_ScansClipName = "O_0_ScansOut";
         const string k_BodyClipName = "O_0_BodyCue";
 
@@ -71,6 +94,28 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_TitleMat = "Assets/Materials/O0Title.mat";
         const string k_LineMat = "Assets/Materials/O0Line.mat";
         const string k_ToneClip = "Assets/_Audio/Placeholder/O0_Cue_PLACEHOLDER.wav";
+
+        /// <summary>
+        /// THE TWO PRIVATE SELF-ACCOUNTS, a pair each. 「玩家a 跟 玩家b 會各自聽到 不同音檔」: A and B
+        /// are never told the same thing in O-0, which is the first thing the piece says about
+        /// the two of them standing in different rooms of the same memory.
+        ///
+        /// A ROLE IS A TRACK, NOT A BRANCH. Timeline has no idea a player exists -- but each
+        /// machine runs its own copy of this prefab with its own director, so two AudioTracks
+        /// bound to two AudioSources are already two independent decks on every headset, and
+        /// which deck is heard is a purely local decision that <see cref="RoleAudible"/> makes.
+        /// See that class for why it mutes rather than stops. Nothing here crosses the network
+        /// and the asset is identical on both machines.
+        /// </summary>
+        const string k_LineA1 = "Assets/_Audio/O-A1_他離開以後.wav";
+        const string k_LineB1 = "Assets/_Audio/O-B1_他搬走以後.wav";
+        const string k_LineA2 = "Assets/_Audio/O-A2_有些記憶.wav";
+        const string k_LineB2 = "Assets/_Audio/O-B2_有些記憶.wav";
+
+        const string k_NarrationATrack = "O-0 自白 A (Player1)";
+        const string k_NarrationBTrack = "O-0 自白 B (Player2)";
+        const string k_SpeakerA = "Narration A";
+        const string k_SpeakerB = "Narration B";
 
         /// <summary>
         /// Where the cards hang, in metres from the beat's origin, and how wide they are.
@@ -125,16 +170,81 @@ namespace CompositeBody.Multiplayer.EditorSetup
         // THE HANDOVER, which used to be earned by touching a 真人 and is now authored here.
         //
         // 「玩家不需要去觸摸scan, 而是改在o_0 timeline上達成 scan dissolve, scan dissolve後 玩家身體
-        // 按照原本計畫出現」. Two clips on one track, because the two are a sequence and not an
-        // overlap: the scans leave, and THEN the body starts arriving. Drag either clip to
-        // re-cut the pacing; stretch the first to make the scans take longer.
+        // 按照原本計畫出現」. Two clips on one track, so the handover reads as one movement in the
+        // window. Drag either clip to re-cut the pacing; stretch the first to make the scans
+        // take longer.
+        //
+        // THEY NOW OVERLAP, WHERE THEY USED TO BE A SEQUENCE. The cue used to sit a second after
+        // the last 真人 had gone; it now starts with the dissolve, because the beat has to end at
+        // 140s and the formation needs thirty of them. Nothing is out of order in the picture:
+        // AvatarFormation grows the membrane over the first 45% of its ramp and only then fades
+        // the Ch36 body in, so what overlaps the dissolve is the film forming, and the body
+        // itself still arrives several seconds after the room is empty. Retime warns if that
+        // stops being true.
         //
         // The scans go after the cue above has finished, not during it. The 光圈 are the 真人's
         // own lights -- dissolving a figure while its colour is still rising reads as a fault in
         // the light rather than as the figure leaving.
-        const float k_ScansOutAt = 34f;   // the 真人 begin to go:    34 -> 44
-        const float k_ScansOut = 10f;
-        const float k_BodyAt = 45f;       // the player's own body begins to arrive
+        // AND IT NOW WAITS FOR THE FIRST PAIR OF LINES. 「播完後才接scan dissolve」 -- the scans
+        // may not start going while either player is still being spoken to.
+        //
+        // THE TWO LINES ARE NOT THE SAME LENGTH, so "after they have played" is one moment and
+        // not two: the later of the two ends it, and the shorter player waits out the difference
+        // in a room that has not moved yet. There is no second answer available -- the directors
+        // are scrubbed from one shared clock, so a dissolve that started when each player's own
+        // line finished would happen at two different times in the same room.
+        //
+        // WHICH IS WHY THESE ARE READ OFF THE CLIPS RATHER THAN TYPED. Swap a wav and the beat
+        // re-cuts itself on the next run instead of talking over its own dissolve.
+        //
+        // THE TWENTY AND THE NINETY ARE THE SCRIPT'S. Production timeline v4 writes this beat as
+        // 重點句 20s, then O-0｜進入 / 第一段VO 90s -- two rows for one and the same thing -- so the
+        // first pair starts at 20s and is budgeted 90, which A1 fills at 88.0s. The 30s it then
+        // gives 轉場一｜紙箱 is the one number here that is NOT followed: see the O-0 row in
+        // BuildMainTimeline for why the whole body arrives in this beat where the sheet grows
+        // only hands, and why the second pair waits for it instead of playing over it.
+        // WHEN THE 真人 ARRIVE, as a length rather than a time: they start with the first 自白
+        // and finish as their own 光圈 finish rising.
+        //
+        // 「現在O_0的SCAN 一開始就在 改成跟第一段VO(A1/B1)一起出現」. Neither end of this is a number of
+        // its own, which is the point: the start is k_FirstLinesAt, and the end is the cue's own
+        // 光圈 ramp above. The halos ARE the figures' light, and a figure that materialised before
+        // or after its own lamp read as two events rather than one arrival. Seven seconds, as
+        // long as the cue stays where it is.
+        const float k_ScansIn = k_Open + k_Hold + k_ColourUp - k_FirstLinesAt;
+
+        const float k_ScansOut = 10f;     // how long the 真人 take to go
+        const float k_FirstLinesAt = 20f; // 「過20秒後」, with the room up and the 光圈 rising
+        const float k_LinesTail = 1f;     // a breath between the last word and the scans going
+
+        /// <summary>
+        /// WHERE THE SECOND PAIR SPEAKS, AND NOW THE ANCHOR OF THE WHOLE BACK HALF.
+        ///
+        /// It used to be derived -- body cue, plus the formation, plus a breath -- which put it
+        /// at 152.5s and O-0 at 185s. 「我把A2 B2 的音檔往前移了 讓他在140S的時候播完」: the pair was
+        /// dragged to here in the Timeline window instead, so that the beat ends at 140s where
+        /// the production timeline says it does, and the body now arrives UNDER the second pair
+        /// rather than before it. So this number is typed, read off what was dragged, and the
+        /// handover behind it hangs off it -- see <see cref="Retime"/>.
+        ///
+        /// Drag the clips again and change this to match, or the next run puts them back.
+        /// </summary>
+        const float k_SecondLinesAt = 112f;
+
+        /// <summary>
+        /// The numbers the beat had before the lines existed, kept as the fallback. Used only
+        /// when a narration clip cannot be loaded: the builder still authors a handover that
+        /// works rather than collapsing every cue onto zero, and the log says which clip it
+        /// could not find.
+        /// </summary>
+        const float k_ScansOutAtFallback = 34f;
+        const float k_BodyAtFallback = 45f;
+
+        // Filled by Retime() before anything is authored. Not const, because their values are
+        // in the audio.
+        static float s_ScansOutAt = k_ScansOutAtFallback;
+        static float s_BodyAt = k_BodyAtFallback;
+        static float s_SecondLinesAt = k_SecondLinesAt;
 
         // Only long enough to cross a half, which is what O0TouchAwakening latches on. It is a
         // ramp rather than a signal marker because this show's directors are scrubbed and
@@ -144,14 +254,49 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
         /// <summary>
         /// AvatarFormation's own ramp, read off XRI_Network_Player_Avatar.prefab. Not used to
-        /// drive anything -- the body arrives on its own clock once it is told to -- but O-0 has
-        /// to be long enough to contain it, so the number has to be written down somewhere.
+        /// drive anything -- the body arrives on its own clock once it is told to -- but the cue
+        /// is now placed so that the ramp LANDS on the last word of the second pair, so the
+        /// number has to be written down here too.
+        ///
+        /// THIRTY, WHERE IT WAS THIRTY-TWO. This and the prefab's m_TotalSeconds are one number
+        /// kept in two places: change one and change the other, or the body arrives at a time
+        /// nothing on the timeline agrees with. Two seconds came off so the cue lands with the
+        /// dissolve rather than a second and a half before it -- 「把身體出現的時間縮短讓他在140S
+        /// 完整跑完」. The shape is untouched: m_TotalSeconds stretches the authored curves rather
+        /// than rewriting them, so the membrane still has the first 45% of the ramp and the Ch36
+        /// body still fades in over the back half.
         /// </summary>
-        const float k_BodySeconds = 32f;
+        const float k_BodySeconds = 30f;
+
+        /// <summary>
+        /// Where AvatarFormation's authored m_BodyCurve leaves zero: the point in the ramp at
+        /// which the Ch36 body itself starts to show, once the membrane has grown. Off the same
+        /// prefab as <see cref="k_BodySeconds"/>.
+        ///
+        /// 「我的理解是AVATAR的膜會先出現完身體才會出現」 -- it does, and this is the only reason that
+        /// reading matters here: the cue may overlap the 真人 dissolve, but the BODY may not, and
+        /// without this number there is no way to say which of the two the overlap is.
+        /// </summary>
+        const float k_MembraneShare = 0.5f;
 
         // Full values, matching what BuildO0Arrival authored.
         const float k_CentreLamp = 24f;
         const float k_ColourLamp = 6f;
+
+        /// <summary>
+        /// One player's deck: the row in the Timeline window, the speaker it plays out of, and
+        /// the one role allowed to hear it.
+        /// </summary>
+        struct Deck
+        {
+            public PlayerRole role;
+            public string label;
+            public string trackName;
+            public string speaker;
+            public string first;
+            public string second;
+            public AudioTrack track;
+        }
 
         /// <summary>
         /// Menu entry as well as the batch one, because the batch one cannot run while the editor
@@ -188,7 +333,14 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             MuteStrayAnimationTracks(timeline);
 
-            AnimationTrack handover = BuildHandoverTrack(timeline);
+            // Before the handover, because where the scans go and when the body arrives are both
+            // read off the length of the first pair of lines.
+            Retime();
+
+            Deck[] decks = BuildNarrationTracks(timeline);
+            if (decks == null) return;
+
+            AnimationTrack[] handover = BuildHandoverTracks(timeline);
             if (handover == null) return;
 
             EditorUtility.SetDirty(timeline);
@@ -197,9 +349,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             // The live prefab first, and then the seed -- so O_0.unity keeps previewing the cue
             // without the show depending on an asset nothing instances.
-            if (!WirePrefab(timeline, track, audioTrack, handover, k_Prefab, true)) return;
+            if (!WirePrefab(timeline, track, audioTrack, handover, decks, k_Prefab, true)) return;
             if (AssetDatabase.LoadAssetAtPath<GameObject>(k_SeedPrefab) != null)
-                WirePrefab(timeline, track, audioTrack, handover, k_SeedPrefab, false);
+                WirePrefab(timeline, track, audioTrack, handover, decks, k_SeedPrefab, false);
 
             // Flush the prefab before the scene is opened. WirePrefab has just added an Animator
             // to the prefab asset, and an instance already sitting in a scene does not grow one
@@ -210,7 +362,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             AssetDatabase.ImportAsset(k_SeedPrefab, ImportAssetOptions.ForceSynchronousImport);
 
             BindAuthoringScene();
-            if (!Verify()) return;
+            if (!Verify(decks)) return;
 
             float end = k_Open + k_Hold + k_CentreDelay + k_CentreDown + k_Tail;
             float colourAt = k_Open + k_Hold;
@@ -219,9 +371,14 @@ namespace CompositeBody.Multiplayer.EditorSetup
                       $"halos up {colourAt}-{colourAt + k_ColourUp}s, white out " +
                       $"{colourAt + k_CentreDelay}-{colourAt + k_CentreDelay + k_CentreDown}s, " +
                       $"clip {end}s.\n" +
-                      $"[Timeline] handover: 真人 out {k_ScansOutAt}-{k_ScansOutAt + k_ScansOut}s, " +
-                      $"body cue {k_BodyAt}s, body arrived by " +
-                      $"{k_BodyAt + k_BodySeconds}s -- so O-0 has to run at least that long.\n" +
+                      $"[Timeline] handover: 真人 in {k_FirstLinesAt}-" +
+                      $"{k_FirstLinesAt + k_ScansIn}s, 真人 out " +
+                      $"{s_ScansOutAt}-{s_ScansOutAt + k_ScansOut}s, " +
+                      $"body cue {s_BodyAt:F2}s, body arrived by " +
+                      $"{s_BodyAt + k_BodyCue * 0.5f + k_BodySeconds:F2}s.\n" +
+                      $"[Timeline] 自白: pair 1 at {k_FirstLinesAt}s, pair 2 at " +
+                      $"{s_SecondLinesAt}s -- O-0 runs {timeline.duration:F1}s, so its clip " +
+                      "in Main.playable has to be at least that wide or the beat is cut off.\n" +
                       "[Timeline] RESULT: PASS");
         }
 
@@ -363,7 +520,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         {
             var mine = new System.Collections.Generic.HashSet<string>
             {
-                k_TrackName, k_HandoverTrackName
+                k_TrackName, k_HandoverTrackName, k_BodyTrackName, k_ArriveTrackName
             };
 
             foreach (TrackAsset candidate in
@@ -385,12 +542,17 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// <summary>
         /// The handover: the 真人 leaving, and then the player's own body being told to arrive.
         ///
-        /// TWO CLIPS ON ONE TRACK, each one draggable on its own. The first ramps
+        /// ONE CLIP ON EACH OF TWO TRACKS, each one draggable on its own. The first ramps
         /// <c>ScanHandover.m_Progress</c> from nothing to all of it; the second crosses
         /// <c>O0TouchAwakening.m_Cue</c> past a half, which is the latch that fires the plates,
-        /// the hands and the body. One track rather than two because they never overlap and
-        /// because a second animation track bound to the same Animator is a blend nobody asked
-        /// for.
+        /// the hands and the body.
+        ///
+        /// THEY USED TO SHARE A TRACK, and that was right while the body waited for the room to
+        /// empty: one row, two clips, a sequence you could read at a glance. The cue now starts
+        /// inside the dissolve, and two clips that overlap on one animation track are blended
+        /// rather than played -- see <see cref="k_BodyTrackName"/> for what that looked like.
+        /// They are bound to the same Animator, which is not a blend: the two write different
+        /// components, and a property only blends against another clip driving the same one.
         ///
         /// EACH CLIP IS EXACTLY AS LONG AS ITS CUE, which is only safe because both components
         /// latch. An animation track reverts the properties it drives to their authored values
@@ -400,31 +562,54 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// is what lets these be two short clips you can drag and stretch rather than two long
         /// ones that have to reach the end of the beat.
         /// </summary>
-        static AnimationTrack BuildHandoverTrack(TimelineAsset timeline)
+        static AnimationTrack[] BuildHandoverTracks(TimelineAsset timeline)
         {
-            AnimationTrack track = null;
-            foreach (TrackAsset existing in timeline.GetOutputTracks())
-            {
-                if (existing is AnimationTrack a && a.name == k_HandoverTrackName) track = a;
-            }
+            AnimationTrack arriveTrack = Row(timeline, k_ArriveTrackName);
+            AnimationTrack track = Row(timeline, k_HandoverTrackName);
+            AnimationTrack bodyTrack = Row(timeline, k_BodyTrackName);
+            if (arriveTrack == null || track == null || bodyTrack == null) return null;
 
-            if (track == null) track = timeline.CreateTrack<AnimationTrack>(null, k_HandoverTrackName);
-            if (track == null)
-            {
-                Debug.LogError("[Timeline] RESULT: FAIL - could not create the handover track.");
-                return null;
-            }
+            // THE CLIP HOLDS THEM IN THE ROOM ITSELF: it ramps over its first seven seconds and
+            // then carries a flat 1 all the way to the end of the dissolve, so it is about eighty
+            // seconds of clip doing seven seconds of work.
+            //
+            // WHY NOT EXTRAPOLATION, WHICH IS WHAT THIS WANTS. TimelineClip.preExtrapolationMode
+            // and postExtrapolationMode are read-only in this version of com.unity.timeline --
+            // the Timeline window sets them, and nothing public does. Reaching past that with
+            // reflection to save eighty seconds of flat curve is not worth owning.
+            //
+            // WHY NOT A LATCH, which is what the dissolve does. ScanHandover's latch is play-mode
+            // only on purpose, so that scrubbing shows the 真人 coming back; a latched arrival
+            // would be stuck at 1 the moment anyone scrubbed past 27s and the authoring scene
+            // would stop telling the truth about the top of the beat.
+            //
+            // WHAT STAYS DRAGGABLE is the thing worth dragging: the ramp is at the clip's head,
+            // so moving the clip moves when they arrive, and stretching its end only lengthens
+            // the hold. The curve is authored to the clip's own length, so a stretched clip is
+            // re-cut on the next run rather than being replayed at a new speed.
+            float arriveFor = s_ScansOutAt + k_ScansOut - k_FirstLinesAt;
+            AnimationClip arrive = SubClip(timeline, k_ScansInClipName);
+            SetCurve(arrive, k_HandoverPath, typeof(ScanHandover), "m_Arrival",
+                     (0f, 0f), (k_ScansIn, 1f), (arriveFor, 1f));
 
-            foreach (TimelineClip old in
-                     new System.Collections.Generic.List<TimelineClip>(track.GetClips()))
-                timeline.DeleteClip(old);
+            TimelineClip arriveClip = arriveTrack.CreateClip(arrive);
+            arriveClip.start = k_FirstLinesAt;
+            arriveClip.duration = arriveFor;
+            arriveClip.displayName = "真人 arrive";
+
+            // AND IT RUNS TO THE END OF THE DISSOLVE, not to its start. Were it to stop at 109s
+            // the track would let go of m_Arrival the moment the dissolve began, the property
+            // would fall back to the prefab's authored 0, and the 真人 would blink out whole
+            // instead of dissolving over ten seconds. Ending with the dissolve means the one
+            // frame where it lets go is a frame on which they are already gone -- and an empty
+            // authored state is then the right thing for every beat after this one.
 
             AnimationClip scans = SubClip(timeline, k_ScansClipName);
             SetCurve(scans, k_HandoverPath, typeof(ScanHandover), "m_Progress",
                      (0f, 0f), (k_ScansOut, 1f));
 
             TimelineClip scansClip = track.CreateClip(scans);
-            scansClip.start = k_ScansOutAt;
+            scansClip.start = s_ScansOutAt;
             scansClip.duration = k_ScansOut;
             scansClip.displayName = "真人 dissolve";
 
@@ -432,13 +617,44 @@ namespace CompositeBody.Multiplayer.EditorSetup
             SetCurve(body, k_AwakeningPath, typeof(O0TouchAwakening), "m_Cue",
                      (0f, 0f), (k_BodyCue, 1f));
 
-            TimelineClip bodyClip = track.CreateClip(body);
-            bodyClip.start = k_BodyAt;
+            TimelineClip bodyClip = bodyTrack.CreateClip(body);
+            bodyClip.start = s_BodyAt;
             bodyClip.duration = k_BodyCue;
             bodyClip.displayName = "Body arrives";
 
-            Debug.Log($"[Timeline] track '{track.name}': 真人 dissolve " +
-                      $"{k_ScansOutAt}-{k_ScansOutAt + k_ScansOut}s, body cue at {k_BodyAt}s.");
+            Debug.Log($"[Timeline] track '{arriveTrack.name}': 真人 arrive " +
+                      $"{k_FirstLinesAt}-{k_FirstLinesAt + k_ScansIn}s, then held to " +
+                      $"{k_FirstLinesAt + arriveFor}s | " +
+                      $"track '{track.name}': 真人 dissolve " +
+                      $"{s_ScansOutAt}-{s_ScansOutAt + k_ScansOut}s | track " +
+                      $"'{bodyTrack.name}': body cue at {s_BodyAt:F2}s.");
+            return new[] { arriveTrack, track, bodyTrack };
+        }
+
+        /// <summary>
+        /// One animation row, found by name and emptied, so a re-run replaces its clips instead
+        /// of adding to them and the director's binding -- which keys off the track object --
+        /// survives.
+        /// </summary>
+        static AnimationTrack Row(TimelineAsset timeline, string name)
+        {
+            AnimationTrack track = null;
+            foreach (TrackAsset existing in timeline.GetOutputTracks())
+            {
+                if (existing is AnimationTrack a && a.name == name) track = a;
+            }
+
+            if (track == null) track = timeline.CreateTrack<AnimationTrack>(null, name);
+            if (track == null)
+            {
+                Debug.LogError($"[Timeline] RESULT: FAIL - could not create the track '{name}'.");
+                return null;
+            }
+
+            foreach (TimelineClip old in
+                     new System.Collections.Generic.List<TimelineClip>(track.GetClips()))
+                timeline.DeleteClip(old);
+
             return track;
         }
 
@@ -502,11 +718,15 @@ namespace CompositeBody.Multiplayer.EditorSetup
             var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(k_Timeline);
             AnimationTrack track = null;
             AnimationTrack handover = null;
+            AnimationTrack bodyCue = null;
+            AnimationTrack arrive = null;
             foreach (TrackAsset candidate in timeline.GetOutputTracks())
             {
                 if (candidate is not AnimationTrack a) continue;
                 if (a.name == k_TrackName) track = a;
                 else if (a.name == k_HandoverTrackName) handover = a;
+                else if (a.name == k_BodyTrackName) bodyCue = a;
+                else if (a.name == k_ArriveTrackName) arrive = a;
             }
             if (track == null)
             {
@@ -568,6 +788,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
             // And the handover, or scrubbing past the cue in the authoring scene leaves the 真人
             // standing there and the track looks like it failed to build.
             if (handover != null) loose.SetGenericBinding(handover, animator);
+            if (bodyCue != null) loose.SetGenericBinding(bodyCue, animator);
+            if (arrive != null) loose.SetGenericBinding(arrive, animator);
 
             // The tone as well, or scrubbing past 8 s in the authoring scene is silent and the
             // audio track looks like it failed to build.
@@ -595,7 +817,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// leaves a timeline that looks right in the window and moves nothing. The only check
         /// worth having is whether the lights actually change.
         /// </summary>
-        static bool Verify()
+        static bool Verify(Deck[] decks)
         {
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(k_Prefab);
             var instance = (GameObject)PrefabUtility.InstantiatePrefab(asset);
@@ -693,6 +915,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 }
 
                 ok &= VerifyHandover(instance, director);
+                ok &= VerifyNarration(director, decks);
 
                 if (ok) Debug.Log("[Timeline] OK   the opening, the cue and the handover drive " +
                                   "everything.");
@@ -734,6 +957,14 @@ namespace CompositeBody.Multiplayer.EditorSetup
             hso.FindProperty("m_Progress").floatValue = 0f;
             hso.FindProperty("m_ScanCurve").animationCurveValue = new AnimationCurve(
                 new Keyframe(0f, 0f, 0f, 0f), new Keyframe(1f, 1f, 0f, 0f));
+
+            // AUTHORED AT AN EMPTY ROOM. The timeline brings the 真人 in, so the prefab must not:
+            // left at 1, they would be standing there in the editor, in any still taken without
+            // a director, and for the first frame of play before the clip's extrapolation takes
+            // hold. Straightened for the same reason as the curve above.
+            hso.FindProperty("m_Arrival").floatValue = 0f;
+            hso.FindProperty("m_ArrivalCurve").animationCurveValue = new AnimationCurve(
+                new Keyframe(0f, 0f, 0f, 0f), new Keyframe(1f, 1f, 0f, 0f));
             hso.ApplyModifiedPropertiesWithoutUndo();
 
             var aso = new SerializedObject(awakening);
@@ -741,8 +972,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
             aso.FindProperty("m_RequireTouch").boolValue = false;
             aso.ApplyModifiedPropertiesWithoutUndo();
 
-            Debug.Log("[Timeline] handover prepared: scan curve straightened, cue at 0, the " +
-                      "touch poll off -- O-0's timeline fires the arrival.");
+            Debug.Log("[Timeline] handover prepared: both curves straightened, an empty room " +
+                      "and the cue at 0, the touch poll off -- O-0's timeline brings the 真人 in, " +
+                      "takes them away and fires the arrival.");
             return true;
         }
 
@@ -782,12 +1014,52 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             bool ok = true;
 
-            foreach ((float t, float progress, bool fired) in new[]
+            // THE ARRIVAL, at four times. The first is the one 「SCAN 一開始就在」 was about: an
+            // empty room before the clip. The last is the one the long flat tail exists for -- a
+            // clip that stopped at its ramp would leave the 真人 out of the room for the whole of
+            // the 自白 they are supposed to be standing through, and nothing in the Timeline
+            // window would show it.
+            foreach ((float t, float expected) in new[]
                      {
-                         (k_ScansOutAt, 0f, false),
-                         (k_ScansOutAt + k_ScansOut * 0.5f, 0.5f, false),
-                         (k_ScansOutAt + k_ScansOut, 1f, false),
-                         (k_BodyAt + k_BodyCue, 1f, true),
+                         (0f, 0f),
+                         (k_FirstLinesAt, 0f),
+                         (k_FirstLinesAt + k_ScansIn, 1f),
+                         (s_ScansOutAt, 1f),
+                     })
+            {
+                director.time = t;
+                director.Evaluate();
+
+                float read = handover.arrival;
+                Debug.Log($"[Timeline] t={t,6:F2}s  真人 arrival {read:F2}");
+
+                if (Mathf.Abs(read - expected) > 0.05f)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - at t={t:F2}s the 真人 arrival reads " +
+                                   $"{read:F2}, not {expected:F2}. " + (expected > 0.5f
+                                       ? "The clip is not holding past its end, so the 真人 are " +
+                                         "not in the room for their own 自白."
+                                       : "Something has the 真人 in the room before they arrive."));
+                    ok = false;
+                }
+            }
+
+            // THE DISSOLVE IS ONLY CHECKED WHERE ITS CURVE IS PINNED. SetCurve smooths its
+            // keys, so the ramp is an S and not a line: a quarter of the way along it reads 0.04
+            // and not 0.125, which is right in the window and looks like a broken track in a
+            // test. NaN means "sample it and print it, but do not claim to know the number" --
+            // used at the two cue times, which are wherever the pacing has put them.
+            //
+            // IN TIME ORDER, and the cue's state is derived from the time rather than typed,
+            // because the cue now fires inside the dissolve. Typing it was what asserted the
+            // cue must be down at 114s -- true only while the body waited for the empty room.
+            foreach ((float t, float progress) in new[]
+                     {
+                         (s_ScansOutAt, 0f),
+                         (s_BodyAt, float.NaN),
+                         (s_BodyAt + k_BodyCue, float.NaN),
+                         (s_ScansOutAt + k_ScansOut * 0.5f, 0.5f),
+                         (s_ScansOutAt + k_ScansOut, 1f),
                      })
             {
                 director.time = t;
@@ -799,19 +1071,21 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 float read = handover.progress;
                 float cueRead = cue.floatValue;
+                bool fired = t >= s_BodyAt + k_BodyCue - 0.001f;
 
-                Debug.Log($"[Timeline] t={t,5:F1}s  真人 dissolve {read:F2}   |   body cue {cueRead:F2}");
+                Debug.Log($"[Timeline] t={t,6:F2}s  真人 dissolve {read:F2}   |   body cue " +
+                          $"{cueRead:F2}{(fired ? "  (should be up)" : "")}");
 
-                if (Mathf.Abs(read - progress) > 0.05f)
+                if (!float.IsNaN(progress) && Mathf.Abs(read - progress) > 0.05f)
                 {
-                    Debug.LogError($"[Timeline] RESULT: FAIL - at t={t:F1}s the 真人 dissolve " +
+                    Debug.LogError($"[Timeline] RESULT: FAIL - at t={t:F2}s the 真人 dissolve " +
                                    $"reads {read:F2}, not {progress:F2}.");
                     ok = false;
                 }
 
                 if (fired && cueRead < 0.5f)
                 {
-                    Debug.LogError($"[Timeline] RESULT: FAIL - at t={t:F1}s the body cue reads " +
+                    Debug.LogError($"[Timeline] RESULT: FAIL - at t={t:F2}s the body cue reads " +
                                    $"{cueRead:F2}; it has to cross a half or the body never arrives.");
                     ok = false;
                 }
@@ -819,9 +1093,343 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 if (!fired && cueRead >= 0.5f)
                 {
                     Debug.LogError($"[Timeline] RESULT: FAIL - the body cue is already up at " +
-                                   $"t={t:F1}s, before the 真人 have gone.");
+                                   $"t={t:F2}s, before its own clip has crossed a half at " +
+                                   $"{s_BodyAt + k_BodyCue:F2}s. Something else is driving m_Cue.");
                     ok = false;
                 }
+            }
+
+            return ok;
+        }
+
+        // ------------------------------------------------------------------ the two 自白
+
+        /// <summary>
+        /// Load a line, and say so rather than throwing when it is not there. A missing wav is
+        /// the normal state of this project halfway through a recording session, and a builder
+        /// that refuses to run leaves the whole beat unauthored over one file.
+        /// </summary>
+        static AudioClip Line(string path)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            if (clip == null)
+            {
+                Debug.LogWarning($"[Timeline] no audio clip at {path}. That line is left off the " +
+                                 "timeline, and the pacing around it is a guess until it lands.");
+            }
+
+            return clip;
+        }
+
+        /// <summary>
+        /// Cut the handover to the lines: where the scans start going, and when the body has to
+        /// be told to arrive for it to finish on the player's last word.
+        ///
+        /// THE BEAT IS PINNED AT BOTH ENDS NOW. The first pair starts at 20s and the second pair
+        /// ends at 140s, both of them typed; what is computed is the handover in between. The
+        /// cue runs BACKWARDS from the end of the second pair, which is the one thing here that
+        /// is easy to get wrong forwards: the body is not arrived when its cue fires. The cue is
+        /// a half-second ramp that merely tells <see cref="O0TouchAwakening"/> to call Form(),
+        /// latching when the ramp crosses a half, and AvatarFormation then takes its own
+        /// <see cref="k_BodySeconds"/> to bring the body in. So the cue belongs a whole formation
+        /// plus half a ramp BEFORE the last word, nowhere near it.
+        ///
+        /// 「出現完後撥放第二段」 was the old rule and is deliberately no longer it: the body arrives
+        /// under the second pair and lands on its last word. What is still checked is the order
+        /// inside the picture -- the Ch36 body may not start fading in while a 真人 is still
+        /// standing there -- because that is the part an audience can see.
+        /// </summary>
+        static void Retime()
+        {
+            AudioClip a1 = Line(k_LineA1);
+            AudioClip b1 = Line(k_LineB1);
+            AudioClip a2 = Line(k_LineA2);
+            AudioClip b2 = Line(k_LineB2);
+
+            s_SecondLinesAt = k_SecondLinesAt;
+
+            if (a1 == null || b1 == null)
+            {
+                s_ScansOutAt = k_ScansOutAtFallback;
+                s_BodyAt = k_BodyAtFallback;
+                Debug.LogWarning("[Timeline] the first pair of lines is incomplete, so the " +
+                                 $"handover stays at its old fixed times ({s_ScansOutAt}s / " +
+                                 $"{s_BodyAt}s) rather than being cut to audio that is not there.");
+                return;
+            }
+
+            float lastWord = k_FirstLinesAt + Mathf.Max(a1.length, b1.length);
+            s_ScansOutAt = lastWord + k_LinesTail;
+
+            if (a2 == null || b2 == null)
+            {
+                // Nothing to run back from, so the body goes back to following the dissolve.
+                s_BodyAt = s_ScansOutAt + k_ScansOut + 1f;
+                Debug.LogWarning("[Timeline] the second pair of lines is incomplete, so the body " +
+                                 $"cue follows the dissolve at {s_BodyAt:F1}s rather than being " +
+                                 "cut to land on a last word that is not there yet.");
+                return;
+            }
+
+            // BACKWARDS FROM THE LAST WORD. The half-ramp is the quarter-second between the cue
+            // clip starting and m_Cue crossing a half, which is when Form() is actually called --
+            // small, and the whole point of this line is that the body is not still arriving
+            // after the room has gone quiet.
+            float ends = s_SecondLinesAt + Mathf.Max(a2.length, b2.length);
+            s_BodyAt = ends - k_BodySeconds - k_BodyCue * 0.5f;
+
+            float bodyShows = s_BodyAt + k_BodyCue * 0.5f + k_BodySeconds * k_MembraneShare;
+            float roomEmpty = s_ScansOutAt + k_ScansOut;
+
+            if (s_SecondLinesAt < lastWord)
+                Debug.LogError($"[Timeline] RESULT: FAIL - 自白 2 starts at {s_SecondLinesAt:F1}s " +
+                               $"but 自白 1 runs to {lastWord:F1}s, so a player talks over " +
+                               "themselves. Move k_SecondLinesAt later.");
+
+            if (bodyShows < roomEmpty)
+                Debug.LogWarning($"[Timeline] the Ch36 body starts showing at {bodyShows:F1}s but " +
+                                 $"a 真人 is still there until {roomEmpty:F1}s -- the player gets " +
+                                 "a body in a room that has not emptied. Move 自白 2 later " +
+                                 "(k_SecondLinesAt) or shorten the formation.");
+
+            Debug.Log($"[Timeline] 自白 1 from {k_FirstLinesAt}s (A {a1.length:F1}s, " +
+                      $"B {b1.length:F1}s) -> last word at {lastWord:F1}s; 真人 dissolve " +
+                      $"{s_ScansOutAt:F1}-{roomEmpty:F1}s; 自白 2 {s_SecondLinesAt:F1}-" +
+                      $"{ends:F1}s; body cue {s_BodyAt:F2}s -> membrane first, Ch36 body from " +
+                      $"{bodyShows:F1}s, arrived {ends:F1}s on the last word.");
+        }
+
+        /// <summary>
+        /// One AudioTrack per player, two clips on each: the line before the scans go, and the
+        /// line after the body has arrived.
+        ///
+        /// TWO CLIPS ON ONE TRACK RATHER THAN FOUR TRACKS, so a player's whole account is one row
+        /// in the Timeline window and the silence between their two lines is a gap you can see
+        /// and drag. It is also what keeps the role decision down to one AudioSource per player:
+        /// a second track for the same player would want a second source, a second RoleAudible,
+        /// and a second place to get the role wrong.
+        ///
+        /// Re-runnable: the tracks are found by name and only their clips replaced, so the asset
+        /// keeps its track objects and the director's bindings survive. Bindings key off the
+        /// track object and not its name -- renaming a track in the Timeline window cannot break
+        /// them, but deleting and recreating one would.
+        /// </summary>
+        static Deck[] BuildNarrationTracks(TimelineAsset timeline)
+        {
+            var decks = new[]
+            {
+                new Deck
+                {
+                    role = PlayerRole.Player1, label = "A", trackName = k_NarrationATrack,
+                    speaker = k_SpeakerA, first = k_LineA1, second = k_LineA2,
+                },
+                new Deck
+                {
+                    role = PlayerRole.Player2, label = "B", trackName = k_NarrationBTrack,
+                    speaker = k_SpeakerB, first = k_LineB1, second = k_LineB2,
+                },
+            };
+
+            for (int i = 0; i < decks.Length; i++)
+            {
+                AudioTrack track = null;
+                foreach (TrackAsset existing in timeline.GetOutputTracks())
+                {
+                    if (existing is AudioTrack a && a.name == decks[i].trackName) track = a;
+                }
+
+                if (track == null)
+                    track = timeline.CreateTrack<AudioTrack>(null, decks[i].trackName);
+
+                if (track == null)
+                {
+                    Debug.LogError("[Timeline] RESULT: FAIL - could not create the track " +
+                                   $"'{decks[i].trackName}'.");
+                    return null;
+                }
+
+                foreach (TimelineClip old in
+                         new System.Collections.Generic.List<TimelineClip>(track.GetClips()))
+                    timeline.DeleteClip(old);
+
+                AddLine(track, decks[i].first, k_FirstLinesAt, $"O-0-{decks[i].label}1");
+                AddLine(track, decks[i].second, s_SecondLinesAt, $"O-0-{decks[i].label}2");
+
+                decks[i].track = track;
+            }
+
+            return decks;
+        }
+
+        /// <summary>
+        /// One line on a deck, as long as the wav is. The clip is sized to the audio rather than
+        /// to a typed number, so a clip can never be shorter than the sentence inside it -- which
+        /// cuts a line off mid-word and is close to invisible in the Timeline window.
+        /// </summary>
+        static void AddLine(AudioTrack track, string path, float at, string label)
+        {
+            AudioClip audio = Line(path);
+            if (audio == null) return;
+
+            TimelineClip clip = track.CreateClip<AudioPlayableAsset>();
+            ((AudioPlayableAsset)clip.asset).clip = audio;
+            clip.start = at;
+            clip.duration = audio.length;
+            clip.displayName = label;
+
+            Debug.Log($"[Timeline] {track.name}: {label} ({audio.name}) " +
+                      $"{at:F1}-{at + audio.length:F1}s.");
+        }
+
+        /// <summary>
+        /// A speaker of its own for each player's lines, beside the cue tone.
+        ///
+        /// NOT THE TONE'S SOURCE. RoleAudible mutes a whole AudioSource, so sharing one with the
+        /// 提示音 would silence the cue for whichever player the deck is not for. One source per
+        /// deck is what makes "mute everything on this source" a safe thing to say.
+        ///
+        /// 2D, like the tone and like O-1's speaker: this is a player's own account of what
+        /// happened and not a voice standing somewhere in the room, and a positioned one would
+        /// arrive from a different direction for each of the two people in it.
+        /// </summary>
+        static AudioSource EnsureSpeaker(Transform opening, string name)
+        {
+            Transform speaker = opening.Find(name);
+            if (speaker == null)
+            {
+                var go = new GameObject(name);
+                go.transform.SetParent(opening, false);
+                speaker = go.transform;
+                Debug.Log($"[Timeline] created '{name}' in the prefab.");
+            }
+
+            var source = speaker.GetComponent<AudioSource>();
+            if (source == null) source = speaker.gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = false;
+            source.spatialBlend = 0f;
+            return source;
+        }
+
+        /// <summary>
+        /// The role gate. Written through SerializedObject rather than a public setter because
+        /// the field is private and serialized, and a prefab edit has to go through the
+        /// serialization system to survive the save.
+        /// </summary>
+        static void EnsureRoleAudible(AudioSource source, PlayerRole role, string label)
+        {
+            var presenter = source.GetComponent<RoleAudible>();
+            if (presenter == null)
+            {
+                presenter = source.gameObject.AddComponent<RoleAudible>();
+                Debug.Log($"[Timeline] added RoleAudible to '{source.name}'.");
+            }
+
+            var so = new SerializedObject(presenter);
+            SerializedProperty roles = so.FindProperty("m_AudibleToRoles");
+            roles.arraySize = 1;
+            roles.GetArrayElementAtIndex(0).intValue = (int)role;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            Debug.Log($"[Timeline] 自白 {label} -> '{source.name}', audible to {role} only.");
+        }
+
+        /// <summary>
+        /// The two decks are private to different players, and neither one talks over the beat it
+        /// is meant to sit between.
+        ///
+        /// BOTH DECKS PRIVATE TO THE SAME PLAYER is the failure that sounds like success on one
+        /// headset: that player hears the whole opening and nobody notices the other stood in
+        /// silence until there are two people in the room. The roles are written by index through
+        /// a SerializedProperty, so this is checked rather than trusted.
+        ///
+        /// THE ORDER IS CHECKED TOO, because the clips are meant to be dragged. Dragging the
+        /// first line later until it runs into the dissolve, or the second line somewhere the
+        /// body no longer lands on its last word, are exactly the two mistakes this arrangement
+        /// invites -- and in the room they read as a sound problem rather than as a timing one.
+        ///
+        /// The second check changed direction when the pair moved to 112s. The body is no longer
+        /// required to have arrived BEFORE the line; it is required not to still be arriving
+        /// AFTER it. A body that finishes forming into silence is the thing to catch now.
+        /// </summary>
+        static bool VerifyNarration(PlayableDirector director, Deck[] decks)
+        {
+            bool ok = true;
+            var seen = new System.Collections.Generic.List<PlayerRole>();
+            float arrived = s_BodyAt + k_BodyCue * 0.5f + k_BodySeconds;
+
+            foreach (Deck deck in decks)
+            {
+                var source = director.GetGenericBinding(deck.track) as AudioSource;
+                if (source == null)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - '{deck.trackName}' is bound to no " +
+                                   "AudioSource, so that player's lines would never be heard.");
+                    ok = false;
+                    continue;
+                }
+
+                var presenter = source.GetComponent<RoleAudible>();
+                if (presenter == null)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - '{source.name}' has no " +
+                                   $"RoleAudible, so both players would hear 自白 {deck.label}.");
+                    ok = false;
+                    continue;
+                }
+
+                var so = new SerializedObject(presenter);
+                SerializedProperty roles = so.FindProperty("m_AudibleToRoles");
+                if (roles.arraySize != 1)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - '{source.name}' is audible to " +
+                                   $"{roles.arraySize} roles; one is the whole point of it.");
+                    ok = false;
+                    continue;
+                }
+
+                seen.Add((PlayerRole)roles.GetArrayElementAtIndex(0).intValue);
+
+                var clips = new System.Collections.Generic.List<TimelineClip>(deck.track.GetClips());
+                if (clips.Count != 2)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - '{deck.trackName}' holds " +
+                                   $"{clips.Count} clips, not the two lines {deck.label} is owed.");
+                    ok = false;
+                    continue;
+                }
+
+                double firstEnds = clips[0].start + clips[0].duration;
+                if (firstEnds > s_ScansOutAt + 0.001)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - 自白 {deck.label}1 runs to " +
+                                   $"{firstEnds:F1}s but the 真人 start dissolving at " +
+                                   $"{s_ScansOutAt:F1}s. 「播完後才接scan dissolve」.");
+                    ok = false;
+                }
+
+                double secondEnds = clips[1].start + clips[1].duration;
+                if (arrived > secondEnds + 0.001)
+                {
+                    Debug.LogError($"[Timeline] RESULT: FAIL - 自白 {deck.label}2 ends at " +
+                                   $"{secondEnds:F1}s but the body is still arriving until " +
+                                   $"{arrived:F1}s, so it finishes forming into a room that has " +
+                                   "gone quiet. 「讓他在140S的時候播完」 -- the ramp lands on the " +
+                                   "last word.");
+                    ok = false;
+                }
+
+                Debug.Log($"[Timeline] 自白 {deck.label}: {clips[0].start:F1}-{firstEnds:F1}s " +
+                          $"then {clips[1].start:F1}-{clips[1].start + clips[1].duration:F1}s, " +
+                          $"out of '{source.name}'.");
+            }
+
+            if (seen.Count != 2 || seen[0] == seen[1])
+            {
+                Debug.LogError("[Timeline] RESULT: FAIL - the two decks resolved to " +
+                               $"{string.Join(" and ", seen)}; they must be different players, " +
+                               "or one of the two stands in silence through the whole opening.");
+                ok = false;
             }
 
             return ok;
@@ -992,7 +1600,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
         }
 
         static bool WirePrefab(TimelineAsset timeline, AnimationTrack track, AudioTrack audioTrack,
-                               AnimationTrack handover, string prefabPath, bool requireHandover)
+                               AnimationTrack[] handover, Deck[] decks, string prefabPath,
+                               bool requireHandover)
         {
             GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
             if (root == null)
@@ -1027,9 +1636,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 director.extrapolationMode = DirectorWrapMode.Hold;
                 director.SetGenericBinding(track, animator);
 
-                // The same Animator for the handover: both tracks' paths are written relative to
-                // the prefab root, which is where it lives.
-                director.SetGenericBinding(handover, animator);
+                // The same Animator for the handover rows: every track's paths are written
+                // relative to the prefab root, which is where it lives.
+                foreach (AnimationTrack row in handover)
+                    director.SetGenericBinding(row, animator);
 
                 Transform handoverOn = root.transform.Find(k_HandoverPath);
                 Transform awakeningOn = root.transform.Find(k_AwakeningPath);
@@ -1059,6 +1669,15 @@ namespace CompositeBody.Multiplayer.EditorSetup
                     return false;
                 }
                 director.SetGenericBinding(audioTrack, tone.GetComponent<AudioSource>());
+
+                // A speaker of its own for each player, and the role gate on it. Both decks are
+                // on both machines; only one of them is audible on each.
+                foreach (Deck deck in decks)
+                {
+                    AudioSource speaker = EnsureSpeaker(tone.parent, deck.speaker);
+                    director.SetGenericBinding(deck.track, speaker);
+                    EnsureRoleAudible(speaker, deck.role, deck.label);
+                }
 
                 // Hand the beat its director, so the cue has something to drive.
                 var beat = root.GetComponent<O0ArrivalBeat>();

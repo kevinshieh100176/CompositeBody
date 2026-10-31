@@ -54,7 +54,7 @@ namespace CompositeBody.Experience
         PlayerRole m_Role = PlayerRole.Player1;
 
         [SerializeField]
-        Color m_Color = new(0.62f, 0.22f, 1f, 1f);
+        Color m_Color = new(0.30f, 0.78f, 0.70f, 1f);
 
         [SerializeField, Range(0f, 8f)]
         float m_Intensity = 1.8f;

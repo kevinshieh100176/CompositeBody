@@ -50,8 +50,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// </summary>
         static readonly Color k_Void = new(0.012f, 0.013f, 0.017f);
 
-        static readonly Color k_Purple = new(0.62f, 0.22f, 1.00f);
-        static readonly Color k_Yellow = new(1.00f, 0.78f, 0.12f);
+        static readonly Color k_RoleA = PlayerRoleColors.Player1;
+        static readonly Color k_RoleB = PlayerRoleColors.Player2;
 
         /// <summary>
         /// The white fixture. High and wide: a 72-degree cone from 4.4 m lands a pool about
@@ -279,9 +279,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
             EditorUtility.SetDirty(beamMat);
 
             BuildFigure(parent, "Human A", new Vector3(-k_FigureSpread, 0f, k_FigureDepth),
-                        k_Purple, 22f, mesh, figureMat, beamMat);
+                        k_RoleA, 22f, mesh, figureMat, beamMat);
             BuildFigure(parent, "Human B", new Vector3(k_FigureSpread, 0f, k_FigureDepth),
-                        k_Yellow, -22f, mesh, figureMat, beamMat);
+                        k_RoleB, -22f, mesh, figureMat, beamMat);
         }
 
         static void BuildFigure(GameObject parent, string name, Vector3 position, Color colour,

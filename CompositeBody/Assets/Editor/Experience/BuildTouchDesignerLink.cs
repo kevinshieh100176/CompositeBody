@@ -81,6 +81,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Debug.Log($"[TDLink] added TouchDesignerSender to '{k_Host}' in {k_Scene}.\n" +
                       "[TDLink] defaults: 127.0.0.1:10000, 60 Hz, addresses under '/cb', " +
                       "right-handed conversion ON.\n" +
+                      "[TDLink] the host can also be set at launch with '-tdhost <ip>', which " +
+                      "overrides the field -- the way to point a build at the venue's TD " +
+                      "machine without rebuilding.\n" +
                       "[TDLink] RESULT: PASS");
         }
 

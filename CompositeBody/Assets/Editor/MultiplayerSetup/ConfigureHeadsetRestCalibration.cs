@@ -62,6 +62,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             EnsureCalibrator(marker);
             SilenceOldTestKey(marker);
             SetPanelKey();
+            EnsureCalibrationPanel();
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -196,6 +197,25 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Debug.Log($"[RestCalib] Debug panel toggle {was} -> F3.");
         }
 
+        /// <summary>
+        /// The calibration panel, on its own object. Staff reach for this one under pressure, so
+        /// it gets its own key rather than a row inside the interaction list.
+        /// </summary>
+        static void EnsureCalibrationPanel()
+        {
+            var existing = Object.FindAnyObjectByType<CalibrationPanel>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                Debug.Log($"[RestCalib] CalibrationPanel already present on '{existing.name}' " +
+                          $"({existing.toggleKey}); leaving its settings alone.");
+                return;
+            }
+
+            var go = new GameObject("CalibrationPanel");
+            var panel = go.AddComponent<CalibrationPanel>();
+            Debug.Log($"[RestCalib] Added CalibrationPanel on its own object, key {panel.toggleKey}.");
+        }
+
         static bool Verify(Transform rest)
         {
             var marker = Object.FindAnyObjectByType<CalibrationPoint>();
@@ -245,6 +265,15 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return false;
             }
             Debug.Log("[RestCalib] OK   debug panel opens on F3");
+
+            var calibrationPanel = Object.FindAnyObjectByType<CalibrationPanel>(FindObjectsInactive.Include);
+            if (calibrationPanel == null)
+            {
+                Debug.LogError("[RestCalib] RESULT: FAIL - no CalibrationPanel, so staff have no " +
+                               "dedicated way to calibrate or correct this headset.");
+                return false;
+            }
+            Debug.Log($"[RestCalib] OK   calibration panel opens on {calibrationPanel.toggleKey}");
 
             if (rest != null && Vector3.Distance(rest.localPosition, new Vector3(0f, k_PlaceholderRestHeight, 0f)) < 0.0001f)
             {

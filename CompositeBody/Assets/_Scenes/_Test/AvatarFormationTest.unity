@@ -5923,7 +5923,7 @@ MonoBehaviour:
   m_BodyRenderers: []
   m_Progress: 0
   m_Scrub: 0
-  m_TotalSeconds: 32
+  m_TotalSeconds: 30
   m_MembraneCurve:
     serializedVersion: 2
     m_Curve:

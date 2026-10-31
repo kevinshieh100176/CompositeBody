@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using CompositeBody.Multiplayer;
 
 namespace CompositeBody.PointClouds.EditorTools
 {
@@ -109,7 +110,10 @@ namespace CompositeBody.PointClouds.EditorTools
             Directory.CreateDirectory(outDir);
             var material = new Material(shader);
             material.SetFloat("_PointSize", pointSize);
-            material.SetFloat("_Turbulence", 0.004f);
+            // The idle values PointCloudFigure now authors, so the two idle frames show what a
+            // figure standing in the scene actually does rather than a quieter stand-in.
+            material.SetFloat("_Turbulence", 0.012f);
+            material.SetFloat("_TurbulenceDrift", 0.75f);
             material.SetFloat("_TurbulenceScale", 6f);
             material.SetFloat("_TurbulenceSpeed", 0.9f);
             material.SetFloat("_DissolveRadius", Mathf.Max(0.5f, mesh.bounds.size.y));
@@ -323,9 +327,9 @@ namespace CompositeBody.PointClouds.EditorTools
             var frames = new (bool keyOn, bool zoneOn, Color zoneColor, string label)[]
             {
                 (true,  false, Color.white,                       "lit_0_white_key"),
-                (false, true,  new Color(0.62f, 0.22f, 1.00f),    "lit_1_purple_zone"),
-                (false, true,  new Color(1.00f, 0.78f, 0.12f),    "lit_2_yellow_zone"),
-                (true,  true,  new Color(0.62f, 0.22f, 1.00f),    "lit_3_key_plus_purple"),
+                (false, true,  PlayerRoleColors.Player1,          "lit_1_roleA_zone"),
+                (false, true,  PlayerRoleColors.Player2,          "lit_2_roleB_zone"),
+                (true,  true,  PlayerRoleColors.Player1,          "lit_3_key_plus_roleA"),
             };
 
             int written = 0;

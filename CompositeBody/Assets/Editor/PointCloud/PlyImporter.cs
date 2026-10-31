@@ -99,6 +99,9 @@ namespace CompositeBody.PointClouds.EditorTools
         [SerializeField, Min(0.002f), Tooltip("Neighbourhood the normal is fitted over. Too small and it fits noise; too large and it rounds off fingers. Roughly fifteen times the point spacing.")]
         float m_NormalRadius = 0.015f;
 
+        [SerializeField, Tooltip("Use the nx/ny/nz in the file instead of estimating. Off by default, and deliberately: the scans here carry 0,1,0 on every point -- the scanner saying it never computed any -- so trusting them would light a figure like a flat lid. On for a cloud baked from modelled geometry, where the normals are the real surface and keep an edge sharp.")]
+        bool m_UseFileNormals;
+
         [SerializeField, Tooltip("Material created alongside the mesh. Left empty, the CompositeBody/PointCloud shader is used.")]
         Shader m_Shader;
 
@@ -134,7 +137,19 @@ namespace CompositeBody.PointClouds.EditorTools
             Color32[] colors = Recolor(data.colors, keep, data.positions.Length);
 
             Vector2[] attributes = m_ComputeDensity ? MeasureDensity(positions, colors) : null;
-            Vector3[] normals = m_EstimateNormals ? EstimateNormals(positions) : null;
+
+            Vector3[] normals;
+            if (m_UseFileNormals && data.normals != null)
+            {
+                normals = TakeNormals(data.normals, keep);
+            }
+            else
+            {
+                if (m_UseFileNormals)
+                    ctx.LogImportWarning($"[Ply] {Path.GetFileName(ctx.assetPath)} carries no nx/ny/nz; " +
+                                         "Use File Normals had nothing to use.");
+                normals = m_EstimateNormals ? EstimateNormals(positions) : null;
+            }
 
             Mesh mesh;
             switch (topology)
@@ -234,6 +249,27 @@ namespace CompositeBody.PointClouds.EditorTools
                 : bounds.center;
 
             for (int i = 0; i < n; i++) result[i] -= offset;
+            return result;
+        }
+
+        /// <summary>
+        /// The file's own normals, thinned the same way the positions were.
+        ///
+        /// Scale and recentring do not reach them -- a uniform scale and a translation leave a
+        /// direction alone -- but Flip Z does, and a normal left unflipped on a flipped cloud
+        /// points into the surface, which lights the far side of everything.
+        /// </summary>
+        Vector3[] TakeNormals(Vector3[] source, int[] keep)
+        {
+            int n = keep?.Length ?? source.Length;
+            var result = new Vector3[n];
+            float flip = m_FlipZ ? -1f : 1f;
+
+            for (int i = 0; i < n; i++)
+            {
+                Vector3 v = source[keep?[i] ?? i];
+                result[i] = new Vector3(v.x, v.y, v.z * flip).normalized;
+            }
             return result;
         }
 
@@ -545,6 +581,7 @@ namespace CompositeBody.PointClouds.EditorTools
     {
         public Vector3[] positions = Array.Empty<Vector3>();
         public Color32[] colors;                 // null when the file carries no colour
+        public Vector3[] normals;                // null when the file carries no nx/ny/nz
         public int[] indices;                    // null when the file has no face element
         public bool hasColor => colors != null;
     }
@@ -695,11 +732,18 @@ namespace CompositeBody.PointClouds.EditorTools
         {
             var positions = new Vector3[vertex.count];
             Color32[] colors = null;
+            Vector3[] normals = null;
 
             int ix = IndexOfProperty(vertex, "x");
             int iy = IndexOfProperty(vertex, "y");
             int iz = IndexOfProperty(vertex, "z");
             if (ix < 0 || iy < 0 || iz < 0) throw new FormatException("vertex element has no x/y/z");
+
+            int inx = IndexOfProperty(vertex, "nx");
+            int iny = IndexOfProperty(vertex, "ny");
+            int inz = IndexOfProperty(vertex, "nz");
+            bool hasNormals = inx >= 0 && iny >= 0 && inz >= 0;
+            if (hasNormals) normals = new Vector3[vertex.count];
 
             int ir = IndexOfProperty(vertex, "red");
             int ig = IndexOfProperty(vertex, "green");
@@ -743,6 +787,14 @@ namespace CompositeBody.PointClouds.EditorTools
                             float.Parse(f[iy], culture),
                             float.Parse(f[iz], culture));
 
+                        if (hasNormals)
+                        {
+                            normals[i] = new Vector3(
+                                float.Parse(f[inx], culture),
+                                float.Parse(f[iny], culture),
+                                float.Parse(f[inz], culture));
+                        }
+
                         if (hasColor)
                         {
                             colors[i] = floatColor
@@ -775,6 +827,7 @@ namespace CompositeBody.PointClouds.EditorTools
 
             data.positions = positions;
             data.colors = colors;
+            data.normals = normals;
             data.indices = faces.Count > 0 ? faces.ToArray() : null;
         }
 
@@ -783,13 +836,14 @@ namespace CompositeBody.PointClouds.EditorTools
         {
             var positions = new Vector3[vertex.count];
             Color32[] colors = null;
+            Vector3[] normals = null;
             List<int> faces = null;
 
             foreach (Element element in elements)
             {
                 if (element == vertex)
                 {
-                    ReadBinaryVertices(stream, element, bigEndian, positions, ref colors);
+                    ReadBinaryVertices(stream, element, bigEndian, positions, ref colors, ref normals);
                 }
                 else if (element.name == "face")
                 {
@@ -803,11 +857,13 @@ namespace CompositeBody.PointClouds.EditorTools
 
             data.positions = positions;
             data.colors = colors;
+            data.normals = normals;
             data.indices = faces != null && faces.Count > 0 ? faces.ToArray() : null;
         }
 
         static void ReadBinaryVertices(FileStream stream, Element vertex, bool bigEndian,
-                                       Vector3[] positions, ref Color32[] colors)
+                                       Vector3[] positions, ref Color32[] colors,
+                                       ref Vector3[] normals)
         {
             if (vertex.hasList)
                 throw new FormatException("a list property inside the vertex element is not supported");
@@ -817,6 +873,12 @@ namespace CompositeBody.PointClouds.EditorTools
             int iz = IndexOfProperty(vertex, "z");
             if (ix < 0 || iy < 0 || iz < 0) throw new FormatException("vertex element has no x/y/z");
 
+            int inx = IndexOfProperty(vertex, "nx");
+            int iny = IndexOfProperty(vertex, "ny");
+            int inz = IndexOfProperty(vertex, "nz");
+            bool hasNormals = inx >= 0 && iny >= 0 && inz >= 0;
+            if (hasNormals) normals = new Vector3[vertex.count];
+
             int ir = IndexOfProperty(vertex, "red");
             int ig = IndexOfProperty(vertex, "green");
             int ib = IndexOfProperty(vertex, "blue");
@@ -825,6 +887,13 @@ namespace CompositeBody.PointClouds.EditorTools
             if (hasColor) colors = new Color32[vertex.count];
 
             Property px = vertex.properties[ix], py = vertex.properties[iy], pz = vertex.properties[iz];
+            Property nx = default, ny = default, nz = default;
+            if (hasNormals)
+            {
+                nx = vertex.properties[inx];
+                ny = vertex.properties[iny];
+                nz = vertex.properties[inz];
+            }
 
             // One buffer for the whole block. At 700k points a per-field read through
             // BinaryReader costs millions of virtual calls and shows up as a visible stall on
@@ -848,6 +917,14 @@ namespace CompositeBody.PointClouds.EditorTools
                         (float)ReadScalar(batch, b + px.offset, px.type, bigEndian),
                         (float)ReadScalar(batch, b + py.offset, py.type, bigEndian),
                         (float)ReadScalar(batch, b + pz.offset, pz.type, bigEndian));
+
+                    if (hasNormals)
+                    {
+                        normals[done + i] = new Vector3(
+                            (float)ReadScalar(batch, b + nx.offset, nx.type, bigEndian),
+                            (float)ReadScalar(batch, b + ny.offset, ny.type, bigEndian),
+                            (float)ReadScalar(batch, b + nz.offset, nz.type, bigEndian));
+                    }
 
                     if (hasColor)
                     {
