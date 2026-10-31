@@ -346,10 +346,31 @@ namespace CompositeBody.Experience
         // Per box, not per machine: both machines carry both boxes, and the id has to name the
         // OBJECT so a button pressed on one screen fires the box that player actually owns
         // rather than the local copy of someone else's.
-        public string debugId => $"o1.box.{m_Owner}";
+        //
+        // AND THE OBJECT, NOT JUST ITS OWNER. This was 'o1.box.{owner}' while there was one
+        // watcher per player. There is one carton now with a watcher per object under it, so
+        // that id named two of them at once and every lookup -- DebugKeys, the panel's remote
+        // fire, the test runner -- takes the FIRST match. The jacket's watcher could be seen in
+        // the list and never fired from a key or from the other machine, which matters more
+        // than it used to: putting an object away is what brings in the next one, so a drop
+        // that will not register now stalls the beat rather than just delaying its gate.
+        public string debugId => $"o1.box.{m_Owner}.{ObjectKey()}";
 
+        /// <summary>
+        /// The watched object's own name -- "Lamp", "Jacket" -- which is what tells this
+        /// player's watchers apart. Matches <see cref="O1GrabStation.debugId"/>'s key, so the
+        /// two rows for one object read as a pair. The watcher's own name ("Drop (Lamp)") is
+        /// the fallback for a box wired by hand before its object was set.
+        /// </summary>
+        string ObjectKey() => m_Object != null ? m_Object.name : name;
+
+        // WHOSE BOX, as well as which object. The id was not the only thing that stopped telling
+        // these apart once each player had several: four rows read "Put the Lamp in the box" and
+        // "Put the Jacket in the box" twice over, so the panel could not say which of them had
+        // been filled. The grab rows get this for free -- their station is named "Lamp (Player
+        // A)" -- and these do not, because a watcher is named after the object alone.
         public string debugLabel =>
-            $"Put the {(m_Object != null ? m_Object.name : "object")} in the box";
+            $"Put the {(m_Object != null ? m_Object.name : "object")} in {m_Owner}'s box";
 
         public DebugInteractionScope debugScope => DebugInteractionScope.LocalMachine;
 

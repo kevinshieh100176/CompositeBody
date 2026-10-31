@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -7,27 +8,33 @@ using CompositeBody.Multiplayer;
 namespace CompositeBody.Multiplayer.EditorSetup
 {
     /// <summary>
-    /// O-1 becomes two halves: the object is on the FLOOR, and there is a cardboard box to put
-    /// it in. The player bends down, picks their thing up, and puts it away; the beat's gate is
-    /// the box, not the grab.
+    /// O-1 becomes two halves: there is a cardboard box, and the object FLOATS OVER IT. The
+    /// player reaches up, takes it, and drops it in; the beat's gate is the box, not the grab.
+    ///
+    /// THE OBJECT USED TO LIE ON THE FLOOR beside the box, which asked the player to notice two
+    /// things in two places and work out that one went in the other. 「物件出現 浮在箱子正上方」 --
+    /// over the carton, so the thing and the place it goes are in the same glance, and the ask
+    /// needs no words. The lamp hangs <see cref="k_FloatGap"/> above the carton's rim and does
+    /// not fall until the player has had it in their hand: <see cref="BuildO1Grab"/> ships it
+    /// with gravity off and forceGravityOnDetach set, so letting go is what makes it a thing
+    /// that drops.
     ///
     /// THREE THINGS HAVE TO BE TRUE FOR THAT, and none of them were:
     ///
     /// 1. THE ROOM HAD NO FLOOR. Not a visible one -- Content/Grey Plane is a renderer with no
-    ///    collider -- which is why the props were built with gravity switched off and hung in
-    ///    mid-air at chest height. An object you are asked to pick UP has to be able to rest on
-    ///    something, and one you drop on the way to the box has to land rather than fall out of
-    ///    the world, so an invisible floor goes in at y=0 and gravity goes back on.
-    /// 2. THE PROPS WERE STAGED IN THE AIR. They are lowered ONCE, here, each by the exact
-    ///    distance that puts the bottom of its own bounds on the floor -- their x and z are left
-    ///    alone, because where in the room a thing stands is a hand decision. A prop already on
-    ///    the floor is not touched, so this can be re-run.
+    ///    collider -- so an object released beside the box fell out of the world. It still has
+    ///    to land: a lamp dropped on the way to the carton is a lamp the player has to be able
+    ///    to pick up again. An invisible floor goes in at y=0.
+    /// 2. THE PROPS WERE STAGED BY HAND, each where the 真人 that left it stood. Where the lamp
+    ///    hangs is a rule now and not staging -- directly over its own carton -- so it is
+    ///    re-placed on every run, and a prop moved by hand will not stay moved. That is the
+    ///    trade for the two halves of the ask never drifting apart.
     /// 3. THE BOX IS A CHILD OF THE STATION, which is what makes it fade in with the object it
     ///    belongs to: <see cref="ScanHandover"/> collects the renderers under the prop's station
     ///    at runtime, and <see cref="RoleVisibility"/> on that same station hides the whole lot
     ///    -- renderers and colliders -- from the player it does not belong to. One box each,
-    ///    neither player able to see or reach the other's, exactly as the coat and the mug
-    ///    already are. Nothing here is networked, because nothing here is ever seen twice.
+    ///    neither player able to see or reach the other's, exactly as the lamps already are.
+    ///    Nothing here is networked, because nothing here is ever seen twice.
     ///
     /// THE CARTON IS THE MODEL at one hand-chosen scale, the same for both players: they are
     /// the same carton twice, and how big a cardboard box is was decided by eye against the
@@ -82,9 +89,18 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// <summary>
         /// How far down the room both boxes stand. One number rather than a distance from each
         /// object: the two boxes are a pair and they line up with each other, which an offset
-        /// measured from two differently placed props would not.
+        /// measured from two differently placed props would not. It moves the WHOLE Box -- the
+        /// carton and the mouth together -- because they are children of it; moving the carton
+        /// alone would leave the trigger behind at the old depth, watching empty floor.
         /// </summary>
-        const float k_BoxZ = 0.75f;
+        const float k_BoxZ = 1.3f;
+
+        /// <summary>
+        /// How far above the carton's rim the object hangs. Far enough to read as floating
+        /// rather than as resting on the lid, close enough that a player who takes it and simply
+        /// opens their hand has already put it in the box.
+        /// </summary>
+        const float k_FloatGap = 0.25f;
 
         /// <summary>
         /// How much of the carton's own footprint counts as its inside. The walls take the rest,
@@ -131,10 +147,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 EnsureFloor(group);
 
-                if (!Prepare(root.transform, "Coat (Player A)", PlayerRole.Player1, out Staged a))
-                    return;
-                if (!Prepare(root.transform, "Mug (Player B)", PlayerRole.Player2, out Staged b))
-                    return;
+                if (!Prepare(root.transform, PlayerRole.Player1, out Staged a)) return;
+                if (!Prepare(root.transform, PlayerRole.Player2, out Staged b)) return;
 
                 // ONE SCALE, BOTH BOXES. The model carries its own units through whatever
                 // transforms the FBX has inside it, so the scale that reproduces the carton
@@ -159,56 +173,87 @@ namespace CompositeBody.Multiplayer.EditorSetup
             }
         }
 
-        /// <summary>One player's station, measured and put on the floor, ready to be built on.</summary>
+        /// <summary>
+        /// One player: every object they are given, and the one station the carton hangs off.
+        ///
+        /// ONE CARTON, SEVERAL OBJECTS. 「兩人面前各出現一個中型紙箱」 -- the box is the player's, not
+        /// the object's, and every object they are shown goes into the same one. It lives under
+        /// the FIRST object's station because that station's RoleVisibility already hides it
+        /// from the other player; which station that is does not matter beyond that, and the
+        /// drop targets inside it are one per object.
+        /// </summary>
         struct Staged
         {
             public Transform station;
-            public XRGrabInteractable grab;
             public PlayerRole owner;
             public string name;
 
-            /// <summary>Where the object ended up, once it was on the floor.</summary>
+            /// <summary>Every object this player has to put away, in the order they appear.</summary>
+            public List<(string key, XRGrabInteractable grab)> props;
+
+            /// <summary>Where the first object was, which is what the box is placed from.</summary>
             public Bounds bounds;
 
-            /// <summary>Its longest side: what a carton has to be able to take.</summary>
+            /// <summary>The longest side of the biggest object: what a carton has to take.</summary>
             public float longest;
         }
 
         /// <summary>
-        /// Find a station, put its object on the floor and give it back its gravity, then
-        /// measure it. Nothing is built here -- the carton's size depends on BOTH stations, so
-        /// both are measured before either is filled.
+        /// Find a station and measure its object. Nothing is built or moved here -- the carton's
+        /// size depends on BOTH stations, so both are measured before either is filled, and the
+        /// object cannot be floated over a box that does not exist yet.
         /// </summary>
-        static bool Prepare(Transform root, string stationName, PlayerRole owner, out Staged staged)
+        static bool Prepare(Transform root, PlayerRole owner, out Staged staged)
         {
             staged = default;
 
-            Transform station = FindDeep(root, stationName);
-            if (station == null)
-            {
-                Debug.LogError($"[O1Box] RESULT: FAIL - no '{stationName}' in the prefab. Run " +
-                               "Tools/O-1/Build Grab Interaction first.");
-                return false;
-            }
+            var props = new List<(string, XRGrabInteractable)>();
+            Transform first = null;
+            Bounds bounds = default;
+            float longest = 0f;
 
-            var grab = station.GetComponentInChildren<XRGrabInteractable>(true);
-            if (grab == null)
+            foreach (BuildO1Grab.Prop prop in BuildO1Grab.Props)
             {
-                Debug.LogError($"[O1Box] RESULT: FAIL - nothing grabbable under '{stationName}'.");
-                return false;
-            }
+                string stationName = prop.Station(owner);
 
-            Bounds bounds = Lower(grab.transform, stationName);
-            Fall(grab.gameObject, stationName);
+                Transform station = FindDeep(root, stationName);
+                if (station == null)
+                {
+                    Debug.LogError($"[O1Box] RESULT: FAIL - no '{stationName}' in the prefab. " +
+                                   "Run Tools/O-1/Build Grab Interaction first.");
+                    return false;
+                }
+
+                var grab = station.GetComponentInChildren<XRGrabInteractable>(true);
+                if (grab == null)
+                {
+                    Debug.LogError($"[O1Box] RESULT: FAIL - nothing grabbable under " +
+                                   $"'{stationName}'.");
+                    return false;
+                }
+
+                Bounds mine = WorldBounds(grab.transform);
+                Hover(grab, stationName);
+
+                if (first == null)
+                {
+                    first = station;
+                    bounds = mine;
+                }
+
+                longest = Mathf.Max(longest,
+                                    Mathf.Max(mine.size.x, Mathf.Max(mine.size.y, mine.size.z)));
+                props.Add((prop.key, grab));
+            }
 
             staged = new Staged
             {
-                station = station,
-                grab = grab,
+                station = first,
                 owner = owner,
-                name = stationName,
+                name = $"{owner}",
+                props = props,
                 bounds = bounds,
-                longest = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z)),
+                longest = longest,
             };
             return true;
         }
@@ -239,7 +284,11 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Vector3 size = Fill(box, carton, cardboard, scale, staged.name);
             CheckItFits(staged, size);
             Place(box, staged, size);
-            Wire(box.gameObject, staged.owner, staged.grab);
+
+            foreach ((string key, XRGrabInteractable grab) in staged.props)
+                Float(box, staged, size, key, grab);
+
+            Wire(box, staged, size);
         }
 
         /// <summary>
@@ -256,7 +305,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             Debug.Log($"[O1Box] {staged.name}: box at ({x:F2}, {k_FloorY:F2}, {k_BoxZ:F2}), " +
                       $"against the {(side > 0 ? "+X" : "-X")} edge of the {k_PlaySpace:F1} m " +
-                      $"play space, {staged.bounds.center.z - k_BoxZ:F2} m from its object.");
+                      "play space, on the side its object was staged on.");
         }
 
         /// <summary>
@@ -329,51 +378,86 @@ namespace CompositeBody.Multiplayer.EditorSetup
         }
 
         /// <summary>
-        /// Drop the object straight down until the bottom of its own bounds is on the floor. Its
-        /// x and z are not touched: those were staged by hand, and the beat's blocking depends on
-        /// which 真人 each object was left behind by.
+        /// The object, hanging directly over its own carton. 「物件出現 浮在箱子正上方」 -- centred on
+        /// the box in x and z and <see cref="k_FloatGap"/> clear of its rim, so the lamp and the
+        /// place it belongs are one shape rather than two things to connect.
         ///
-        /// Returns the bounds it ends up with, which is what the box is sized and placed from.
+        /// MEASURED, NOT OFFSET. The lamp's pivot is not under the lamp -- the model's meshes
+        /// sit most of a metre off the FBX's origin -- so the move is the difference between
+        /// where its bounds ARE and where they should be, which is right whatever the model's
+        /// pivot happens to be.
+        ///
+        /// WHERE IT HANGS IS A RULE, so it is re-applied on every run and a prop dragged
+        /// somewhere by hand goes back. The staging that used to live here -- each object on the
+        /// 真人's own mark -- is what the carton now carries instead: the box is placed from the
+        /// side the object was on, and the object follows the box.
         /// </summary>
-        static Bounds Lower(Transform prop, string stationName)
+        static void Float(Transform box, Staged staged, Vector3 size, string key,
+                          XRGrabInteractable grab)
         {
+            Transform prop = grab.transform;
             Bounds bounds = WorldBounds(prop);
-            float drop = bounds.min.y - k_FloorY;
 
-            if (Mathf.Abs(drop) < 0.01f)
-            {
-                Debug.Log($"[O1Box] {stationName}: already on the floor.");
-                return bounds;
-            }
+            var target = new Vector3(box.position.x,
+                                     k_FloorY + size.y + k_FloatGap,
+                                     box.position.z);
 
-            prop.position -= new Vector3(0f, drop, 0f);
-            bounds.center -= new Vector3(0f, drop, 0f);
+            prop.position += new Vector3(target.x - bounds.center.x,
+                                         target.y - bounds.min.y,
+                                         target.z - bounds.center.z);
 
-            Debug.Log($"[O1Box] {stationName}: lowered {drop:F2} m onto the floor; it is " +
-                      $"{bounds.size.x:F2}x{bounds.size.y:F2}x{bounds.size.z:F2} m.");
-            return bounds;
+            // EVERY OBJECT HANGS IN THE SAME PLACE, one after another, and they never overlap
+            // because they are never there at the same time: O1GrabWaves does not bring the
+            // second one in until the first one's line has finished, which cannot happen until
+            // both players have had it in hand -- and once it has been let go of, gravity is on
+            // and it cannot float back. One place to look, for the whole beat.
+            Debug.Log($"[O1Box] {staged.name}'s {key}: floats at " +
+                      $"({target.x:F2}, {target.y:F2}, {target.z:F2}) -- " +
+                      $"{k_FloatGap:F2} m over the rim of their carton, and stays there until " +
+                      "the player lets go of it.");
+
+            // IT MUST NOT START INSIDE ITS OWN BOX. The mouth is half again as tall as the
+            // carton so an object across the rim still counts, and the float is measured from
+            // the rim -- so the two reach for the same band of air, and a smaller gap or a
+            // taller carton closes it. O1DropBox asks whether the object is inside, unheld and
+            // settled, all three of which are true of a lamp that has merely been hung there:
+            // the beat would report its gate within a second of starting, before either player
+            // had touched anything. Error and not a warning, because nothing about the room
+            // would look wrong.
+            float mouthTop = k_FloorY + size.y * 1.5f;
+            float starts = WorldBounds(prop).center.y;
+            if (starts > mouthTop) return;
+
+            Debug.LogError($"[O1Box] RESULT: FAIL - {staged.name}'s {key} floats with its centre " +
+                           $"at {starts:F2} m, inside their mouth trigger, which reaches " +
+                           $"{mouthTop:F2} m. The box would report itself full on the first " +
+                           $"frame of the beat. Raise k_FloatGap above " +
+                           $"{k_FloatGap + mouthTop - starts:F2} m, or lower k_CartonScale.",
+                           staged.station);
         }
 
         /// <summary>
-        /// Gravity back on, now that there is something to land on. These were built kinematic
-        /// in the air for want of a floor; an object meant to be picked up off the ground and
-        /// dropped into a box has to be a thing that falls, or the player's release leaves a mug
-        /// hanging over the carton.
+        /// Gravity OFF, and it stays off until the player has had the object in their hand.
+        /// 「浮在箱子正上方」: a non-kinematic body with no forces on it simply stays where it is,
+        /// and <see cref="XRGrabInteractable.forceGravityOnDetach"/> -- set by
+        /// <see cref="BuildO1Grab"/> -- switches gravity on the first time it is released. Both
+        /// are re-asserted here because this builder is run over prefabs built when the props
+        /// lay on the floor with gravity already on, and one of those would drop into its own
+        /// box on the first frame and report the gate before the beat had begun.
         /// </summary>
-        static void Fall(GameObject prop, string stationName)
+        static void Hover(XRGrabInteractable grab, string stationName)
         {
-            var rb = prop.GetComponent<Rigidbody>();
+            var rb = grab.GetComponent<Rigidbody>();
             if (rb == null)
             {
-                Debug.LogWarning($"[O1Box] {stationName}: no Rigidbody, so it cannot fall or be " +
-                                 "dropped. Left alone.");
+                Debug.LogWarning($"[O1Box] {stationName}: no Rigidbody, so it can neither float " +
+                                 "nor be dropped. Left alone.");
                 return;
             }
 
-            if (rb.useGravity) return;
-
-            rb.useGravity = true;
-            Debug.Log($"[O1Box] {stationName}: gravity on.");
+            rb.isKinematic = false;
+            rb.useGravity = false;
+            grab.forceGravityOnDetach = true;
         }
 
         /// <summary>
@@ -381,11 +465,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// every run, because these are references rather than staging: a box whose object was
         /// rebuilt should find the new one.
         /// </summary>
-        static void Wire(GameObject box, PlayerRole owner, XRGrabInteractable grab)
+        static void Wire(Transform box, Staged staged, Vector3 size)
         {
-            var drop = box.GetComponent<O1DropBox>();
-            if (drop == null) drop = box.AddComponent<O1DropBox>();
-
             Collider mouth = null;
             foreach (Collider collider in box.GetComponentsInChildren<Collider>(true))
             {
@@ -394,14 +475,56 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 break;
             }
 
-            var so = new SerializedObject(drop);
-            so.FindProperty("m_Owner").intValue = (int)owner;
-            so.FindProperty("m_Mouth").objectReferenceValue = mouth;
-            so.FindProperty("m_Object").objectReferenceValue = grab;
-            so.ApplyModifiedPropertiesWithoutUndo();
+            // ONE WATCHER PER OBJECT, ALL OF THEM ON THE SAME MOUTH. O1DropBox waits for ONE
+            // grabbable to be let go of inside a trigger, which was the whole component while
+            // there was one object each. There are several now and still one carton, so the
+            // trigger is shared and the watchers are children of the box -- a component cannot
+            // be added twice to one object, and nor should it be: "has the jacket been put
+            // away" and "has the lamp" are two questions with two answers.
+            if (box.TryGetComponent(out O1DropBox legacy))
+            {
+                Object.DestroyImmediate(legacy, true);
+                Debug.Log($"[O1Box] {staged.name}: took the single O1DropBox off the box itself; " +
+                          "each object has its own under it now.");
+            }
 
-            Debug.Log($"[O1Box] '{box.name}' under '{box.transform.parent.name}': {owner} fills " +
-                      $"it with '{grab.name}', and that reports 'beat.O1_Control'.");
+            foreach ((string key, XRGrabInteractable grab) in staged.props)
+            {
+                string name = $"Drop ({key})";
+
+                Transform target = box.Find(name);
+                if (target == null)
+                {
+                    var made = new GameObject(name);
+                    made.transform.SetParent(box, false);
+                    target = made.transform;
+                }
+
+                if (!target.TryGetComponent(out O1DropBox drop))
+                    drop = target.gameObject.AddComponent<O1DropBox>();
+
+                var so = new SerializedObject(drop);
+                so.FindProperty("m_Owner").intValue = (int)staged.owner;
+                so.FindProperty("m_Mouth").objectReferenceValue = mouth;
+                so.FindProperty("m_Object").objectReferenceValue = grab;
+                so.ApplyModifiedPropertiesWithoutUndo();
+
+                Debug.Log($"[O1Box] {staged.name}: '{name}' waits for '{grab.name}' in the " +
+                          "shared mouth.");
+            }
+
+            // Anything left from a previous run with a different set of objects. A stale watcher
+            // would hold the beat open waiting for a prop that is no longer in the room.
+            for (int i = box.childCount - 1; i >= 0; i--)
+            {
+                Transform child = box.GetChild(i);
+                if (!child.TryGetComponent(out O1DropBox stale)) continue;
+                if (staged.props.Exists(p => child.name == $"Drop ({p.key})")) continue;
+
+                Debug.Log($"[O1Box] {staged.name}: removed '{child.name}', which waits for an " +
+                          "object this beat no longer has.");
+                Object.DestroyImmediate(child.gameObject);
+            }
         }
 
         /// <summary>

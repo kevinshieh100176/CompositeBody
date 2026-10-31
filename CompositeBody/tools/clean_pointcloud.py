@@ -550,6 +550,22 @@ def stage_downsample(xyz, rgb, args):
     return _select(xyz, rgb, keep)
 
 
+def rotate_z_up_to_y_up(xyz):
+    """
+    (x, y, z) -> (x, z, -y): a -90 degree turn about X, so +Z becomes up.
+
+    A ROTATION, NOT AN AXIS SWAP. Writing (x, z, y) would be one character shorter and would
+    also put the height in y -- but its determinant is -1, so it mirrors the subject. The
+    handedness flip this pipeline does make is the deliberate one in to_unity, and two mirrors
+    cancel into a figure that is the right way round by accident and wrong the moment either
+    step changes.
+    """
+    if np is not None:
+        a = np.asarray(xyz, dtype=np.float64)
+        return np.stack([a[:, 0], a[:, 2], -a[:, 1]], axis=1)
+    return [(p[0], p[2], -p[1]) for p in xyz]
+
+
 def to_unity(xyz, plane):
     """
     Feet on y=0, centred in XZ, Z negated.
@@ -683,6 +699,13 @@ def main(argv=None):
                     help="don't clean anything -- report where a standing figure might be, "
                          "with the --near command to extract it. Run this first.")
 
+    ap.add_argument("--up", choices=("y", "z"), default="y",
+                    help="which axis the INPUT calls up. Everything below assumes y -- the "
+                         "floor fit, the footprint bands, the cylinder of --near -- so a z-up "
+                         "scan is rotated into y-up on load rather than handled twice. "
+                         "Scaniverse exports through CloudCompare are z-up; the captures this "
+                         "was first written against were not.")
+
     g = ap.add_argument_group("crop (pick one; strongly recommended)")
     g.add_argument("--crop", nargs=6, type=float, metavar=("XMIN", "XMAX", "YMIN", "YMAX", "ZMIN", "ZMAX"))
     g.add_argument("--near", nargs=2, type=float, metavar=("X", "Z"),
@@ -754,6 +777,10 @@ def main(argv=None):
         xyz, rgb = read_ply_points(args.input)
     n0 = len(xyz)
     print(f"  {n0:,} points   {bounds_line(xyz)}")
+
+    if args.up == "z":
+        xyz = rotate_z_up_to_y_up(xyz)
+        print(f"  rotated z-up to y-up   {bounds_line(xyz)}")
 
     if args.survey:
         print("\nsurvey")

@@ -44,7 +44,10 @@ namespace CompositeBody.Diagnostics
             yield return null;
 
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.Exit(m_Failures.Count == 0 ? 0 : 1);
+            // The status code is the result of the batch run. In an editor somebody is sitting in
+            // front of, that same exit would close it out from under them: leave play mode instead.
+            if (Application.isBatchMode) UnityEditor.EditorApplication.Exit(m_Failures.Count == 0 ? 0 : 1);
+            else UnityEditor.EditorApplication.isPlaying = false;
 #else
             Application.Quit(m_Failures.Count == 0 ? 0 : 1);
 #endif
@@ -173,7 +176,10 @@ namespace CompositeBody.Diagnostics
             // thing with no clock of its own -- can show one.
             // The grab stations declare the O-1 gate and carry their own fallback, so a row that
             // is waiting for a player shows how long it will wait.
-            IDebugInteraction grab = FindById("o1.grab.Player1");
+            // BY PREFIX, because the id names the object as well as the player now: Player 1
+            // has a lamp and a jacket, and which one is first in the list is not this test's
+            // business. What it is checking is that O-1's grab rows exist at all.
+            IDebugInteraction grab = FindByPrefix("o1.grab.Player1.");
             if (Check(grab != null, "the O-1 grab row is present"))
             {
                 Check(FindById("beat.O1_Control") != null,
@@ -236,6 +242,21 @@ namespace CompositeBody.Diagnostics
             foreach (IDebugInteraction entry in InteractionDebug.entries)
             {
                 if (entry.debugId == id) return entry;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// The first row whose id starts with this, for the families that name an object as
+        /// well as a player -- 'o1.grab.Player1.Lamp', 'o1.box.Player1.Jacket'. A test that
+        /// wants "one of this player's grab rows" should not have to know which objects the
+        /// running order is showing this week.
+        /// </summary>
+        static IDebugInteraction FindByPrefix(string prefix)
+        {
+            foreach (IDebugInteraction entry in InteractionDebug.entries)
+            {
+                if (entry.debugId != null && entry.debugId.StartsWith(prefix)) return entry;
             }
             return null;
         }

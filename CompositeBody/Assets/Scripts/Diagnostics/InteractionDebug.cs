@@ -106,45 +106,6 @@ namespace CompositeBody.Diagnostics
     }
 
     /// <summary>
-    /// An interaction that staff can also correct by hand, in small steps, from the panel.
-    ///
-    /// SEPARATE FROM <see cref="IDebugInteraction"/> BECAUSE ALMOST NOTHING WANTS IT. Firing a
-    /// gate is a thing every interaction can express; being nudged four centimetres to the left
-    /// is not, and putting it on the main interface would mean every implementation carrying
-    /// five methods that throw. The panel draws the extra row only for the interactions that
-    /// implement this, so adding it to something else later needs no panel change.
-    ///
-    /// A <see cref="DebugFireTarget"/> IS STILL ASKED FOR, and an implementation is free to
-    /// honour only <see cref="DebugFireTarget.Local"/> -- the calibrator does, because an origin
-    /// belongs to the headset in front of whoever is correcting it. The parameter stays so that
-    /// the panel's code path is the same shape as its firing one, and so a future nudgeable
-    /// thing that genuinely is another machine's business can say so.
-    ///
-    /// THE UNITS ARE THE ROOM'S, not the player's and not Unity's. A nudge is given in metres
-    /// along the calibration marker's own right/up/forward and degrees about up, because the
-    /// person pressing the button is thinking "the chair should be a bit further that way" while
-    /// looking at the room, and a frame that turned with the player's head would make the same
-    /// button mean a different direction every time they looked round.
-    /// </summary>
-    public interface IDebugNudgeable
-    {
-        /// <summary>Whether a correction can be applied to that machine right now.</summary>
-        bool DebugCanNudge(DebugFireTarget target);
-
-        /// <summary>
-        /// Shift by <paramref name="roomMetres"/> in the marker's frame and turn by
-        /// <paramref name="degrees"/> about up, on top of whatever calibration produced.
-        /// </summary>
-        void DebugNudge(DebugFireTarget target, Vector3 roomMetres, float degrees);
-
-        /// <summary>Whether there is hand-correction to take back.</summary>
-        bool DebugCanUndoNudge(DebugFireTarget target);
-
-        /// <summary>Put it back to where calibration left it, in one step.</summary>
-        void DebugUndoNudge(DebugFireTarget target);
-    }
-
-    /// <summary>
     /// The list of everything that can be debugged, and the one switch that decides whether its
     /// buttons do anything.
     ///
@@ -206,6 +167,25 @@ namespace CompositeBody.Diagnostics
         public static void Register(IDebugInteraction interaction)
         {
             if (interaction == null || s_Entries.Contains(interaction)) return;
+
+            // TWO ROWS UNDER ONE ID IS A HALF-BREAK, AND A SILENT ONE. Both rows appear in the
+            // panel and both local buttons work, so the list looks right -- but every lookup by
+            // id takes the FIRST match: DebugKeys' bindings, the panel's remote fire, the test
+            // runner. The second row can be watched and never fired from a key or from the
+            // other machine. O-1 shipped like that for a while, once each player had more than
+            // one object to pick up and put away, so the check is here rather than in a comment.
+            foreach (IDebugInteraction existing in s_Entries)
+            {
+                if (existing.debugId != interaction.debugId) continue;
+
+                Debug.LogWarning($"[InteractionDebug] two interactions share the id " +
+                                 $"'{interaction.debugId}' ('{existing.debugLabel}' and " +
+                                 $"'{interaction.debugLabel}'). Both get a row, but a key " +
+                                 "binding or a remote fire can only ever reach the first. Make " +
+                                 "the id name the object, not just the player.");
+                break;
+            }
+
             s_Entries.Add(interaction);
             onEntriesChanged?.Invoke();
         }

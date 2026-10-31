@@ -98,7 +98,16 @@ namespace CompositeBody.Multiplayer.EditorSetup
                     grabGroup = go.transform;
                 }
 
-                ok = BuildO1Grab.BuildInto(grabGroup);
+                // O-2's four scans, the same way and for the same reason: reused, not rebuilt.
+                Transform ghostGroup = beats.Find("O_2 Ghosts");
+                if (ghostGroup == null)
+                {
+                    var go = new GameObject("O_2 Ghosts");
+                    go.transform.SetParent(beats, false);
+                    ghostGroup = go.transform;
+                }
+
+                ok = BuildO1Grab.BuildInto(grabGroup) && BuildO2Ghosts.BuildInto(ghostGroup);
                 if (ok)
                 {
                     WireHandover(root, beats, grabGroup);
@@ -124,7 +133,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             Debug.Log($"[Onboarding] {k_PrefabPath} and {k_ScenePath}\n" +
                       "  Content/ unchanged, so the O-0 timeline's paths still resolve.\n" +
-                      "  Beats/O_1 Grab/ holds the coat and the mug.\n" +
+                      "  Beats/O_1 Grab/ holds the two lamps and their boxes.\n" +
+                      "  Beats/O_2 Ghosts/ holds the four scans, unformed, at the centre.\n" +
                       "  O_0.prefab is left in place; MainScene still points at it.\n" +
                       "[Onboarding] RESULT: PASS");
         }

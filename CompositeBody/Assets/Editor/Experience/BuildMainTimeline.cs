@@ -40,16 +40,48 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_DriverName = "ShowTimeline";
 
         /// <summary>
-        /// The running order, taken from 合成肉身_VR_Production_Timeline_v2 (1010), sheet
-        /// "VR Timeline", column Duration_sec. 18 scenes, 2260s -- the 38:00 that sheet's own
-        /// 欄位與規則 tab quotes as the total.
+        /// The running order, taken from 合成肉身_VR_Production_Timeline_v4, sheet "VR Timeline".
+        /// Its own 時長 chain totals 2370s = 39:30; the 欄位與規則 tab still quotes 38:00, which is
+        /// left over from v2 (1010) and is the number this table used to be built from.
+        ///
+        /// READ THE 時長 COLUMN, NOT THE TC COLUMNS. In v4 the 開始TC / 結束TC cells are stale from
+        /// the 轉場一 row down -- they are 90s behind, because the 第一段VO row was inserted and the
+        /// TCs were never recalculated, and they still chain to v3's old 0:05:10 boundary. 時長 is
+        /// the maintained column and chains cleanly, so it is the one to trust.
         ///
         /// DURATIONS ARE THE DOCUMENT'S, NOT THE CODE'S. When the two disagree the document wins:
-        /// it is what the other departments are building to. O-0 is the one place that still
-        /// disagrees on purpose, and it now disagrees the other way: the document gives the scene
-        /// 60s and the beat needs 80, because the player's body arrives inside it. See the note
-        /// on that row. Everything after O-0 therefore starts twenty seconds later than the
-        /// sheet says, which is a conversation to have with it rather than a number to hide.
+        /// it is what the other departments are building to. O-0 ran 45s over for a while and no
+        /// longer does -- the second 自白 was moved under the body's arrival instead of after it,
+        /// so the beat is the sheet's 140s again and every boundary below is v4's. What survives
+        /// of that disagreement is the body itself rather than a number; the note on the O-0 row
+        /// says what it was and why the row cannot be shortened further.
+        ///
+        /// THE NEW ONBOARDING LINES HAVE LANDED, so O-1 and O-2 move to v4's durations. This
+        /// note used to say they were held back: the sheet gives O-1 three sub-beats
+        /// (燈 / T-shirt 35 / 封箱 50) and O-2 90s, and all four of the VO files it asks for
+        /// were missing, so widening O-1 would have bought 70s of dead air rather than a longer
+        /// beat. All four are in the project now and their lengths fit the sub-beats they were
+        /// written for, to within a second and a half:
+        ///
+        ///   燈        85s   O-AB1_睡前                  74.5s, both players hear it together
+        ///   T-shirt   35s   O-AB2_搶衣服                 34.0s, likewise
+        ///   封箱      50s   O-A3 / O-B3_有些東西可以放進箱子  37.0s each, ONE PER PLAYER
+        ///
+        /// 燈 IS 85s AND NOT THE 75s ITS 時長 CELL SAYS. That row is the one place in the
+        /// Onboarding block where the two columns disagree -- its TC span (0220->0345) is 85s
+        /// while 時長 reads 75 -- and 85 is the one to build to: the extra ten seconds are the
+        /// cartons and the wall arriving before anyone is asked for anything, which is authored
+        /// on O-1's own track at 1.5-12s and is time the beat really does spend. The other two
+        /// rows' columns agree. So O-1 is 170s, not the 160 the 時長 chain adds up to, and every
+        /// boundary below it sits 10s later than the 時長 column alone would put it.
+        ///
+        /// 封箱 IS A LINE WITH NOTHING UNDER IT. Sealing the carton is an interaction nobody has
+        /// built and it is deliberately parked; its two recordings are wired so the running
+        /// order is recorded, and O1GrabWaves simply stops after the jacket. That does not block
+        /// the beat -- the gate is the boxes being filled, not the waves being finished.
+        ///
+        /// O-3 IS NOT TOUCHED. v4 replaces it with a 10s 收黑, which would drop the 停頓點 that
+        /// waits for both players, and that row is not in the crop this was re-read from.
         ///
         /// Gates sit only on the Onboarding beats, which is where the sheet puts its one explicit
         /// 停頓點 ("互動需要做完兩個", after O-1) and where the 完成條件 column asks for both
@@ -64,25 +96,67 @@ namespace CompositeBody.Multiplayer.EditorSetup
             // lookup found no object called "O_0", quietly made an empty holder and nested
             // nothing -- so the cue was driven by nobody at all: O0ArrivalBeat stands down
             // whenever a master driver exists, and the master was pointing at a stub.
-            // EIGHTY SECONDS, WHERE THE DOCUMENT SAYS SIXTY, and this is the one entry that
-            // overruns on purpose. The beat no longer ends with the 光圈 up: the 真人 dissolve on
-            // O-0's own timeline and the player's body then arrives over AvatarFormation's
-            // authored 32 seconds, which cannot start until the scans have gone. BuildO0Timeline
-            // fires the body at 45s, so the arrival finishes at 77 -- and 「出現後 來到 O-1」 means
-            // the beat has to contain it rather than hand a half-formed body to the next one.
-            ("Onboarding/Timeline", "O-0 進入", 80d, null, 0d),
+            // A HUNDRED AND FORTY SECONDS, WHICH IS WHAT v4 SAYS. It was 185 for a while, and
+            // the argument is worth keeping because the beat did not lose anything to get here.
+            //
+            // WHAT v4 ASKS FOR. Its three O-0 rows are 重點句 20s, O-0｜進入 / 第一段VO 90s (one
+            // and the same beat, written as two rows) and 轉場一｜紙箱 30s -- 140s in all. The 30s
+            // is the tight one: it has to hold 真人消失, the player's body arriving AND the 28s
+            // second 自白, so those three have to overlap rather than queue.
+            //
+            // AND THEY DO OVERLAP NOW. The 185 was the same five events played strictly one
+            // after another -- 20 + 88 + 10 + 32 + 28 -- with the second 自白 waiting until the
+            // body was fully there. 「我把A2 B2 的音檔往前移了 讓他在140S的時候播完」: that pair was
+            // dragged back to 112-140s, and the formation was shortened to 30s and pulled back
+            // to 109.75s so the body forms UNDER it and lands on its last word. Every event is
+            // still in the beat; two of them now happen at the same time.
+            //
+            // WHAT IS STILL NOT THE SHEET'S READING is the body itself. v4 only grows HANDS here
+            // -- 「玩家雙手完整顯現 → 進O-1」, with the full membrane body held back to S2-1 -- and the
+            // decision taken is the other one: the player gets a whole body in O-0. It fits in
+            // the sheet's 140s, so this duration no longer records that disagreement and
+            // BuildO0Timeline is the only place it is written down. Shortening this row further
+            // to buy time elsewhere would cut the second 自白 off, not just tighten a transition.
+            //
+            //   20s      the room is up, and each player's first 自白 starts
+            //  +88s      the longer of the two first lines (A 88.0s, B 83.5s) plays out
+            //  -> 109s   a breath later the 真人 start to go, over 10s
+            //  -> 109.8s the body is cued, and AvatarFormation's 30s ramp runs under the rest:
+            //            membrane first, the Ch36 body itself from 125s, after the room is empty
+            //  -> 112s   each player's second 自白, 28s of it, ending at 140s
+            //  = 140s, with the body arriving on its last word.
+            //
+            // THE NUMBER LIVES IN TWO PLACES AND MUST AGREE. BuildO0Timeline computes the beat's
+            // real length from the wavs and logs it; this is a typed duration that has to be at
+            // least as wide, because a Control clip drives its sub-director for exactly as long
+            // as the clip is -- too narrow and O-0 is cut off mid-sentence with a half-formed
+            // body, which looks like a bug in the body rather than a number in a table.
+            ("Onboarding/Timeline", "O-0 進入", 140d, null, 0d),
 
-            // O-1 HOLDS NINE SECONDS BEFORE ITS END, not at it. The objects, the cartons and the
-            // wall of boxes dissolve out on O-1's own timeline once both players have filled
-            // every box and the lines they are owed have finished -- so the tail after the hold
-            // is exactly that dissolve, and O-2 starts in an empty room. The lead is O-1's own
-            // number; see BuildO1Timeline.
-            ("Onboarding/Timeline O_1", "O-1 鬼的控制", 90d, "beat.O1_Control",
+            // O-1 IS THREE SUB-BEATS IN ONE ROW, and one gate at the end of all three. v4 writes
+            // 鬼的抓取1 燈 / 鬼的抓取2 T-shirt / 封箱 as separate rows, but they are not separate
+            // beats: 「播完後下一個物件才會出現」 means each one begins when the players finished the
+            // last, which is a chain O1GrabWaves runs at runtime and not three clips at fixed
+            // times. The sheet's 時長 for the three is what this row is wide enough for; where
+            // inside it each object actually appears is up to the players.
+            //
+            // AND THE 停頓點 IS THIS ROW'S HOLD. v4 puts 「停頓點（兩者VO都需要聽完）」 between O-1 and
+            // O-2 as a zero-length row; that is this gate, which O1DropSequence will not clear
+            // while either player still has a box to fill or the beat is still speaking.
+            //
+            // IT HOLDS NINE SECONDS BEFORE THE END, not at it. The objects, the cartons and the
+            // wall of boxes dissolve out on O-1's own timeline once that gate clears -- so the
+            // tail after the hold is exactly that dissolve, and O-2 starts in an empty room. The
+            // lead is O-1's own number; see BuildO1Timeline.
+            ("Onboarding/Timeline O_1", "O-1 鬼的抓取", 170d, "beat.O1_Control",
              BuildO1Timeline.k_OutLead),
 
-            // 鬼的抓取, not 鬼魂交流: the gate has always been called beat.O2_Grasp and the label
-            // was the odd one out.
-            ("Onboarding/Timeline O_2", "O-2 鬼的抓取", 120d, "beat.O2_Grasp", 0d),
+            // 鬼魂交流 AND 90s, BOTH FROM v4. This row used to read 鬼的抓取 at 120s, and the note
+            // here used to argue the label was the odd one out because the gate is called
+            // beat.O2_Grasp. v4 settles it the other way: every 抓取 is in O-1 now, and O-2 is
+            // 鬼魂交流. The gate keeps its id -- it is a key, not a description, and renaming it
+            // would strand the flag on both machines mid-show.
+            ("Onboarding/Timeline O_2", "O-2 鬼魂交流", 90d, "beat.O2_Grasp", 0d),
             ("Beat_O3",    "O-3 Onboarding結束",   20d,  "beat.O3_Communion", 0d),
 
             ("Beat_S1-1",  "S1-1 記憶痕跡成形",     40d,  null, 0d),

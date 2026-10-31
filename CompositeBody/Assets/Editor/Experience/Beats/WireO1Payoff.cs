@@ -40,8 +40,22 @@ namespace CompositeBody.Multiplayer.EditorSetup
     public static class WireO1Payoff
     {
         const string k_PrefabPath = "Assets/_Scenes/Onboarding.prefab";
-        const string k_CueA = "Assets/_Audio/S0-1-A.wav";
-        const string k_CueB = "Assets/_Audio/S0-1-B.wav";
+
+        /// <summary>
+        /// THE GRABS HAVE NO CUE OF THEIR OWN, and the two that had one are gone. This used to
+        /// be S0-1-A and S0-1-B, a sound per player on the first pick-up; they are no longer in
+        /// _Audio, and this builder has been failing on the missing file ever since -- RETURNING
+        /// BEFORE ITS SAVE, so the orbit hand-over and the footprints it also does were silently
+        /// not being applied either. That is the real cost of asking for a file that the running
+        /// order has moved on from.
+        ///
+        /// 「兩人必須都抓住物件才會觸發VO，要不然只有音效」: the speech answers BOTH players having their
+        /// object in hand, which is O1GrabWaves, and a single player's grab is now the quiet
+        /// half. So the stations are wired with no clip and <see cref="O1GrabStation"/> is
+        /// silent -- which is what BuildO1Timeline used to do by clearing the cue after the
+        /// fact. A per-player sound effect, if one is ever recorded, goes here.
+        /// </summary>
+        const string k_Cue = null;
 
         [MenuItem("Tools/O-1/Wire Grab Cues and Payoff")]
         public static void Run()
@@ -66,8 +80,17 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 // The stations are under Beats/O_1 Grab, not Content -- the grab beat has its own
                 // holder in the merged prefab -- so the search starts at the root.
-                if (!WireStation(root.transform, "Coat (Player A)", PlayerRole.Player1, k_CueA)) return;
-                if (!WireStation(root.transform, "Mug (Player B)", PlayerRole.Player2, k_CueB)) return;
+                // EVERY OBJECT'S STATIONS, not just the first pair. O-1 shows several objects
+                // one after another and each one has to be able to say "this player is holding
+                // theirs" -- which is what O1GrabStation is for now that the beat's speech waits
+                // on both players having theirs.
+                foreach (BuildO1Grab.Prop prop in BuildO1Grab.Props)
+                {
+                    if (!WireStation(root.transform, prop.StationA, PlayerRole.Player1, k_Cue))
+                        return;
+                    if (!WireStation(root.transform, prop.StationB, PlayerRole.Player2, k_Cue))
+                        return;
+                }
 
                 if (!HandOrbitsToTimeline(content)) return;
 
@@ -133,11 +156,17 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return false;
             }
 
-            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(cuePath);
-            if (clip == null)
+            // A station may legitimately have no cue of its own: only the first object was ever
+            // given one. A path that is NAMED and missing is still a failure.
+            AudioClip clip = null;
+            if (!string.IsNullOrEmpty(cuePath))
             {
-                Debug.LogError($"[O1Payoff] RESULT: FAIL - no clip at {cuePath}.");
-                return false;
+                clip = AssetDatabase.LoadAssetAtPath<AudioClip>(cuePath);
+                if (clip == null)
+                {
+                    Debug.LogError($"[O1Payoff] RESULT: FAIL - no clip at {cuePath}.");
+                    return false;
+                }
             }
 
             var existing = station.GetComponent<O1GrabStation>();
@@ -165,8 +194,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
             so.FindProperty("m_Source").objectReferenceValue = source;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            Debug.Log($"[O1Payoff] '{name}': {owner} grabs it, cue {clip.name} " +
-                      $"({clip.length:F1}s), reports 'beat.O1_Control'.");
+            Debug.Log($"[O1Payoff] '{name}': {owner} grabs it, cue " +
+                      $"{(clip != null ? $"{clip.name} ({clip.length:F1}s)" : "none")}; the " +
+                      "grab tells O1GrabWaves this player is holding theirs.");
             return true;
         }
 

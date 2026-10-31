@@ -293,7 +293,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
             material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
             material.SetFloat("_ZWrite", 0f);
             material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            // Above the water, not just Transparent -- see ShowRenderQueues.AboveWater.
+            material.renderQueue = ShowRenderQueues.AboveWater;
         }
 
         /// <summary>

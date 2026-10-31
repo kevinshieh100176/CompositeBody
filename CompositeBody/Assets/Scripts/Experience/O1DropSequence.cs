@@ -84,6 +84,13 @@ namespace CompositeBody.Experience
                                           "runs the clips end to end sounds like one long file.")]
         float m_Gap = 0.6f;
 
+        [SerializeField, Tooltip("The beat's own chain of lines, if it has one. This gate will " +
+                                 "not clear until every wave in it has been heard -- including " +
+                                 "the last, which has no object and is simply the pause before " +
+                                 "O-2. The show's dissolve-out follows the hold, and it must " +
+                                 "not start over a line the two players are listening to.")]
+        O1GrabWaves m_Waves;
+
         [SerializeField, Tooltip("Task reported once this player has filled every box and the " +
                                  "last line has finished. The show's hold near the end of O-1 " +
                                  "waits on it, from both players.")]
@@ -275,6 +282,19 @@ namespace CompositeBody.Experience
             }
 
             if (!any) return false;
+
+            // AND NOT UNTIL THE CHAIN OF LINES HAS RUN OUT. The speech moved to
+            // <see cref="O1GrabWaves"/> -- both players holding an object is what answers them
+            // now -- and those lines are long: a player who fills their box early would
+            // otherwise clear the hold, and the dissolve-out would run over the top of a line
+            // the two of them are listening to together.
+            //
+            // FINISHED, NOT SPEAKING. 「播放結束timeline才會繼續到o-2」 is about the LAST line, and
+            // between two waves the speaker is silent for the gap -- long enough for a frame of
+            // this to see nothing sounding and clear the gate in the pause before 封箱's line.
+            // The chain being over is the condition, and only the chain can say when it is.
+            if (m_Waves != null && !m_Waves.finished) return false;
+
             return m_Queue.Count == 0 && !speaking;
         }
 

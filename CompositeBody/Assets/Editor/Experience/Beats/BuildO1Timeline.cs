@@ -67,6 +67,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_GrabGroup = "O_1 Grab";
         const string k_ShowcaseName = "Showcase_CB_boxes";
         const string k_SpeakerName = "Cue O-1";
+        const string k_WaveSpeakerName = "Cue O-1 Waves";
         const string k_TrackName = "O-1: dissolve";
         const string k_ClipName = "O_1_Dissolve";
 
@@ -87,25 +88,67 @@ namespace CompositeBody.Multiplayer.EditorSetup
             "Assets/_models/3d-cardboard-lowpoly/textures/Cardboard_MAT_Base_color_Dissolve.png";
 
         /// <summary>
-        /// The one line O-1 has a recording for. 「每當玩家把一個物件放進箱子後會按順序撥放音檔」 -- one
-        /// per object, in this order; with one object each there is one line each. Add objects and
-        /// add clips here, or in the inspector on the O1DropSequence, and both lists grow together.
+        /// THE DROP IS SILENT NOW. 「兩人必須都抓住物件才會觸發VO，要不然只有音效」 -- the speech answers
+        /// both players HOLDING their object, which is <see cref="k_WaveLines"/> below; putting
+        /// it away is the quiet half. This list used to hold O-1AB_紀念日快樂 and is deliberately
+        /// empty rather than deleted: <see cref="O1DropSequence"/> still runs the beat's gate,
+        /// and a line per drop is one entry away if the running order asks for it again.
         /// </summary>
-        static readonly string[] k_Lines =
+        static readonly string[] k_Lines = { };
+
+        /// <summary>
+        /// O-1's three sub-beats, in order, and what is said at the end of each. v4 writes them
+        /// as three rows -- 鬼的抓取1 燈 85s, 鬼的抓取2 T-shirt 35s, 封箱 50s -- but they are one
+        /// beat: 「播完後下一個物件才會出現」, so each begins when the players finished the last and
+        /// none of them has a time of its own.
+        ///
+        /// TWO KINDS OF LINE. The first two are 「與B共同聆聽」 -- one recording, both players,
+        /// same moment -- and the third is not: 封箱 gives each player their own, O-A3 and O-B3.
+        /// <see cref="O1GrabWaves"/> takes either, and times the chain off the longer of a pair
+        /// so the next object still arrives for both of them on the same frame.
+        ///
+        /// THE THIRD IS A PAUSE, AND IT IS MARKED AS ONE. 「這裡先不要加互動 這邊是停頓點」 -- 封箱 is
+        /// a line with no object behind it, so it is not waiting on a grab that was never built:
+        /// it speaks as soon as T-shirt's line ends, which is 「兩人都抓過兩樣東西 讓2段vo都播完」, and
+        /// the show stays on O-1's hold until it is over. The flag is what tells that apart from
+        /// a wave whose objects are simply missing, which is still worth a warning.
+        ///
+        /// THE NAMES ARE ASCII because they reach the debug panel through O1GrabWaves' row, and
+        /// the panel's font has no CJK glyphs -- see AvatarFormationSync.debugLabel. The running
+        /// order's own names for these three are 燈, T shirt and 封箱.
+        /// </summary>
+        static readonly (string name, string shared, string a, string b, bool pause)[] k_WaveLines =
         {
-            "Assets/_Audio/O-1AB_紀念日快樂.wav",
+            ("Lamp", "Assets/_Audio/O-AB1_睡前.wav", null, null, false),
+            ("Jacket", "Assets/_Audio/O-AB2_搶衣服.wav", null, null, false),
+            ("Seal the box", null, "Assets/_Audio/O-A3_有些東西可以放進箱子.wav",
+                                   "Assets/_Audio/O-B3_有些東西可以放進箱子.wav", true),
         };
 
-        /// <summary>O-1's authored length, from the running order in BuildMainTimeline.</summary>
-        const double k_BeatSeconds = 90d;
+        /// <summary>
+        /// O-1's authored length, from the running order in BuildMainTimeline. 170s is v4's
+        /// three sub-beats added up -- 燈 85, T-shirt 35, 封箱 50 -- and not three clips: where
+        /// inside it each object appears is decided by the players, not by this number. It only
+        /// has to be WIDE ENOUGH, because a Control clip drives its sub-director for exactly as
+        /// long as the clip is.
+        /// </summary>
+        const double k_BeatSeconds = 170d;
 
         // THE PACING. Four numbers, and the only four worth having opinions about.
         //
         // The first is not zero: the show arrives here off O-0's hold and a dissolve that started
         // on the same instant would have been running while the players were still being waited
         // for.
-        const double k_InAt = 1.5d;        // the objects, the cartons and the wall begin to arrive
+        const double k_InAt = 1.5d;        // the cartons and the wall begin to arrive
         const double k_In = 6d;            // over six seconds: 1.5 -> 7.5
+
+        // AND THEN THE OBJECTS, which did not used to be a separate pair of numbers: everything
+        // arrived on one curve. 「Showcase_CB_boxes 跟箱子(Carton)...出現後 燈會出現」 -- the boxes
+        // first, the lamps once there is somewhere for them to go. A lamp that dissolved in
+        // alongside its carton was a room filling up; one that arrives after it is an
+        // instruction, and the beat never has to say a word.
+        const double k_PropAt = 8d;        // half a second after the cartons have finished
+        const double k_PropIn = 4d;        // over four seconds: 8 -> 12
 
         /// <summary>
         /// How much of the beat is left after the hold -- which is to say how long the
@@ -114,8 +157,13 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// </summary>
         public const double k_OutLead = 9d;
 
-        const double k_Out = 6d;           // 81 -> 87, then three seconds of empty room
-
+        /// <summary>
+        /// Where the hold sits, which is the only thing that is left of what used to be the
+        /// dissolve-out. The out-curve that ran from here is gone -- see <see cref="Curve"/>;
+        /// O-2 is what empties the room now. The constant stays because the log says where the
+        /// show stops to wait, and because <see cref="k_OutLead"/> is still the gap that
+        /// BuildMainTimeline puts between the marker and the end of the beat.
+        /// </summary>
         static double outAt => k_BeatSeconds - k_OutLead;
 
         /// <summary>
@@ -149,7 +197,16 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Material showcase = BuildShowcaseMaterial();
             if (carton == null || showcase == null) return;
 
-            List<AudioClip> lines = LoadLines();
+            // The grabbable objects get the same treatment as the cartons: opaque, clipped
+            // against noise in their own base map's alpha. BuildO1Grab makes and tints them;
+            // how this beat dissolves is one thing and it is owned here.
+            foreach (BuildO1Grab.Prop prop in BuildO1Grab.Props)
+            {
+                if (!MakePropClippable(prop.Material(PlayerRole.Player1))) return;
+                if (!MakePropClippable(prop.Material(PlayerRole.Player2))) return;
+            }
+
+            List<AudioClip> lines = LoadLines(k_Lines);
             if (lines == null) return;
 
             // The wall of boxes, as it was staged by hand. Taken out of the scene here; put back
@@ -181,35 +238,107 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 PlayableDirector director = EnsureDirector(root.transform, timeline);
                 Animator animator = EnsureAnimator(group);
 
-                var paths = new List<string>();
+                // Two groups and not one list, because they no longer arrive together: the wall
+                // and the cartons come in first and the lamps follow them.
+                var scenery = new List<string>();
+                var props = new List<string>();
 
                 Transform wall = EnsureShowcase(group, staged, showcase);
                 if (wall == null) return;
-                paths.Add(Path(group, wall));
+                scenery.Add(Path(group, wall));
 
                 var boxes = new List<(PlayerRole role, O1DropBox box)>();
 
-                foreach ((string station, PlayerRole role) in new[]
-                         {
-                             ("Coat (Player A)", PlayerRole.Player1),
-                             ("Mug (Player B)", PlayerRole.Player2),
-                         })
+                // Per object, the two stations that hold it -- which is what a wave is. The
+                // first object's pair goes on the animation track; every later one is handed to
+                // O1GrabWaves, so the two lists below are deliberately not the same thing.
+                var byProp = new List<List<O1GrabStation>>();
+                var presenceByProp = new List<List<PropPresence>>();
+
+                for (int i = 0; i < BuildO1Grab.Props.Length; i++)
                 {
-                    Transform t = group.Find(station);
-                    if (t == null)
+                    BuildO1Grab.Prop prop = BuildO1Grab.Props[i];
+                    bool onTrack = i == 0;
+
+                    var held = new List<O1GrabStation>();
+                    var presences = new List<PropPresence>();
+
+                    foreach (PlayerRole role in new[] { PlayerRole.Player1, PlayerRole.Player2 })
                     {
-                        Debug.LogError($"[O1Timeline] RESULT: FAIL - no '{station}' under " +
-                                       $"{k_GrabGroup}. Run Tools/O-1/Build Grab Interaction and " +
-                                       "Tools/O-1/Build the Drop Boxes first.");
-                        return;
+                        string station = prop.Station(role);
+
+                        Transform t = group.Find(station);
+                        if (t == null)
+                        {
+                            Debug.LogError($"[O1Timeline] RESULT: FAIL - no '{station}' under " +
+                                           $"{k_GrabGroup}. Run Tools/O-1/Build Grab " +
+                                           "Interaction and Tools/O-1/Build the Drop Boxes " +
+                                           "first.");
+                            return;
+                        }
+
+                        if (!WireStation(group, t, role, carton, scenery,
+                                         onTrack ? props : null, boxes)) return;
+
+                        var grab = t.GetComponent<O1GrabStation>();
+                        if (grab == null)
+                        {
+                            Debug.LogError($"[O1Timeline] RESULT: FAIL - '{station}' has no " +
+                                           "O1GrabStation, so the beat cannot know when both " +
+                                           "players are holding their object. Run Tools/O-1/" +
+                                           "Wire Grab Cues and Payoff first.");
+                            return;
+                        }
+
+                        held.Add(grab);
+                        presences.Add(t.GetComponent<PropPresence>());
                     }
 
-                    if (!WireStation(group, t, role, carton, paths, boxes)) return;
+                    byProp.Add(held);
+                    presenceByProp.Add(presences);
                 }
 
+                // EVERY OBJECT HAS A WATCHER, checked only now that every station has been
+                // walked: all the drop watchers hang under the FIRST object's station -- there
+                // is one carton per player and several things to put in it -- so the list is
+                // not complete until the loop above is. The match is by the grab each watcher
+                // is pointed at rather than by a name that could be renamed.
+                //
+                // A CHECK AND NOT A WIRING. Nothing in the wave chain waits on a box any more;
+                // what the gate waits on is every object being put away, and an object with no
+                // watcher is one that can never be. The beat would hold until its fallback and
+                // nobody would know which object was the one nobody could finish.
+                foreach (List<O1GrabStation> stations in byProp)
+                {
+                    foreach (O1GrabStation station in stations)
+                    {
+                        var grab = station.GetComponentInChildren<XRGrabInteractable>(true);
+                        bool watched = false;
+
+                        foreach ((PlayerRole role, O1DropBox drop) in boxes)
+                        {
+                            if (role != station.owner || drop.target != grab) continue;
+                            watched = true;
+                            break;
+                        }
+
+                        if (watched) continue;
+
+                        Debug.LogError($"[O1Timeline] RESULT: FAIL - nothing under " +
+                                       $"{station.owner}'s carton is watching " +
+                                       $"'{station.name}', so it could never be put away and " +
+                                       "the beat's gate could never clear. Run Tools/O-1/Build " +
+                                       "the Drop Boxes first.");
+                        return;
+                    }
+                }
+
+                // Waves first: the drop sequence takes a reference to it, and on a first run
+                // there would be nothing to take.
+                if (!WireWaves(group, byProp, presenceByProp)) return;
                 if (!WireSequence(group, boxes, lines)) return;
 
-                BuildTrack(timeline, director, animator, paths);
+                BuildTrack(timeline, director, animator, scenery, props);
 
                 EditorUtility.SetDirty(timeline);
                 AssetDatabase.SaveAssets();
@@ -217,10 +346,12 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 PrefabUtility.SaveAsPrefabAsset(root, k_Prefab);
 
-                Debug.Log($"[O1Timeline] {k_Timeline}: {paths.Count} group(s) dissolve in " +
-                          $"{k_InAt}-{k_InAt + k_In}s and out {outAt}-{outAt + k_Out}s of a " +
-                          $"{k_BeatSeconds}s beat; the show holds at {outAt}s, so the " +
-                          $"dissolve-out is what plays once both players are finished.\n" +
+                Debug.Log($"[O1Timeline] {k_Timeline}: {scenery.Count} box group(s) dissolve in " +
+                          $"{k_InAt}-{k_InAt + k_In}s, then {props.Count} lamp(s) at " +
+                          $"{k_PropAt}-{k_PropAt + k_PropIn}s, and both HELD to the end of a " +
+                          $"{k_BeatSeconds}s beat; the show holds at {outAt}s, and what plays " +
+                          "once both players are finished is the room as they left it -- O-2 " +
+                          "dissolves the boxes out over its first scan forming.\n" +
                           $"[O1Timeline] {lines.Count} line(s) queued one per object: " +
                           $"{string.Join(", ", lines.ConvertAll(c => c.name))}.\n" +
                           "[O1Timeline] RESULT: PASS");
@@ -233,10 +364,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
         // ------------------------------------------------------------------ audio
 
-        static List<AudioClip> LoadLines()
+        static List<AudioClip> LoadLines(string[] paths)
         {
             var clips = new List<AudioClip>();
-            foreach (string path in k_Lines)
+            foreach (string path in paths)
             {
                 var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
                 if (clip == null)
@@ -339,6 +470,57 @@ namespace CompositeBody.Multiplayer.EditorSetup
             material.renderQueue = (int)RenderQueue.AlphaTest;
 
             EditorUtility.SetDirty(material);
+        }
+
+        /// <summary>
+        /// Turn one of the grabbable objects' materials into a clipped one, against a dissolve
+        /// map generated from its own base texture.
+        ///
+        /// SAME TREATMENT AS THE CARTONS, and for a reason the room proved by itself: a lamp
+        /// dragged into the scene straight from SmallProps is not hidden by the water, and the
+        /// built one is. The only difference between them was that this one had been made
+        /// alpha-blended so PropPresence could fade it. KWS's passes work off the depth buffer
+        /// and _CameraOpaqueTexture, and a blended material writes neither -- so from the water
+        /// system's point of view the object is not in the scene at all.
+        ///
+        /// Clipping costs nothing here: the objects dissolve rather than fade, which is what
+        /// everything else in this beat does anyway, and they go back to writing depth and
+        /// casting shadows like the solid things they are meant to be.
+        /// </summary>
+        static bool MakePropClippable(string materialPath)
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material == null)
+            {
+                Debug.LogError($"[O1Timeline] RESULT: FAIL - no material at {materialPath}. Run " +
+                               "Tools/O-1/Build Grab Interaction first.");
+                return false;
+            }
+
+            Texture baseMap = material.HasProperty("_BaseMap") ? material.GetTexture("_BaseMap") : null;
+            string source = baseMap != null ? AssetDatabase.GetAssetPath(baseMap) : null;
+
+            if (string.IsNullOrEmpty(source) || !source.EndsWith(".png"))
+            {
+                Debug.LogError($"[O1Timeline] RESULT: FAIL - {material.name}'s base map is " +
+                               $"{(baseMap == null ? "missing" : "not a PNG (" + source + ")")}, " +
+                               "so there is nothing to write dissolve noise into. The map is " +
+                               "decoded from disk; see BuildDissolveMap.");
+                return false;
+            }
+
+            // Next to the source, as the cartons' are. Shared by the two roles' materials --
+            // same mesh, same base map, so the same pattern, and BuildDissolveMap leaves an
+            // existing one alone rather than re-rolling it.
+            string dissolve = source.Substring(0, source.Length - 4) + "_Dissolve.png";
+
+            Texture2D map = BuildDissolveMap(source, dissolve);
+            if (map == null) return false;
+
+            MakeClippable(material, map);
+            Debug.Log($"[O1Timeline] {material.name} is opaque and clipped against {map.name}; " +
+                      "PropPresence writes its cutoff.");
+            return true;
         }
 
         /// <summary>
@@ -615,55 +797,72 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// clips.
         /// </summary>
         static bool WireStation(Transform group, Transform station, PlayerRole role,
-                                Material carton, List<string> paths,
+                                Material carton, List<string> scenery, List<string> props,
                                 List<(PlayerRole, O1DropBox)> boxes)
         {
+            // THE CARTON IS THE PLAYER'S, NOT THE OBJECT'S, so most stations do not have one.
+            // 「兩人面前各出現一個中型紙箱」 -- one box each, and every object that player is shown
+            // goes into it; BuildO1Box hangs it under the FIRST object's station because that
+            // station's RoleVisibility already hides it from the other player. A station
+            // without one is the normal case now, not a build that was run in the wrong order.
             Transform box = station.Find("Box");
-            if (box == null)
-            {
-                Debug.LogError($"[O1Timeline] RESULT: FAIL - '{station.name}' has no Box. Run " +
-                               "Tools/O-1/Build the Drop Boxes first.");
-                return false;
-            }
 
             // The prop's own renderers, which is everything under the station EXCEPT the carton.
-            var props = new List<Renderer>();
+            // Four of them now rather than one: the lamp is a base, a stem, a collar and a shade.
+            var lamp = new List<Renderer>();
             foreach (Renderer r in station.GetComponentsInChildren<Renderer>(true))
             {
-                if (!r.transform.IsChildOf(box)) props.Add(r);
+                if (box == null || !r.transform.IsChildOf(box)) lamp.Add(r);
             }
 
             var grabs = new List<XRGrabInteractable>(
                 station.GetComponentsInChildren<XRGrabInteractable>(true));
 
-            EnsurePresence(station.gameObject, PropPresence.Mode.Fade, props, grabs);
-            paths.Add(Path(group, station));
+            // CLIP, NOT FADE. Fade means an alpha-blended material, and an alpha-blended
+            // material is invisible to the water system's passes -- which is what put these
+            // objects behind the water. See MakePropClippable.
+            EnsurePresence(station.gameObject, PropPresence.Mode.Clip, lamp, grabs);
 
-            var cartons = new List<Renderer>(box.GetComponentsInChildren<Renderer>(true));
-            foreach (Renderer r in cartons) r.sharedMaterial = carton;
+            // null means "this object is not the timeline's". Only the FIRST object arrives at
+            // an authored time; the rest are brought in by O1GrabWaves when the previous one's
+            // line finishes, and a curve on the track would overwrite the component on every
+            // frame the director is evaluated.
+            props?.Add(Path(group, station));
 
-            EnsurePresence(box.gameObject, PropPresence.Mode.Clip, cartons,
-                           new List<XRGrabInteractable>());
-            paths.Add(Path(group, box));
-
-            // THE GATE IS NOT THE BOX'S ANY MORE, and nor is the fallback: O1DropSequence waits
-            // for every box AND for the lines they are owed. A box left reporting the same task
-            // would clear the hold on the first drop, with a line still sounding and the other
-            // object still on the floor.
-            var drop = box.GetComponent<O1DropBox>();
-            if (drop == null)
+            if (box != null)
             {
-                Debug.LogError($"[O1Timeline] RESULT: FAIL - '{station.name}/Box' has no " +
-                               "O1DropBox. Run Tools/O-1/Build the Drop Boxes first.");
-                return false;
+                var cartons = new List<Renderer>(box.GetComponentsInChildren<Renderer>(true));
+                foreach (Renderer r in cartons) r.sharedMaterial = carton;
+
+                EnsurePresence(box.gameObject, PropPresence.Mode.Clip, cartons,
+                               new List<XRGrabInteractable>());
+                scenery.Add(Path(group, box));
+
+                // ONE WATCHER PER OBJECT, UNDER THE BOX. There is one carton and several things
+                // to put in it, so the drop targets are children of it -- see BuildO1Box.
+                //
+                // AND THE GATE IS NONE OF THEIRS, nor is the fallback: O1DropSequence waits for
+                // every one of them. A box left reporting the beat's task would clear the hold
+                // on the first drop, with the other objects still in the room.
+                var drops = new List<O1DropBox>(box.GetComponentsInChildren<O1DropBox>(true));
+                if (drops.Count == 0)
+                {
+                    Debug.LogError($"[O1Timeline] RESULT: FAIL - '{station.name}/Box' has no " +
+                                   "O1DropBox under it. Run Tools/O-1/Build the Drop Boxes " +
+                                   "first.");
+                    return false;
+                }
+
+                foreach (O1DropBox drop in drops)
+                {
+                    var dso = new SerializedObject(drop);
+                    dso.FindProperty("m_TaskId").stringValue = "";
+                    dso.FindProperty("m_Timeout").floatValue = 0f;
+                    dso.ApplyModifiedPropertiesWithoutUndo();
+
+                    boxes.Add((role, drop));
+                }
             }
-
-            var dso = new SerializedObject(drop);
-            dso.FindProperty("m_TaskId").stringValue = "";
-            dso.FindProperty("m_Timeout").floatValue = 0f;
-            dso.ApplyModifiedPropertiesWithoutUndo();
-
-            boxes.Add((role, drop));
 
             // AND THE GRAB NO LONGER SPEAKS. S0-1-A and S0-1-B played when the object was picked
             // up, which with the new audio would be a line on the grab and another on the drop
@@ -717,6 +916,192 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
         // ------------------------------------------------------------------ the sequence
 
+        /// <summary>
+        /// The chain of objects: both players grab one, a line answers them, and the next one
+        /// arrives when it finishes.
+        ///
+        /// ONE WAVE PER LINE. <see cref="k_WaveLines"/> is the running order, so a second clip
+        /// there is a second object -- and the wave it makes will have no stations and nothing
+        /// to fade in until a second pair of stations exists, which the log says plainly rather
+        /// than leaving a silent hole in the beat.
+        ///
+        /// THE FIRST WAVE BRINGS IN NOTHING. Its lamps are on the animation track above, at a
+        /// time somebody chose; only the waves after it are faded in by the component, because
+        /// when they arrive depends on when each player put the last one away. That is also why
+        /// a later wave's objects must be kept OFF the track: the track would overwrite the
+        /// component on every frame the director is evaluated.
+        ///
+        /// A WAVE IS WIRED PER PLAYER, NOT PER OBJECT: each side carries its own station and
+        /// its own presence together, so the two are always the same player's. Parallel arrays
+        /// would let the jacket arrive for whoever happened to be at the same index.
+        ///
+        /// IT NO LONGER CARRIES A DROP BOX. 「兩個人都抓完燈後 vo跑完 外套才會出現」 -- what brings
+        /// the next object in is the line finishing, for both players at once, so the boxes
+        /// drive nothing in the chain. They are still the beat's gate, through O1DropSequence.
+        /// </summary>
+        static bool WireWaves(Transform group, List<List<O1GrabStation>> byProp,
+                              List<List<PropPresence>> presenceByProp)
+        {
+            var waves = group.GetComponent<O1GrabWaves>();
+            if (waves == null) waves = group.gameObject.AddComponent<O1GrabWaves>();
+
+            // ITS OWN SPEAKER, NOT THE DROP SEQUENCE'S. Both are 2D and both speak for the room,
+            // but one queue holding two unrelated kinds of line would mean a drop could delay a
+            // line the whole beat is waiting on -- and 「播完後下一個物件才會出現」 makes that line
+            // the thing the next object is timed from.
+            Transform speaker = group.Find(k_WaveSpeakerName);
+            if (speaker == null)
+            {
+                var made = new GameObject(k_WaveSpeakerName);
+                made.transform.SetParent(group, false);
+                speaker = made.transform;
+            }
+
+            var source = speaker.GetComponent<AudioSource>();
+            if (source == null) source = speaker.gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = false;
+            source.spatialBlend = 0f;    // the room, not a thing one player stands nearer to
+
+            var so = new SerializedObject(waves);
+            SerializedProperty list = so.FindProperty("m_Waves");
+            list.arraySize = k_WaveLines.Length;
+
+            var summary = new List<string>();
+
+            for (int i = 0; i < k_WaveLines.Length; i++)
+            {
+                (string name, string shared, string a, string b, bool pause) spec = k_WaveLines[i];
+
+                SerializedProperty wave = list.GetArrayElementAtIndex(i);
+                wave.FindPropertyRelative("name").stringValue = spec.name;
+
+                // Unique per wave, or the second wave unlocks on the first wave's grabs. The
+                // number and not the wave's name: a task id crosses the network as a
+                // FixedString64Bytes, and these are named in Chinese.
+                wave.FindPropertyRelative("taskId").stringValue = $"o1.hold.{i + 1}";
+
+                if (!Lines(wave, spec, out float longest)) return false;
+
+                SerializedProperty sides = wave.FindPropertyRelative("sides");
+                sides.arraySize = 0;
+
+                // A PAUSE IS LEFT EMPTY ON PURPOSE. 「這裡先不要加互動」 -- no sides at all is what
+                // makes O1GrabWaves speak it by itself once every line before it has been
+                // heard, and the beat's hold waits for it like any other line.
+                if (spec.pause)
+                {
+                    summary.Add($"{i + 1}. {spec.name} ({longest:F1}s, THE PAUSE -- speaks by " +
+                                "itself, no interaction)");
+                    continue;
+                }
+
+                if (i >= byProp.Count)
+                {
+                    summary.Add($"{i + 1}. {spec.name} ({longest:F1}s, NO OBJECTS)");
+
+                    Debug.LogWarning($"[O1Timeline] wave {i + 1} '{spec.name}' is a line and " +
+                                     "nothing else: BuildO1Grab.Props has no object for it, so " +
+                                     "there is nothing to grab and nothing to fade in. The " +
+                                     $"chain stops after wave {i} and the show never comes off " +
+                                     "O-1's hold except by its fallback. Mark it as the pause " +
+                                     "if that is what it is.");
+                    continue;
+                }
+
+                List<O1GrabStation> stations = byProp[i];
+                List<PropPresence> presences = presenceByProp[i];
+
+                sides.arraySize = stations.Count;
+                for (int s = 0; s < stations.Count; s++)
+                {
+                    SerializedProperty side = sides.GetArrayElementAtIndex(s);
+                    side.FindPropertyRelative("role").enumValueIndex = (int)stations[s].owner;
+                    side.FindPropertyRelative("station").objectReferenceValue = stations[s];
+
+                    // THE FIRST OBJECT HAS NO PRESENCE HERE, and that is the one-owner rule:
+                    // the lamps are on the animation track at a time somebody chose, and a
+                    // component writing the same float would be overwritten on every frame the
+                    // director is evaluated. Every later object is this component's, faded in
+                    // when ITS OWN player fills their box.
+                    side.FindPropertyRelative("appears").objectReferenceValue =
+                        i > 0 ? presences[s] : null;
+                }
+
+                summary.Add($"{i + 1}. {spec.name} ({longest:F1}s, {stations.Count} player(s), " +
+                            $"{(i == 0 ? "arrives on the track" : "arrives on the line before it")})");
+            }
+
+            so.FindProperty("m_Source").objectReferenceValue = source;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            Debug.Log($"[O1Timeline] O1GrabWaves on {group.name}: {k_WaveLines.Length} wave(s) " +
+                      $"-- {string.Join("; ", summary)}. A line waits for BOTH players to be " +
+                      "holding that object ('o1.hold.N'), and the objects that follow it " +
+                      "arrive for both of them when it ends. The last line to finish is what " +
+                      "lets the show off O-1's hold and into O-2.");
+
+            if (BuildO1Grab.Props.Length > k_WaveLines.Length)
+                Debug.LogWarning($"[O1Timeline] BuildO1Grab.Props has " +
+                                 $"{BuildO1Grab.Props.Length} object(s) and the running order " +
+                                 $"has {k_WaveLines.Length} line(s); the extra objects are " +
+                                 "built and hidden but nothing ever brings them in.");
+            return true;
+        }
+
+        /// <summary>
+        /// A wave's speech: one shared recording, or one per role. Returns false if a clip named
+        /// in the running order is missing, and gives back the longest of them -- which is what
+        /// the chain is timed off, so both machines advance together.
+        /// </summary>
+        static bool Lines(SerializedProperty wave,
+                          (string name, string shared, string a, string b, bool pause) spec,
+                          out float longest)
+        {
+            longest = 0f;
+
+            SerializedProperty shared = wave.FindPropertyRelative("line");
+            SerializedProperty own = wave.FindPropertyRelative("ownLines");
+
+            shared.objectReferenceValue = null;
+            own.arraySize = 0;
+
+            if (!string.IsNullOrEmpty(spec.shared))
+            {
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(spec.shared);
+                if (clip == null)
+                {
+                    Debug.LogError($"[O1Timeline] RESULT: FAIL - no audio clip at {spec.shared}.");
+                    return false;
+                }
+                shared.objectReferenceValue = clip;
+                longest = clip.length;
+                return true;
+            }
+
+            var roles = new[] { (PlayerRole.Player1, spec.a), (PlayerRole.Player2, spec.b) };
+            own.arraySize = roles.Length;
+
+            for (int i = 0; i < roles.Length; i++)
+            {
+                (PlayerRole role, string path) = roles[i];
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                if (clip == null)
+                {
+                    Debug.LogError($"[O1Timeline] RESULT: FAIL - no audio clip at {path} for " +
+                                   $"{role}'s half of '{spec.name}'.");
+                    return false;
+                }
+
+                SerializedProperty entry = own.GetArrayElementAtIndex(i);
+                entry.FindPropertyRelative("role").enumValueIndex = (int)role;
+                entry.FindPropertyRelative("clip").objectReferenceValue = clip;
+                longest = Mathf.Max(longest, clip.length);
+            }
+
+            return true;
+        }
+
         static bool WireSequence(Transform group, List<(PlayerRole role, O1DropBox box)> boxes,
                                  List<AudioClip> lines)
         {
@@ -756,13 +1141,21 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 for (int c = 0; c < spoken; c++)
                     clips.GetArrayElementAtIndex(c).objectReferenceValue = lines[c];
 
-                if (mine.Count > lines.Count)
+                // Only when a list was STARTED and ran out. An empty list is the beat as it is
+                // written -- the speech answers the grab now, not the drop -- and a warning for
+                // that would fire on every run and mean nothing.
+                if (lines.Count > 0 && mine.Count > lines.Count)
                     Debug.LogWarning($"[O1Timeline] {roles[i]} has {mine.Count} box(es) and only " +
                                      $"{lines.Count} line(s); the later drops will be silent.");
             }
 
             so.FindProperty("m_Source").objectReferenceValue = speaker;
             so.FindProperty("m_TaskId").stringValue = "beat.O1_Control";
+
+            // Wired here rather than found at runtime: the gate must not clear while the beat's
+            // shared line is still sounding, and a reference that is only resolved if it happens
+            // to be on the same object is the kind that goes missing without anyone noticing.
+            so.FindProperty("m_Waves").objectReferenceValue = group.GetComponent<O1GrabWaves>();
             so.ApplyModifiedPropertiesWithoutUndo();
 
             Debug.Log($"[O1Timeline] O1DropSequence on {group.name}: " +
@@ -867,26 +1260,25 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// <summary>
         /// One clip across the whole beat, one curve per group: absent, in, held, out, absent.
         ///
-        /// FIVE KEYS AND NOT FOUR. The first is at zero rather than at <see cref="k_InAt"/>,
+        /// TWO ARRIVALS AND ONE DEPARTURE. The wall and the cartons come in on the first pair of
+        /// numbers, the lamps on the second and later, because 「出現後 燈會出現」 -- the room is
+        /// furnished and then the thing to be put away appears over the box. They all leave
+        /// together: the dissolve-out is the tail of the beat and there is nothing to stagger
+        /// about an empty room.
+        ///
+        /// FIVE KEYS AND NOT FOUR. The first is at zero rather than at the start of the fade,
         /// because a curve whose first key is a second and a half in is flat BEFORE it -- at the
         /// value of that first key, which is zero here, so it happens to be right. It is written
         /// down anyway: if the beat ever starts with the boxes already present, the difference
         /// between those two readings is the whole bug.
         /// </summary>
         static void BuildTrack(TimelineAsset timeline, PlayableDirector director,
-                               Animator animator, List<string> paths)
+                               Animator animator, List<string> scenery, List<string> props)
         {
             var clip = new AnimationClip { name = k_ClipName, frameRate = 60f };
 
-            foreach (string path in paths)
-            {
-                clip.SetCurve(path, typeof(PropPresence), "m_Presence", new AnimationCurve(
-                    new Keyframe(0f, 0f, 0f, 0f),
-                    new Keyframe((float)k_InAt, 0f, 0f, 0f),
-                    new Keyframe((float)(k_InAt + k_In), 1f, 0f, 0f),
-                    new Keyframe((float)outAt, 1f, 0f, 0f),
-                    new Keyframe((float)(outAt + k_Out), 0f, 0f, 0f)));
-            }
+            Curve(clip, scenery, k_InAt, k_In);
+            Curve(clip, props, k_PropAt, k_PropIn);
 
             AssetDatabase.AddObjectToAsset(clip, timeline);
             EditorUtility.SetDirty(clip);
@@ -895,12 +1287,41 @@ namespace CompositeBody.Multiplayer.EditorSetup
             TimelineClip timelineClip = track.CreateClip(clip);
             timelineClip.start = 0d;
             timelineClip.duration = k_BeatSeconds;
-            timelineClip.displayName = "Objects, boxes and the wall";
+            timelineClip.displayName = "Boxes and the wall, then the lamps";
 
             director.SetGenericBinding(track, animator);
 
-            Debug.Log($"[O1Timeline] track '{k_TrackName}': {paths.Count} curve(s) over " +
-                      $"{k_BeatSeconds}s -- {string.Join(", ", paths)}.");
+            Debug.Log($"[O1Timeline] track '{k_TrackName}' over {k_BeatSeconds}s:\n" +
+                      $"  {k_InAt}-{k_InAt + k_In}s  {string.Join(", ", scenery)}\n" +
+                      $"  {k_PropAt}-{k_PropAt + k_PropIn}s  {string.Join(", ", props)}\n" +
+                      "  and then nothing leaves: O-2 takes them away, not this.");
+        }
+
+        /// <summary>
+        /// One group's arrival, written against every path in it. It arrives and then stays.
+        ///
+        /// NOTHING LEAVES ON THIS TIMELINE ANY MORE. 「到o-2 箱子(box &amp; Showcase_CB_boxes)要fade
+        /// out, scan人物都要fade in」 -- the room is emptied by the beat that fills it, so the
+        /// cartons, the wall and the objects hold at 1 to the end of O-1 and
+        /// <see cref="BuildO2Timeline"/> takes them away over the top of its first scan
+        /// forming. A dissolve that finished before O-2 began would have left the players
+        /// looking at an empty room waiting for a ghost; crossing the two makes it an exchange.
+        ///
+        /// WHICH LEAVES O-1'S LAST <see cref="k_OutLead"/> SECONDS WITH NOTHING TO SHOW. They
+        /// are no longer a dissolve, just the room as the two of them left it, after the last
+        /// line and before O-2. That is a breath rather than a hole -- but if it reads as dead
+        /// air, the number to change is k_OutLead, which also moves the master's hold marker.
+        /// </summary>
+        static void Curve(AnimationClip clip, List<string> paths, double at, double over)
+        {
+            foreach (string path in paths)
+            {
+                clip.SetCurve(path, typeof(PropPresence), "m_Presence", new AnimationCurve(
+                    new Keyframe(0f, 0f, 0f, 0f),
+                    new Keyframe((float)at, 0f, 0f, 0f),
+                    new Keyframe((float)(at + over), 1f, 0f, 0f),
+                    new Keyframe((float)k_BeatSeconds, 1f, 0f, 0f)));
+            }
         }
 
         // ------------------------------------------------------------------ helpers
