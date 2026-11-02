@@ -129,6 +129,18 @@ namespace CompositeBody.Experience
 
         float m_Drift;
 
+        // The speed last written to the graph's root. What is already there matters: writing the
+        // same value again is free, and writing a different one is not. See SetSpeed.
+        double m_Speed = 1d;
+
+        // Latched while the trim is pulling, so the correction is not switched on and off again
+        // as the error crosses the deadband.
+        bool m_Trimming;
+
+        // The steps the trim is rounded to. A trim is audible through how often it changes rather
+        // than through its size, so it is allowed only a few values.
+        const double k_TrimStep = 0.005d;
+
         /// <summary>
         /// How far the director is behind (negative: ahead of) the shared clock, in seconds. For
         /// the debug panel: this is the one number that says whether the audio sync is working,
@@ -376,6 +388,7 @@ namespace CompositeBody.Experience
                 m_Director.time = target;
                 m_Director.Evaluate();      // keep the held frame applied
                 m_Drift = 0f;
+                m_Trimming = false;
                 return;
             }
 
@@ -386,12 +399,24 @@ namespace CompositeBody.Experience
                 // whatever point the clock is actually at.
                 m_Director.time = target;
                 m_Director.Play();
-                SetSpeed(1d);
+
+                // A graph that has just been played is already running at 1, and a speed that is
+                // written when it did not change costs the audio a seek. See SetSpeed.
+                m_Speed = 1d;
                 m_Drift = 0f;
+                m_Trimming = false;
                 return;
             }
 
-            m_Drift = (float)(target - m_Director.time);
+            // THE DIRECTOR IS A FRAME BEHIND WHERE THIS READS IT. PlayableDirector advances in
+            // PreLateUpdate, after every Update, so director.time here is the time last frame was
+            // drawn at while target is the clock now. Subtracting the two as they stand reports a
+            // whole frame as drift before any real drift exists -- 13.9ms on a 72Hz Link run,
+            // over the deadband on its own, which left the trim below running permanently. A trim
+            // that moves every frame is what shredded O-2's line (see SetSpeed). Compare against
+            // the evaluation that is about to happen instead.
+            double predicted = m_Director.time + Time.unscaledDeltaTime * m_Speed;
+            m_Drift = (float)(target - predicted);
             float error = Mathf.Abs(m_Drift);
 
             if (error > m_HardResync)
@@ -405,28 +430,57 @@ namespace CompositeBody.Experience
                 m_Director.time = target;
                 m_Director.Evaluate();
                 SetSpeed(1d);
+                m_Trimming = false;
                 return;
             }
 
-            if (error <= m_Deadband)
+            // ONE FRAME OF JITTER IS NOT DRIFT. Link's frame times alternate as it reprojects,
+            // and a deadband inside that noise has the trim chasing the frame clock instead of
+            // the show clock, so the floor is two frames however the field is authored. Latched
+            // on the way out, so the correction does not switch off and on either side of it.
+            float deadband = Mathf.Max(m_Deadband, 2f * Time.unscaledDeltaTime);
+
+            if (error <= (m_Trimming ? 0.5f * deadband : deadband))
             {
                 SetSpeed(1d);
+                m_Trimming = false;
                 return;
             }
 
+            m_Trimming = true;
+
             // Proportional, because the trim has to fall off as the error closes or the director
-            // overshoots and the pitch audibly hunts. Full trim at the hard-resync threshold.
+            // overshoots and the pitch audibly hunts. Full trim at the hard-resync threshold, and
+            // rounded to steps so the speed holds one value for seconds rather than being a new
+            // number on every frame.
             double trim = m_SpeedTrim * Mathf.Clamp(m_Drift / m_HardResync, -1f, 1f);
-            SetSpeed(1d + trim);
+            SetSpeed(1d + System.Math.Round(trim / k_TrimStep) * k_TrimStep);
         }
 
+        /// <summary>
+        /// Set the speed of the show, and with it every sub-timeline the Control clips nest inside
+        /// it.
+        ///
+        /// A SPEED THAT CHANGES RE-SEEKS EVERY LINE UNDER THIS GRAPH. A Control clip compares each
+        /// frame's advance against deltaTime * effectiveSpeed and calls anything more than a
+        /// picosecond apart a discontinuity (DirectorControlPlayable.DetectDiscontinuity), which
+        /// re-evaluates the nested director -- and an Evaluate is precisely what makes a clip
+        /// re-seek its voice (ScheduleRuntimeClip.EvaluateAt -> AudioClipPlayable.Seek). So a trim
+        /// that is a new number every frame restarts the voice-over 72 times a second, which is
+        /// what O-2's line came back from the headset sounding like. Writing the same value again
+        /// is free, so only a real change is allowed through.
+        /// </summary>
         void SetSpeed(double speed)
         {
+            if (speed == m_Speed) return;
             if (!m_Director.playableGraph.IsValid()) return;
             if (m_Director.playableGraph.GetRootPlayableCount() == 0) return;
 
             Playable root = m_Director.playableGraph.GetRootPlayable(0);
-            if (root.IsValid()) root.SetSpeed(speed);
+            if (!root.IsValid()) return;
+
+            root.SetSpeed(speed);
+            m_Speed = speed;
         }
 
         /// <summary>
