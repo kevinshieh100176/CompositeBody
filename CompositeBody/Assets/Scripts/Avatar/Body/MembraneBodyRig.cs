@@ -1,4 +1,5 @@
 using UnityEngine;
+using CompositeBody.Experience;
 using XRMultiplayer;
 
 namespace CompositeBody.Avatar.Body
@@ -221,6 +222,13 @@ namespace CompositeBody.Avatar.Body
         /// </summary>
         const float k_StandingBand = 0.9f;
 
+        /// <summary>
+        /// Smallest eye height that can belong to a standing player. Under it the head is level
+        /// with the floor or below it, which is not a short player -- it is the floor not being
+        /// where this thinks it is.
+        /// </summary>
+        const float k_MinEyeHeight = 0.1f;
+
         Limb m_LeftArm, m_RightArm, m_LeftLeg, m_RightLeg;
 
         // Bind-pose geometry, all held in this object's own space so it survives the body being
@@ -233,6 +241,9 @@ namespace CompositeBody.Avatar.Body
 
         float m_TorsoYaw, m_TorsoYawGoal;
         float m_StandingEyeHeight = -1f;
+        float m_FloorWorldY;
+        float m_Fit = 1f;
+        bool m_WarnedAboutTheFloor;
         bool m_OwnerView;
         bool m_Captured;
 
@@ -267,6 +278,19 @@ namespace CompositeBody.Avatar.Body
         public Transform leftHandBone => m_LeftHandBone;
 
         public Transform rightHandBone => m_RightHandBone;
+
+        /// <summary>The hips and the two ankles, so a test can ask the one thing no still frame
+        /// of this rig answers: whether the figure is the right way up. That only goes wrong
+        /// once the show has moved the players, which is long after anything a prefab check
+        /// sees.</summary>
+        public Transform hips => m_Hips;
+
+        public Transform leftFoot => m_LeftFoot;
+
+        public Transform rightFoot => m_RightFoot;
+
+        /// <summary>The floor the feet were planted on in the last solve, in world space.</summary>
+        public float floorWorldY => m_FloorWorldY;
 
         void Awake()
         {
@@ -358,12 +382,44 @@ namespace CompositeBody.Avatar.Body
         {
             if (m_HeadTarget == null || m_Hips == null || m_HeadBone == null) return;
 
+            // Once per solve rather than once per use: the fit and both feet have to agree about
+            // where the floor is, and it moves between frames whenever the show is moving.
+            m_FloorWorldY = ResolveFloorY();
+
             float scale = FitToPlayer();
             PlaceBody(scale);
             PoseSpine();
             PoseArms(scale);
             PoseLegs(scale);
             ApplyCollapses();
+        }
+
+        /// <summary>
+        /// Where the floor is, in world space, right now.
+        ///
+        /// <see cref="m_FloorY"/> is a height in the space the players were calibrated in -- the
+        /// playspace -- and the show MOVES that space: S1 carries it some twenty metres down.
+        /// Read as a world height it is right only while the playspace is at the origin, and
+        /// wrong by however far the show has taken it since.
+        ///
+        /// That was the feet above the head through the whole of S1. The hips hang off the head,
+        /// which rides the room down; the ankles were planted on a floor left at world zero
+        /// twenty metres over them; and a leg is solved with no stretch, so one that cannot
+        /// reach its target just points straight at it. The body was at its smallest with it,
+        /// because a standing height measured against the same floor came out negative.
+        ///
+        /// Taken through the playspace's transform rather than its Y alone, so a yawed or scaled
+        /// playspace reads correctly too. Looked up every frame rather than held: an avatar can
+        /// spawn before the scene it belongs in has finished loading, and the playspace is a
+        /// plain scene object that arrives with it.
+        /// </summary>
+        float ResolveFloorY()
+        {
+            Playspace playspace = Playspace.Instance;
+
+            return playspace != null
+                ? playspace.transform.TransformPoint(new Vector3(0f, m_FloorY, 0f)).y
+                : m_FloorY;
         }
 
         /// <summary>
@@ -374,7 +430,17 @@ namespace CompositeBody.Avatar.Body
         {
             if (m_BindEyeHeight <= 1e-3f) return 1f;
 
-            float eyeHeight = m_HeadTarget.position.y - m_FloorY;
+            float eyeHeight = m_HeadTarget.position.y - m_FloorWorldY;
+
+            // A head level with the floor or under it is not a standing height. Taken as one it
+            // pins the body at its smallest and leaves it there, so the last good fit is held
+            // instead -- and said once, because a head below the floor means the floor is not
+            // where this thinks it is, which is worth hearing rather than squinting at.
+            if (eyeHeight <= k_MinEyeHeight)
+            {
+                WarnAboutTheFloor();
+                return m_Fit;
+            }
 
             if (m_StandingEyeHeight < 0f)
             {
@@ -397,7 +463,30 @@ namespace CompositeBody.Avatar.Body
                 m_StandingEyeHeight = Mathf.Max(eyeHeight, m_StandingEyeHeight - m_StandingDecayRate * Time.deltaTime);
             }
 
-            return Mathf.Clamp(m_StandingEyeHeight / m_BindEyeHeight, m_ScaleRange.x, m_ScaleRange.y);
+            m_Fit = Mathf.Clamp(m_StandingEyeHeight / m_BindEyeHeight, m_ScaleRange.x, m_ScaleRange.y);
+            return m_Fit;
+        }
+
+        /// <summary>
+        /// Says where the floor was thought to be, once. The two ways it goes wrong are a missing
+        /// playspace and a playspace somewhere unexpected, and they are told apart here rather
+        /// than by reading a body that looks equally wrong either way.
+        /// </summary>
+        void WarnAboutTheFloor()
+        {
+            if (m_WarnedAboutTheFloor) return;
+            m_WarnedAboutTheFloor = true;
+
+            Playspace playspace = Playspace.Instance;
+
+            Debug.LogWarning(
+                $"[MembraneBodyRig] {name}: the head is at y={m_HeadTarget.position.y:0.00} and the floor " +
+                $"it is fitted against is at y={m_FloorWorldY:0.00}, so the body is holding its last size. " +
+                (playspace != null
+                    ? $"The floor is '{playspace.name}' plus {m_FloorY:0.00}m, and that playspace is at " +
+                      $"y={playspace.transform.position.y:0.00}."
+                    : "There is no Playspace in the scene, so Floor Y is being read as a world height -- " +
+                      "which is right only while the show has not moved the players."), this);
         }
 
         /// <summary>Turns the torso after the head and hangs the hips below the headset.</summary>
@@ -526,7 +615,13 @@ namespace CompositeBody.Avatar.Body
             if (!leg.valid) return;
 
             Vector3 stance = torso * (new Vector3(bindAnkle.x - m_BindHips.x, 0f, bindAnkle.z - m_BindHips.z) * scale);
-            Vector3 target = new(hips.x + stance.x, m_FloorY + bindAnkle.y * scale, hips.z + stance.z);
+
+            // Never above the hips. The floor is normally most of a leg below them, but if it is
+            // not -- no playspace to read it from, a floor height calibrated wrong -- then a leg
+            // solved onto a target above its own root turns the figure upside down, and an
+            // inverted body is a much worse way to be wrong than one standing with straight legs.
+            float ankleY = Mathf.Min(m_FloorWorldY + bindAnkle.y * scale, hips.y);
+            Vector3 target = new(hips.x + stance.x, ankleY, hips.z + stance.z);
 
             // No stretch on a leg. An arm that cannot reach is a hand coming off a forearm, but a
             // leg that cannot reach the floor is a player off the ground, which is what it should
