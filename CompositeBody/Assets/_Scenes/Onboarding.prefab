@@ -1129,7 +1129,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.O1GrabStation
   m_Owner: 2
-  m_Cue: {fileID: 0}
+  m_Cue: {fileID: 8300000, guid: 9e59d5e9ae8bfe644b3b2499d805575c, type: 3}
   m_Source: {fileID: 1270827365427798620}
   m_Grab: {fileID: 0}
   m_Spatial: 1
@@ -8905,7 +8905,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.O1GrabStation
   m_Owner: 1
-  m_Cue: {fileID: 0}
+  m_Cue: {fileID: 8300000, guid: 690a492b7b45b5741b611c29e6b0ca46, type: 3}
   m_Source: {fileID: 8615038537542491476}
   m_Grab: {fileID: 0}
   m_Spatial: 1
@@ -21179,7 +21179,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: 690a492b7b45b5741b611c29e6b0ca46, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -21278,7 +21278,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.O1GrabStation
   m_Owner: 1
-  m_Cue: {fileID: 0}
+  m_Cue: {fileID: 8300000, guid: 690a492b7b45b5741b611c29e6b0ca46, type: 3}
   m_Source: {fileID: 792601753370205380}
   m_Grab: {fileID: 0}
   m_Spatial: 1
@@ -29515,19 +29515,33 @@ PlayableDirector:
     value: {fileID: 1468200359000144367}
   - key: {fileID: 0}
     value: {fileID: 8280200873027568861}
-  - key: {fileID: 3089285520888325991, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 603307582101040375}
-  - key: {fileID: -4324515826055581384, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 5893575513314128580}
-  - key: {fileID: -3803130044896987301, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 2095847631130574928}
-  - key: {fileID: -8401730240654129673, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 3588635783290177004}
-  - key: {fileID: -5943209065050634995, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 8788264943531324136}
-  - key: {fileID: 9147876511295775563, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 1468200359000144367}
-  - key: {fileID: 1868100946039424308, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+  - key: {fileID: 0}
+    value: {fileID: 8280200873027568861}
+  - key: {fileID: -2107636502980566171, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+    value: {fileID: 603307582101040375}
+  - key: {fileID: -4067845231112817372, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+    value: {fileID: 5893575513314128580}
+  - key: {fileID: -3049749479904457843, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+    value: {fileID: 2095847631130574928}
+  - key: {fileID: 8305663801357927948, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+    value: {fileID: 3588635783290177004}
+  - key: {fileID: -8921572507160033987, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+    value: {fileID: 8788264943531324136}
+  - key: {fileID: -3260271420736721455, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+    value: {fileID: 1468200359000144367}
+  - key: {fileID: -4101585340937321270, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
     value: {fileID: 8280200873027568861}
   m_ExposedReferences:
     m_References: []
@@ -29855,7 +29869,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: 9e59d5e9ae8bfe644b3b2499d805575c, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -29954,7 +29968,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.O1GrabStation
   m_Owner: 2
-  m_Cue: {fileID: 0}
+  m_Cue: {fileID: 8300000, guid: 9e59d5e9ae8bfe644b3b2499d805575c, type: 3}
   m_Source: {fileID: 918808121007469566}
   m_Grab: {fileID: 0}
   m_Spatial: 1
