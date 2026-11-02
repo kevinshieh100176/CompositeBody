@@ -116,3 +116,8 @@ InitTestScene*.unity*
 # source), so it appears and disappears on every build and is never worth a commit.
 CompositeBody/Assets/StreamingAssets/RuntimeActionBindings.json
 CompositeBody/Assets/StreamingAssets/RuntimeActionBindings.json.meta
+
+# Bytecode cache for the scripts under CompositeBody/tools, written next to them
+# whenever one is imported rather than run.
+__pycache__/
+*.pyc
