@@ -98,15 +98,24 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// still running to 87s and the beat ending at 90s: three seconds of the room empty
         /// again before O-3, which is the shape the dissolve-outs elsewhere in the show have.
         ///
-        /// THEY DO NOT OVERLAP. A slot is longer than what happens inside it (2.5 + 14 + 2.5 =
-        /// 19 of 21), so there is a second and a half of nobody between one scan and the next.
-        /// Two point clouds in the same position do not read as two ghosts; they read as one
-        /// cloud that has gone wrong. A crossfade is these numbers, not a different structure.
+        /// THEY DO NOT OVERLAP. A slot is longer than what happens inside it (5 + 9 + 5 = 19 of
+        /// 21), so there are two seconds of nobody between one scan and the next. Two point
+        /// clouds in the same position do not read as two ghosts; they read as one cloud that
+        /// has gone wrong. A crossfade is these numbers, not a different structure.
+        ///
+        /// THE FADE IS DOUBLE WHAT IT WAS, AND THE HOLD PAID FOR IT. 「dissolve in 跟 dissolve
+        /// out 都變得更久」 without the beat moving, and the slot is what may not move: it is what
+        /// lands the last scan gone at 84s inside a 90s beat. So the five seconds the two fades
+        /// gained came off the standing -- 2.5 + 14 + 2.5 became 5 + 9 + 5 -- and the slot, the
+        /// gaps between the scans and the length of the beat are all untouched.
+        ///
+        /// THE HOLD IS THE ONE TO GIVE BACK if nine seconds of a 真人 simply standing there
+        /// reads as hurried, and every second returned to it has to come off both fades.
         /// </summary>
         const double k_GhostsAt = 2.0d;
         const double k_GhostSlot = 21.0d;
-        const double k_GhostFade = 2.5d;
-        const double k_GhostHold = 14.0d;
+        const double k_GhostFade = 5.0d;
+        const double k_GhostHold = 9.0d;
 
         /// <summary>
         /// O-1's boxes going, timed to cross the first scan arriving: they start half a second
