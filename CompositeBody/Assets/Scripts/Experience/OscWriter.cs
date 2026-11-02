@@ -106,6 +106,23 @@ namespace CompositeBody.Experience
         }
 
         /// <summary>
+        /// Four floats, which in this stream means a quaternion. Sent in x, y, z, w order -- OSC
+        /// has no opinion about that, so the order is part of the contract with the receiver and
+        /// is written down in the manual rather than left to be guessed from the numbers.
+        /// </summary>
+        public void Message(string addressA, string addressB, float x, float y, float z, float w)
+        {
+            OpenElement();
+            WriteString(addressA, addressB);
+            WriteString(",ffff", null);
+            WriteFloat(x);
+            WriteFloat(y);
+            WriteFloat(z);
+            WriteFloat(w);
+            CloseElement();
+        }
+
+        /// <summary>
         /// A string argument, which goes on the wire exactly like an address: terminated and
         /// padded to a 4-byte boundary.
         ///
