@@ -38,7 +38,7 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples.Hands.Editor
                 IsRuleEnabled = () => s_HandsPackageAddRequest == null || s_HandsPackageAddRequest.IsCompleted,
                 Message = $"[{k_SampleDisplayName}] XR Hands ({k_HandsPackageName}) package must be installed or updated to use this sample.",
                 Category = k_Category,
-                CheckPredicate = () => PackageVersionUtility.GetPackageVersion(k_HandsPackageName) >= s_MinimumHandsPackageVersion,
+                CheckPredicate = () => SamplePackageVersions.GetPackageVersion(k_HandsPackageName) >= s_MinimumHandsPackageVersion,
                 FixIt = () =>
                 {
                     if (s_HandsPackageAddRequest == null || s_HandsPackageAddRequest.IsCompleted)
@@ -52,7 +52,7 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples.Hands.Editor
                 IsRuleEnabled = () => s_HandsPackageAddRequest == null || s_HandsPackageAddRequest.IsCompleted,
                 Message = $"[{k_SampleDisplayName}] XR Hands ({k_HandsPackageName}) package must be at version {s_RecommendedHandsPackageVersion} or higher to use the latest sample features.",
                 Category = k_Category,
-                CheckPredicate = () => PackageVersionUtility.GetPackageVersion(k_HandsPackageName) >= s_RecommendedHandsPackageVersion,
+                CheckPredicate = () => SamplePackageVersions.GetPackageVersion(k_HandsPackageName) >= s_RecommendedHandsPackageVersion,
                 FixIt = () =>
                 {
                     if (s_HandsPackageAddRequest == null || s_HandsPackageAddRequest.IsCompleted)
@@ -63,10 +63,10 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples.Hands.Editor
             },
             new BuildValidationRule
             {
-                IsRuleEnabled = () => PackageVersionUtility.GetPackageVersion(k_HandsPackageName) >= s_MinimumHandsPackageVersion,
+                IsRuleEnabled = () => SamplePackageVersions.GetPackageVersion(k_HandsPackageName) >= s_MinimumHandsPackageVersion,
                 Message = $"[{k_SampleDisplayName}] {k_HandVisualizerSampleName} sample from XR Hands ({k_HandsPackageName}) package must be imported or updated to use this sample.",
                 Category = k_Category,
-                CheckPredicate = () => ProjectValidationUtility.SampleImportMeetsMinimumVersion(k_HandsPackageDisplayName, k_HandVisualizerSampleName, PackageVersionUtility.GetPackageVersion(k_HandsPackageName)),
+                CheckPredicate = () => ProjectValidationUtility.SampleImportMeetsMinimumVersion(k_HandsPackageDisplayName, k_HandVisualizerSampleName, SamplePackageVersions.GetPackageVersion(k_HandsPackageName)),
                 FixIt = () =>
                 {
                     if (TryFindSample(k_HandsPackageName, string.Empty, k_HandVisualizerSampleName, out var sample))
@@ -97,7 +97,7 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples.Hands.Editor
                 IsRuleEnabled = () => s_ShaderGraphPackageAddRequest == null || s_ShaderGraphPackageAddRequest.IsCompleted,
                 Message = $"[{k_SampleDisplayName}] Shader Graph ({k_ShaderGraphPackageName}) package must be installed for materials used in this sample.",
                 Category = k_Category,
-                CheckPredicate = () => PackageVersionUtility.IsPackageInstalled(k_ShaderGraphPackageName),
+                CheckPredicate = () => SamplePackageVersions.IsPackageInstalled(k_ShaderGraphPackageName),
                 FixIt = () =>
                 {
                     s_ShaderGraphPackageAddRequest = Client.Add(k_ShaderGraphPackageName);
@@ -152,7 +152,7 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples.Hands.Editor
         {
             sample = default;
 
-            if (!PackageVersionUtility.IsPackageInstalled(packageName))
+            if (!SamplePackageVersions.IsPackageInstalled(packageName))
                 return false;
 
             IEnumerable<Sample> packageSamples;
