@@ -26,8 +26,8 @@ namespace CompositeBody.Multiplayer
     /// performance must not be one click away. These buttons are the opposite case: they exist
     /// precisely to be used in the venue, with the audience in. What guards them instead is that
     /// the panel is hidden behind a key, the steps are a centimetre, and
-    /// <see cref="HeadsetRestCalibrator"/> refuses a calibration whose tilt does not match the
-    /// cradle.
+    /// <see cref="HeadsetRestCalibrator"/> refuses a pose that does not look like the procedure
+    /// this machine is set up for.
     ///
     /// THIS MACHINE ONLY. Each PC calibrates and corrects its own headset; nothing here reaches
     /// across the network. The person who can see whether a correction helped is the one at that
@@ -82,6 +82,7 @@ namespace CompositeBody.Multiplayer
         readonly System.Collections.Generic.List<Button> m_Steps = new();
 
         bool m_Coarse;
+        bool m_ArmedFromHere;
         float m_NextRefresh;
 
         /// <summary>Open or close it from code, for a harness or another panel.</summary>
@@ -105,7 +106,9 @@ namespace CompositeBody.Multiplayer
             if (Keyboard.current != null && m_ToggleKey != Key.None &&
                 Keyboard.current[m_ToggleKey].wasPressedThisFrame)
             {
-                m_Root.SetActive(!m_Root.activeSelf);
+                bool opening = !m_Root.activeSelf;
+                m_Root.SetActive(opening);
+                if (!opening) CancelOwnCapture();
             }
 
             if (!m_Root.activeSelf) return;
@@ -154,7 +157,12 @@ namespace CompositeBody.Multiplayer
             }
             else
             {
-                m_Headset.text = $"headset tracking   ({m_Calibrator.calibrateKey} also calibrates)";
+                // What to do with the headset, not just that it is tracking: the two procedures
+                // want opposite things done with it, and the person reading this is holding it.
+                m_Headset.text = (m_Calibrator.source == CalibrationSource.WornOnHead
+                                     ? "tracking · wear it, stand on the marker, face its arrow"
+                                     : "tracking · place it in the cradle on the marker") +
+                                 $"   ({m_Calibrator.calibrateKey} also calibrates)";
                 m_Headset.color = k_Dim;
             }
 
@@ -177,13 +185,34 @@ namespace CompositeBody.Multiplayer
         {
             if (m_Calibrator == null) return;
             m_Calibrator.Arm();
+            m_ArmedFromHere = true;
             m_NextRefresh = 0f;
+        }
+
+        /// <summary>
+        /// Closing the panel calls off a capture this panel armed.
+        ///
+        /// An armed capture fires whenever the headset next holds still, which may be long
+        /// after the window it was started from has gone -- and when it fires it re-lines the
+        /// origin up with the marker and drops any hand correction. Leaving one armed behind a
+        /// closed panel is a trap: the world moves with nothing on screen to explain it.
+        ///
+        /// Only what this panel armed. The key on the calibrator is the other way in, and
+        /// someone who pressed it never had the panel open for closing it to mean anything.
+        /// </summary>
+        void CancelOwnCapture()
+        {
+            if (!m_ArmedFromHere) return;
+            m_ArmedFromHere = false;
+
+            if (m_Calibrator != null && m_Calibrator.isArmed) m_Calibrator.Cancel();
         }
 
         void Cancel()
         {
             if (m_Calibrator == null) return;
             m_Calibrator.Cancel();
+            m_ArmedFromHere = false;
             m_NextRefresh = 0f;
         }
 
@@ -194,7 +223,10 @@ namespace CompositeBody.Multiplayer
             float metres = m_Coarse ? m_CoarseMetres : m_FineMetres;
             float degrees = m_Coarse ? m_CoarseDegrees : m_FineDegrees;
 
+            // The calibrator cancels a pending capture when it is corrected by hand, so the
+            // panel's record of having armed one goes with it.
             m_Calibrator.Nudge(direction * metres, turn * degrees);
+            m_ArmedFromHere = false;
             m_NextRefresh = 0f;
         }
 

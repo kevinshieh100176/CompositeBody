@@ -14,8 +14,8 @@ namespace CompositeBody.Multiplayer
     /// </summary>
     public class CalibrationPoint : MonoBehaviour
     {
-        [SerializeField, Tooltip("Local keyboard shortcut for quick testing on a PC. In the venue the trigger is a held pinch; see HandPinchCalibrator.")]
-        Key m_TestCalibrateKey = Key.C;
+        [SerializeField, Tooltip("Local keyboard shortcut for quick testing on a PC: calibrates immediately from the worn headset, with no waiting for it to settle. Normally None -- in the venue the trigger is HeadsetRestCalibrator's key or the calibration panel, both of which wait for a still pose first.")]
+        Key m_TestCalibrateKey = Key.None;
 
         [SerializeField, Tooltip("Also match the marker's height. Off by default: the headset's own floor estimate is normally better than a hand held at an unknown height, and a wrong height sinks the player through the floor or floats them above it.")]
         bool m_AlignHeight = false;
@@ -29,6 +29,16 @@ namespace CompositeBody.Multiplayer
 
         [SerializeField, Range(1f, 60f), Tooltip("How far the headset's measured tilt may differ from the cradle's before the calibration is refused. The commonest human error is pressing the key while the headset is still on someone's head, and that reads as tens of degrees.")]
         float m_MaxRestTilt = 20f;
+
+        [SerializeField, Min(0.05f), Tooltip("How far, in metres, the headset may be from the cradle's height before the calibration is refused. The tilt check alone cannot catch a worn headset while the rest pose happens to be upright -- but a head is more than a metre above a cradle, whichever way it is facing.")]
+        float m_MaxRestHeightError = 0.5f;
+
+        [Header("Headset on a head")]
+        [SerializeField, Min(0.2f), Tooltip("How far above the marker the headset must be before it is believed to be on a head. This catches the opposite mistake to the rest-pose height check: calibrating from a worn pose while the headset is in fact sitting in the cradle.")]
+        float m_MinWornHeight = 0.8f;
+
+        [SerializeField, Range(5f, 80f), Tooltip("How far the worn headset may be rolled from level. A head rolls a few degrees; past this it is a headset lying on something rather than on a person.")]
+        float m_MaxWornRoll = 30f;
 
         // A horizontal projection shorter than this carries no usable facing; 0.34 is about 20
         // degrees off vertical.
@@ -45,40 +55,126 @@ namespace CompositeBody.Multiplayer
 
         void Update()
         {
-            if (Keyboard.current != null && Keyboard.current[m_TestCalibrateKey].wasPressedThisFrame)
+            // None is the normal setting and is not a key: indexing the keyboard with it throws.
+            if (m_TestCalibrateKey != Key.None && Keyboard.current != null &&
+                Keyboard.current[m_TestCalibrateKey].wasPressedThisFrame)
                 CalibrateHere();
         }
 
         /// <summary>
         /// Shifts the XR Origin so the camera's current position/yaw matches this marker.
         /// Call this while the player is physically standing on the marker facing its forward.
+        ///
+        /// The one-line form, for a key press and for the inspector. The work, and every reason
+        /// it might refuse, is in <see cref="CalibrateFromWornHeadset"/>.
         /// </summary>
         public void CalibrateHere()
         {
-            if (m_XROrigin == null)
+            if (!CalibrateFromWornHeadset(out string failure))
+                Utils.LogWarning("[CalibrationPoint] Not calibrated: " + failure);
+        }
+
+        /// <summary>
+        /// Lines the origin up from the headset while somebody is wearing it: they stand on the
+        /// marker, face the way it points, and the pose they are in becomes the marker's pose.
+        ///
+        /// THE PERSON IS INSIDE THIS MEASUREMENT, which is the whole of the difference from
+        /// <see cref="CalibrateFromHeadsetRest"/>. Where someone stands is good to a handspan and
+        /// which way they face is good to perhaps five degrees, and five degrees is a quarter of
+        /// a metre of disagreement between the two headsets at three metres out, growing with
+        /// distance. What it buys for that is a procedure needing nothing measured and nothing
+        /// built -- no cradle, no rest pose, no tape measure -- so it works the first time it is
+        /// asked, which the cradle path does not until somebody has been under the marker with a
+        /// ruler.
+        ///
+        /// NEVER THE HEIGHT, unlike the cradle path. The distance from floor to headset is this
+        /// player's own eye height, not a measured constant: taking it would plant everyone's
+        /// eyes at the marker's height, and for a marker taped to the floor that means their
+        /// eyes on the floor. The floor is already handled, by the headset's own floor-level
+        /// tracking origin, and is not this procedure's business.
+        ///
+        /// Returns false having moved nothing when the pose does not look like a headset on a
+        /// head, which in practice means it is in the cradle and the other method was wanted.
+        /// </summary>
+        public bool CalibrateFromWornHeadset(out string failure)
+        {
+            failure = null;
+
+            if (!TryGetCamera(out Transform cam))
             {
-                m_XROrigin = FindAnyObjectByType<XROrigin>();
-                if (m_XROrigin == null)
-                {
-                    Utils.LogError("[CalibrationPoint] Cannot calibrate: no XROrigin in scene.");
-                    return;
-                }
+                failure = "no XROrigin with a camera in the scene";
+                Utils.LogError("[CalibrationPoint] Cannot calibrate: " + failure);
+                return false;
             }
 
-            Transform cam = m_XROrigin.Camera.transform;
+            // THE MIRROR OF THE CRADLE PATH'S HEIGHT CHECK, catching the same confusion from the
+            // other side: run this while the headset is sitting in the cradle and it reads the
+            // cradle's spot as a standing person's, silently, because this path discards height
+            // and so has nothing left to look wrong. A head is the better part of a metre above
+            // a floor marker whether its owner is standing or sitting down.
+            float height = cam.position.y - transform.position.y;
+            if (height < m_MinWornHeight)
+            {
+                failure = $"the headset is only {height:0.00}m above the marker " +
+                          $"(expected at least {m_MinWornHeight:0.00}m) -- it is not on a head; " +
+                          "if it is in the cradle, calibrate from the rest pose instead";
+                Utils.LogWarning("[CalibrationPoint] Refused: " + failure);
+                return false;
+            }
 
-            // Rotate around the camera's current position so only yaw changes -- head tilt
-            // (pitch/roll) must never be baked into the origin.
-            float yawDelta = transform.eulerAngles.y - cam.eulerAngles.y;
+            // A head rolls a few degrees and no further. Past the limit it is a headset lying on
+            // something at about head height, and its facing is then whichever way it was set
+            // down rather than anything a person chose.
+            float roll = Mathf.Abs(Mathf.Asin(Mathf.Clamp(Vector3.Dot(cam.right, Vector3.up), -1f, 1f)) *
+                                   Mathf.Rad2Deg);
+            if (roll > m_MaxWornRoll)
+            {
+                failure = $"the headset is rolled {roll:0.#}deg off level (limit {m_MaxWornRoll:0.#}deg) -- " +
+                          "it is lying on its side rather than sitting on a head";
+                Utils.LogWarning("[CalibrationPoint] Refused: " + failure);
+                return false;
+            }
+
+            // Yaw off the flattened forward vectors rather than the difference of two
+            // eulerAngles.y. For any pose with a usable horizontal forward the two agree, so
+            // this is not a bug being fixed; what it buys is the degenerate case. A head looking
+            // almost straight down has no azimuth to read, and an euler decomposition answers
+            // anyway, folding roll into yaw and handing back a plausible number. The flattened
+            // form hands back a vector too short to use, and that is something that can be
+            // refused instead of believed.
+            Vector3 haveDir = Flatten(cam.forward);
+            Vector3 wantDir = Flatten(transform.forward);
+
+            if (haveDir.sqrMagnitude < k_MinHorizontal * k_MinHorizontal)
+            {
+                failure = "the headset is pointed too near straight up or down for its facing to " +
+                          "be read -- look level, along the way the marker points";
+                Utils.LogWarning("[CalibrationPoint] Refused: " + failure);
+                return false;
+            }
+
+            if (wantDir.sqrMagnitude < k_MinHorizontal * k_MinHorizontal)
+            {
+                failure = "the marker itself points vertically, so it carries no facing to " +
+                          "calibrate against; check its rotation in the scene";
+                Utils.LogWarning("[CalibrationPoint] Refused: " + failure);
+                return false;
+            }
+
+            float yawDelta = Vector3.SignedAngle(haveDir, wantDir, Vector3.up);
+
+            // About the camera, so the turn costs no position. The translation below is then the
+            // whole of the position correction, and the two halves can be read apart.
             m_XROrigin.transform.RotateAround(cam.position, Vector3.up, yawDelta);
 
-            // Translate so camera XZ lands on the marker; leave height alone since floor
-            // height should already match real-world tracking.
             Vector3 positionDelta = transform.position - cam.position;
             positionDelta.y = 0f;
             m_XROrigin.transform.position += positionDelta;
 
-            Utils.Log("[CalibrationPoint] Calibrated XR Origin to marker.");
+            Utils.Log($"[CalibrationPoint] Calibrated from the worn headset; yaw {yawDelta:0.0}deg, " +
+                      $"shift {positionDelta.magnitude:0.000}m, head {height:0.00}m up " +
+                      "(height left alone).");
+            return true;
         }
 
         /// <summary>
@@ -159,6 +255,22 @@ namespace CompositeBody.Multiplayer
             Transform rest = headsetRest;
             Quaternion want = rest.rotation;
             Quaternion have = cam.rotation;
+
+            // HEIGHT FIRST, because it is the check that does not depend on the cradle having a
+            // distinctive orientation. The tilt test below is the better tell when the cradle
+            // holds the headset at an angle -- but while the rest pose is upright, which it is
+            // whenever nobody has measured the real cradle yet, a headset worn by someone
+            // standing level and facing roughly the right way passes it. A head is more than a
+            // metre above a cradle on the floor no matter which way it is pointing.
+            float heightError = Mathf.Abs(cam.position.y - rest.position.y);
+            if (heightError > m_MaxRestHeightError)
+            {
+                failure = $"the headset is {heightError:0.00}m from the cradle's height " +
+                          $"(limit {m_MaxRestHeightError:0.00}m) -- it is probably still being worn, " +
+                          "or the rest pose has not been measured against the real cradle";
+                Utils.LogWarning("[CalibrationPoint] Refused: " + failure);
+                return false;
+            }
 
             // The axis the facing is read off: whichever of the headset's own three lies
             // flattest in the cradle. A near-vertical axis carries almost no yaw -- a headset

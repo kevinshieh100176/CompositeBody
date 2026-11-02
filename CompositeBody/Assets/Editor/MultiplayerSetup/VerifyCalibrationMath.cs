@@ -7,8 +7,9 @@ using CompositeBody.Multiplayer;
 namespace CompositeBody.Multiplayer.EditorSetup
 {
     /// <summary>
-    /// Checks the arithmetic in <see cref="CalibrationPoint.CalibrateAtPoint"/> and
-    /// <see cref="CalibrationPoint.CalibrateFromHeadsetRest"/> against a synthetic rig, with no
+    /// Checks the arithmetic in <see cref="CalibrationPoint.CalibrateAtPoint"/>,
+    /// <see cref="CalibrationPoint.CalibrateFromHeadsetRest"/> and
+    /// <see cref="CalibrationPoint.CalibrateFromWornHeadset"/> against a synthetic rig, with no
     /// headset involved.
     ///
     /// This is the one part of pinch calibration that can be verified without hardware, and it
@@ -103,7 +104,53 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 extraTilt: 35f,
                 expectRefusal: true);
 
+            // The worn path, which is what the key and the panel drive. Its cases are mostly
+            // about what it must NOT do -- take the height, bake a tilt into the origin -- since
+            // the thing it does do, snapping the head onto the marker, is trivially right.
+            WornCase("standing a little off the marker, looking level",
+                markerPos: new Vector3(-1.5f, 0f, 0.8f),
+                markerYaw: 145f,
+                camPos: new Vector3(-1.38f, 1.62f, 0.69f),
+                camEuler: new Vector3(3f, 131f, -2f));
+
+            WornCase("head pitched down and rolled, well off the marker",
+                markerPos: new Vector3(0.4f, 0f, -2.3f),
+                markerYaw: -70f,
+                camPos: new Vector3(2.9f, 1.71f, -0.4f),
+                camEuler: new Vector3(32f, 24f, 14f));
+
+            WornCase("marker and player already agree",
+                markerPos: Vector3.zero,
+                markerYaw: 0f,
+                camPos: new Vector3(0f, 1.65f, 0f),
+                camEuler: Vector3.zero);
+
+            // The confusion the worn guards exist for: the headset is in the cradle and the worn
+            // procedure was the one asked for. Height is discarded on this path, so without the
+            // check there would be nothing left to look wrong.
+            WornCase("refused: in the cradle, not on a head",
+                markerPos: new Vector3(-1.5f, 0f, 0.8f),
+                markerYaw: 145f,
+                camPos: new Vector3(-1.5f, 0.11f, 0.8f),
+                camEuler: new Vector3(0f, 150f, 0f),
+                expectRefusal: true);
+
+            WornCase("refused: lying on its side at head height",
+                markerPos: Vector3.zero,
+                markerYaw: 0f,
+                camPos: new Vector3(0.1f, 1.2f, 0.05f),
+                camEuler: new Vector3(0f, 20f, 82f),
+                expectRefusal: true);
+
+            WornCase("refused: looking straight down, no facing to read",
+                markerPos: Vector3.zero,
+                markerYaw: 0f,
+                camPos: new Vector3(0f, 1.6f, 0f),
+                camEuler: new Vector3(90f, 35f, 0f),
+                expectRefusal: true);
+
             NudgeCase();
+            WornHeadsetCase();
 
             Debug.Log($"[CalibMath] {s_Checks} checks, {s_Failures} failed.");
             Debug.Log(s_Failures == 0 ? "[CalibMath] RESULT: PASS" : "[CalibMath] RESULT: FAIL");
@@ -387,6 +434,177 @@ namespace CompositeBody.Multiplayer.EditorSetup
             marker.CalibrateFromHeadsetRest(out _);
             Check(!calibrator.hasCorrection,
                   "re-calibrating clears the hand correction");
+
+            // 6. The one that bit in the venue: a capture is armed, staff start correcting by
+            // hand instead, and the moment they stop clicking the headset holds still and the
+            // capture fires -- lining the origin back up with the cradle and dropping the
+            // correction. Correcting by hand has to call the capture off.
+            calibrator.Arm();
+            if (Check(calibrator.isArmed, "a capture can be armed"))
+            {
+                calibrator.Nudge(new Vector3(0.05f, 0f, 0f), 0f);
+                Check(!calibrator.isArmed,
+                      "correcting by hand cancels the pending capture that would overwrite it");
+                Check(calibrator.hasCorrection, "and the correction itself survives");
+            }
+        }
+
+        /// <summary>
+        /// The height guard, which is the check that still works when nobody has measured the
+        /// cradle yet.
+        ///
+        /// While the rest pose is the upright placeholder, a headset worn by someone standing
+        /// level and facing roughly the right way is within the tilt tolerance -- so tilt alone
+        /// would let a calibration snap that player's head down to the cradle's height.
+        /// </summary>
+        static void WornHeadsetCase()
+        {
+            Debug.Log("[CalibMath] --- refused: worn, with an upright placeholder cradle ---");
+
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var originGO = new GameObject("XR Origin");
+            var floorOffsetGO = new GameObject("Camera Offset");
+            floorOffsetGO.transform.SetParent(originGO.transform, false);
+
+            var camGO = new GameObject("Main Camera");
+            camGO.transform.SetParent(floorOffsetGO.transform, false);
+            var cam = camGO.AddComponent<Camera>();
+
+            var origin = originGO.AddComponent<XROrigin>();
+            var originSo = new SerializedObject(origin);
+            originSo.FindProperty("m_Camera").objectReferenceValue = cam;
+            originSo.FindProperty("m_CameraFloorOffsetObject").objectReferenceValue = floorOffsetGO;
+            originSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var markerGO = new GameObject("CalibrationMarker");
+            var marker = markerGO.AddComponent<CalibrationPoint>();
+
+            // The placeholder: upright, 11cm above the marker, facing the marker's forward.
+            var restGO = new GameObject("HeadsetRest");
+            restGO.transform.SetParent(markerGO.transform, false);
+            restGO.transform.localPosition = new Vector3(0f, 0.11f, 0f);
+            restGO.transform.localRotation = Quaternion.identity;
+
+            var markerSo = new SerializedObject(marker);
+            markerSo.FindProperty("m_HeadsetRest").objectReferenceValue = restGO.transform;
+            markerSo.ApplyModifiedPropertiesWithoutUndo();
+
+            // Someone standing on the marker wearing it, facing almost the right way and with
+            // their head at a believable height. Tilt alone cannot tell this from a cradle.
+            camGO.transform.SetPositionAndRotation(new Vector3(0.05f, 1.62f, -0.03f),
+                                                   Quaternion.Euler(4f, 11f, 1f));
+            Vector3 before = camGO.transform.position;
+
+            // Raw difference from the cradle, yaw included. The calibrator takes the yaw out
+            // before measuring tilt, so its number is smaller still -- if even this is inside
+            // the tolerance, the tilt test cannot be what refuses this pose.
+            float raw = Quaternion.Angle(Quaternion.Euler(4f, 11f, 1f), Quaternion.identity);
+            Check(raw <= 20f,
+                  $"the worn pose sits inside the tilt tolerance ({raw:0.#}deg), so tilt alone would allow it");
+
+            Check(!marker.CalibrateFromHeadsetRest(out string failure),
+                  $"refused anyway, on height ({failure})");
+            Check(Vector3.Distance(camGO.transform.position, before) <= k_PositionTolerance,
+                  "and the refusal moved nothing");
+        }
+
+        /// <summary>
+        /// One worn-headset case: somebody standing near the marker, wearing it, facing roughly
+        /// the right way.
+        ///
+        /// THERE IS NO TRUTH TO RECOVER HERE, unlike the cradle cases. This procedure DEFINES
+        /// the marker as wherever the head is, so the person's stance and facing error is in the
+        /// answer by construction and no amount of arithmetic takes it out again. What can be
+        /// checked is the post-conditions -- and the one worth the most is the height, which must
+        /// come out untouched.
+        /// </summary>
+        static void WornCase(string label, Vector3 markerPos, float markerYaw,
+                             Vector3 camPos, Vector3 camEuler, bool expectRefusal = false)
+        {
+            Debug.Log($"[CalibMath] --- {label} ---");
+
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var originGO = new GameObject("XR Origin");
+            var floorOffsetGO = new GameObject("Camera Offset");
+            floorOffsetGO.transform.SetParent(originGO.transform, false);
+
+            var camGO = new GameObject("Main Camera");
+            camGO.transform.SetParent(floorOffsetGO.transform, false);
+            var cam = camGO.AddComponent<Camera>();
+
+            var origin = originGO.AddComponent<XROrigin>();
+            var originSo = new SerializedObject(origin);
+            originSo.FindProperty("m_Camera").objectReferenceValue = cam;
+            originSo.FindProperty("m_CameraFloorOffsetObject").objectReferenceValue = floorOffsetGO;
+            originSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var markerGO = new GameObject("CalibrationMarker");
+            markerGO.transform.SetPositionAndRotation(markerPos, Quaternion.Euler(0f, markerYaw, 0f));
+            var marker = markerGO.AddComponent<CalibrationPoint>();
+
+            Quaternion camRot = Quaternion.Euler(camEuler);
+            camGO.transform.SetPositionAndRotation(camPos, camRot);
+
+            float heightBefore = camGO.transform.position.y;
+            float tiltBefore = Vector3.Angle(camGO.transform.up, Vector3.up);
+
+            bool calibrated = marker.CalibrateFromWornHeadset(out string failure);
+
+            if (expectRefusal)
+            {
+                Check(!calibrated, $"refused ({failure ?? "but it did not refuse"})");
+                Check(Vector3.Distance(camGO.transform.position, camPos) <= k_PositionTolerance &&
+                      Quaternion.Angle(camGO.transform.rotation, camRot) <= k_AngleTolerance,
+                    "a refusal moves nothing");
+                return;
+            }
+
+            if (!Check(calibrated, $"calibrated ({failure ?? "ok"})")) return;
+
+            // 1. THE HEIGHT IS NOT TOUCHED, which is the whole difference from the cradle path.
+            // Floor-to-eye here is this person's own height rather than a measured constant, and
+            // taking it would plant their eyes on the floor the marker is taped to.
+            float heightNow = camGO.transform.position.y;
+            Check(Mathf.Abs(heightNow - heightBefore) <= k_PositionTolerance,
+                $"eye height untouched ({heightBefore:0.000}m -> {heightNow:0.000}m)");
+
+            // 2. In plan, though, the head lands exactly on the marker.
+            Vector3 flatError = camGO.transform.position - markerPos;
+            flatError.y = 0f;
+            Check(flatError.magnitude <= k_PositionTolerance,
+                $"stands on the marker in plan ({flatError.magnitude * 1000f:0.#}mm out)");
+
+            // 3. And faces the way the marker points, measured along the floor.
+            Vector3 camDir = camGO.transform.forward;
+            camDir.y = 0f;
+            Vector3 markerDir = markerGO.transform.forward;
+            markerDir.y = 0f;
+            float facing = Vector3.Angle(camDir, markerDir);
+            Check(facing <= k_AngleTolerance,
+                $"faces the marker's forward (off by {facing:0.###}deg)");
+
+            // 4. The head's own tilt survives. A yaw-only correction cannot change how far from
+            // level a head is; if this moved, that tilt went into the origin instead.
+            float tiltNow = Vector3.Angle(camGO.transform.up, Vector3.up);
+            Check(Mathf.Abs(tiltNow - tiltBefore) <= k_AngleTolerance,
+                $"head tilt survives ({tiltBefore:0.##}deg -> {tiltNow:0.##}deg)");
+
+            // 5. Yaw-only on the origin, so no pitch or roll is baked in for the rest of the show.
+            Check(Mathf.Abs(NormalizeAngle(originGO.transform.eulerAngles.x)) <= k_AngleTolerance &&
+                  Mathf.Abs(NormalizeAngle(originGO.transform.eulerAngles.z)) <= k_AngleTolerance,
+                "origin is yaw-only");
+
+            // 6. Calibrating again from the settled pose must not walk the origin along -- staff
+            // press the key twice when they are unsure whether the first one took.
+            Vector3 settledPos = camGO.transform.position;
+            Quaternion settledRot = camGO.transform.rotation;
+            marker.CalibrateFromWornHeadset(out _);
+            float drift = Vector3.Distance(camGO.transform.position, settledPos);
+            Check(drift <= k_PositionTolerance &&
+                  Quaternion.Angle(camGO.transform.rotation, settledRot) <= k_AngleTolerance,
+                $"re-calibrating does not drift (moved {drift * 1000f:0.#}mm)");
         }
 
         static float NormalizeAngle(float degrees)
