@@ -848,7 +848,7 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.2857143
+        time: 0.12903225
         value: 1
         inSlope: 0
         outSlope: 0
@@ -857,7 +857,7 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.71428573
+        time: 0.87096775
         value: 1
         inSlope: 0
         outSlope: 0
@@ -1005,7 +1005,7 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.2857143
+        time: 0.12903225
         value: 1
         inSlope: 0
         outSlope: 0
@@ -1014,7 +1014,7 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.71428573
+        time: 0.87096775
         value: 1
         inSlope: 0
         outSlope: 0
@@ -1424,10 +1424,10 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 670
+    m_Start: 653
     m_ClipIn: 0
     m_Asset: {fileID: -4180060438797719774}
-    m_Duration: 14
+    m_Duration: 31
     m_TimeScale: 1
     m_ParentTrack: {fileID: -2033783888330069596}
     m_EaseInDuration: 0
@@ -1491,7 +1491,7 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: "670 \u9032 / 680 \u51FA"
+    m_DisplayName: "653 \u9032 / 680 \u51FA"
   m_Markers:
     m_Objects: []
   m_PresenceBeforeFirstClip: 0
@@ -3103,7 +3103,7 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.2857143
+        time: 0.12903225
         value: 1
         inSlope: 0
         outSlope: 0
@@ -3112,7 +3112,7 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.71428573
+        time: 0.87096775
         value: 1
         inSlope: 0
         outSlope: 0
@@ -3154,10 +3154,10 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 670
+    m_Start: 653
     m_ClipIn: 0
     m_Asset: {fileID: 3858515719795368054}
-    m_Duration: 14
+    m_Duration: 31
     m_TimeScale: 1
     m_ParentTrack: {fileID: 4131228265049202872}
     m_EaseInDuration: 0
@@ -3221,7 +3221,7 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: "670 \u9032 / 680 \u51FA"
+    m_DisplayName: "653 \u9032 / 680 \u51FA"
   m_Markers:
     m_Objects: []
   m_PresenceBeforeFirstClip: 0
@@ -3929,10 +3929,10 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 670
+    m_Start: 653
     m_ClipIn: 0
     m_Asset: {fileID: -4718416385267044119}
-    m_Duration: 14
+    m_Duration: 31
     m_TimeScale: 1
     m_ParentTrack: {fileID: 7719523050162232576}
     m_EaseInDuration: 0
@@ -3996,7 +3996,7 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: "670 \u9032 / 680 \u51FA"
+    m_DisplayName: "653 \u9032 / 680 \u51FA"
   m_Markers:
     m_Objects: []
   m_PresenceBeforeFirstClip: 0
