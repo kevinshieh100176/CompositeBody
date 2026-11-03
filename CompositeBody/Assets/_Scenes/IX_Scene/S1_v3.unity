@@ -819,6 +819,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5133979831872499531, guid: 53e862169127fa9448904c6bd3d95dbf,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6090562649341122549, guid: 53e862169127fa9448904c6bd3d95dbf,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -874,6 +879,36 @@ PrefabInstance:
       propertyPath: Settings
       value: 
       objectReference: {fileID: 1557599623}
+    - target: {fileID: 8234182330518722037, guid: 53e862169127fa9448904c6bd3d95dbf,
+        type: 3}
+      propertyPath: WorldSpaceBounds.m_Center.x
+      value: -0.1876781
+      objectReference: {fileID: 0}
+    - target: {fileID: 8234182330518722037, guid: 53e862169127fa9448904c6bd3d95dbf,
+        type: 3}
+      propertyPath: WorldSpaceBounds.m_Center.y
+      value: -3.1076782
+      objectReference: {fileID: 0}
+    - target: {fileID: 8234182330518722037, guid: 53e862169127fa9448904c6bd3d95dbf,
+        type: 3}
+      propertyPath: WorldSpaceBounds.m_Center.z
+      value: -46.03407
+      objectReference: {fileID: 0}
+    - target: {fileID: 8234182330518722037, guid: 53e862169127fa9448904c6bd3d95dbf,
+        type: 3}
+      propertyPath: WorldSpaceBounds.m_Extent.x
+      value: 6.2852154
+      objectReference: {fileID: 0}
+    - target: {fileID: 8234182330518722037, guid: 53e862169127fa9448904c6bd3d95dbf,
+        type: 3}
+      propertyPath: WorldSpaceBounds.m_Extent.y
+      value: 8.081993
+      objectReference: {fileID: 0}
+    - target: {fileID: 8234182330518722037, guid: 53e862169127fa9448904c6bd3d95dbf,
+        type: 3}
+      propertyPath: WorldSpaceBounds.m_Extent.z
+      value: 58.210125
+      objectReference: {fileID: 0}
     - target: {fileID: 8652562854464045595, guid: 53e862169127fa9448904c6bd3d95dbf,
         type: 3}
       propertyPath: m_LocalPosition.x

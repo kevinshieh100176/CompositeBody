@@ -2,7 +2,7 @@
   "mcpServers": {
     "unity-editor-mcp": {
       "command": "unity",
-      "args": ["mcp", "--project-path", "C:/_Projects/202611CompositeBody/CompositeBody/CompositeBody"]
+      "args": ["mcp", "--project-path", "D:/_UnityProj/26_10_CompositeBody/CompositeBody"]
     }
   }
 }
