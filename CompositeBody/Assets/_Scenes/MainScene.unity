@@ -1881,6 +1881,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dcf655ba391d8ef43852a3daf6127bf5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Multiplayer.StaffControlPanel
+  m_DiagnosticsKey: 97
 --- !u!114 &490486575
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4890,12 +4891,9 @@ MonoBehaviour:
   m_Behaviours:
   - {fileID: 1248416935}
   m_ShowPanel: 1
-  m_Side: 1
   m_Margin: {x: 12, y: 12}
-  m_FunctionKeys: 1
   m_HiddenOnStart: 0
   m_RoleSwitch: 1
-  m_RoleKey: 1
 --- !u!4 &1248416934
 Transform:
   m_ObjectHideFlags: 0
