@@ -206,14 +206,42 @@ namespace CompositeBody.Multiplayer.EditorSetup
         // WHEN THE 真人 ARRIVE, as a length rather than a time: they start with the first 自白
         // and finish as their own 光圈 finish rising.
         //
-        // 「現在O_0的SCAN 一開始就在 改成跟第一段VO(A1/B1)一起出現」. Neither end of this is a number of
-        // its own, which is the point: the start is k_FirstLinesAt, and the end is the cue's own
-        // 光圈 ramp above. The halos ARE the figures' light, and a figure that materialised before
-        // or after its own lamp read as two events rather than one arrival. Seven seconds, as
-        // long as the cue stays where it is.
-        const float k_ScansIn = k_Open + k_Hold + k_ColourUp - k_FirstLinesAt;
+        // 「現在O_0的SCAN 一開始就在 改成跟第一段VO(A1/B1)一起出現」. The start is not a number of its own,
+        // which is the point: it is k_FirstLinesAt. The end was not either -- it was the cue's
+        // own 光圈 ramp above, because the halos ARE the figures' light and a figure that
+        // materialised before or after its own lamp read as two events rather than one arrival.
+        // Seven seconds, as long as the cue stayed where it was.
+        //
+        // AND THE STRETCH IS WHAT UNCOUPLES THEM. 「dissolve in ... 變得更久」, so the arrival now
+        // takes twice the halo ramp: fourteen seconds, 20 -> 34s, with the lamps full at 27s and
+        // the figures still assembling for seven seconds under a light that has stopped rising.
+        // Nothing on the timeline moves for it -- the clip's ramp is at its head and its flat
+        // tail runs to the dissolve either way (see BuildHandoverTracks) -- so the whole cost of
+        // the stretch is that the arrival outlasts its own light. Put it back to 1 to have the
+        // two land together again.
+        const float k_ScansInStretch = 2f;
 
-        const float k_ScansOut = 10f;     // how long the 真人 take to go
+        const float k_ScansIn =
+            (k_Open + k_Hold + k_ColourUp - k_FirstLinesAt) * k_ScansInStretch;
+
+        /// <summary>
+        /// HOW LONG THE 真人 TAKE TO GO. 「dissolve out ... 變得更久」 asked for twice the ten this
+        /// was, and sixteen is as far as it reaches: the ceiling here is not the length of the
+        /// beat but the player's own body.
+        ///
+        /// THE DISSOLVE STARTS AT 109s -- the last word of 自白 1 plus <see cref="k_LinesTail"/>,
+        /// read off the audio by <see cref="Retime"/> -- and the Ch36 body starts showing at
+        /// 125s, which Retime works BACKWARDS from the end of 自白 2. Sixteen lands the room
+        /// empty on the frame the body begins. Twenty would leave a 真人 standing there until
+        /// 129s while the player's own body faded in underneath it, which is the one thing
+        /// Retime's warning exists to catch.
+        ///
+        /// SO THE CEILING IS PINNED TO AUDIO AND NOT TO ANYTHING TYPED HERE. Re-cut 自白 2
+        /// shorter and it comes down with it -- Retime says so rather than letting this go
+        /// quietly wrong.
+        /// </summary>
+        const float k_ScansOut = 16f;
+
         const float k_FirstLinesAt = 20f; // 「過20秒後」, with the room up and the 光圈 rising
         const float k_LinesTail = 1f;     // a breath between the last word and the scans going
 

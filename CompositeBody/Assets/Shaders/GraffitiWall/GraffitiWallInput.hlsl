@@ -40,6 +40,7 @@ float _GraffitiYMax;
 float _GraffitiSeed;
 float _GraffitiRotation;
 float _GraffitiShowThrough;
+float _DissolveNoiseScale;
 UNITY_TEXTURE_STREAMING_DEBUG_VARS;
 CBUFFER_END
 
@@ -256,6 +257,76 @@ half3 ApplyDetailNormal(float2 detailUv, half3 normalTS, half detailMask)
     return normalTS;
 #endif
 }
+
+// Dissolve.
+//
+// ON THIS SHADER, ALPHA CLIPPING IS THE DISSOLVE. The albedo's alpha becomes a noise field, so
+// sweeping _Cutoff from 0 to 1 eats the surface away in patches instead of switching it off --
+// the same trick the O-1 cardboard uses, except the cardboard carries the noise painted into its
+// base map and the graffiti walls are Quixel tiles with no alpha channel at all (DXT1), so it has
+// to be generated here. CompositeBody.Experience.PropPresence in Clip mode is what drives the
+// cutoff; nothing else needs to know.
+//
+// WHY IT HANGS OFF SampleAlbedoAlpha rather than off the lit surface data. Every pass of this
+// shader -- forward, shadow caster, depth, depth-normals, GBuffer, meta, 2D -- reads the base map
+// through that one function and then clips on its alpha. Overriding it is the only place where a
+// half-gone wall is half gone in all of them at once; putting the clip in the forward pass alone
+// would leave a wall that has visibly come apart still casting a whole shadow and still writing a
+// whole depth buffer, which SSAO and anything else reading depth would then shade against.
+//
+// _ALPHATEST_ON IS THE GATE, so the materials that do not clip -- GraffitiWall_Concrete, and
+// every future wall -- compile none of this and pay nothing. The cost is that a genuine cutout
+// texture on this shader would be multiplied by the noise as well; there is no such material
+// today, and multiplying (rather than replacing) at least keeps its holes holes.
+float GraffitiDissolveHash(float2 cell)
+{
+    return frac(sin(dot(cell, float2(127.1, 311.7))) * 43758.5453);
+}
+
+float GraffitiDissolveNoise(float2 p)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+
+    float a = GraffitiDissolveHash(i);
+    float b = GraffitiDissolveHash(i + float2(1.0, 0.0));
+    float c = GraffitiDissolveHash(i + float2(0.0, 1.0));
+    float d = GraffitiDissolveHash(i + float2(1.0, 1.0));
+
+    return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
+}
+
+half GraffitiDissolveField(float2 uv)
+{
+    // The uv has already been through _BaseMap_ST -- fifteen or twenty times across these walls.
+    // Undo that, or the patches come out the size of one floor tile and the wall dissolves as a
+    // grid. In mesh uv space _DissolveNoiseScale is "patches across the whole surface".
+    float2 meshUv = (uv - _BaseMap_ST.zw) / max(abs(_BaseMap_ST.xy), 1e-4);
+    float2 p = meshUv * _DissolveNoiseScale;
+
+    // Three octaves: the coarse one decides which corner goes first, the fine ones give the
+    // retreating edge its ragged bite.
+    float n = GraffitiDissolveNoise(p) * 0.6
+            + GraffitiDissolveNoise(p * 2.17 + 19.3) * 0.3
+            + GraffitiDissolveNoise(p * 4.41 + 47.7) * 0.1;
+
+    // Summed octaves cluster around the middle and never reach either end, which would leave the
+    // first and last second of a sweep doing nothing visible. Stretched to the full range the
+    // cutoff's own 0-to-1 is the whole dissolve, start to finish.
+    return (half)saturate((n - 0.18) / 0.64);
+}
+
+half4 GraffitiSampleAlbedoAlpha(float2 uv, TEXTURE2D_PARAM(albedoAlphaMap, sampler_albedoAlphaMap))
+{
+    half4 albedoAlpha = half4(SAMPLE_TEXTURE2D(albedoAlphaMap, sampler_albedoAlphaMap, uv));
+#ifdef _ALPHATEST_ON
+    albedoAlpha.a *= GraffitiDissolveField(uv);
+#endif
+    return albedoAlpha;
+}
+
+#define SampleAlbedoAlpha(uv, texArgs) GraffitiSampleAlbedoAlpha(uv, texArgs)
 
 inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfaceData)
 {

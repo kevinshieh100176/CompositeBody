@@ -60,6 +60,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             Transform rest = EnsureRestPose(marker);
             EnsureCalibrator(marker);
+            SetSource(CalibrationSource.WornOnHead);
             SilenceOldTestKey(marker);
             SetPanelKey();
             EnsureCalibrationPanel();
@@ -216,6 +217,35 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Debug.Log($"[RestCalib] Added CalibrationPanel on its own object, key {panel.toggleKey}.");
         }
 
+        /// <summary>
+        /// Which of the two procedures the machines are set up for.
+        ///
+        /// Written on every run rather than left to whatever the scene happens to hold, unlike
+        /// the calibrator's other settings. It is the one field that decides what staff are told
+        /// to do with the headset, and a scene that disagrees with the running order fails
+        /// quietly: the capture never fires, or it fires off a pose nobody meant.
+        /// </summary>
+        static void SetSource(CalibrationSource source)
+        {
+            var calibrator = Object.FindAnyObjectByType<HeadsetRestCalibrator>(FindObjectsInactive.Include);
+            if (calibrator == null) return;
+
+            var so = new SerializedObject(calibrator);
+            SerializedProperty property = so.FindProperty("m_Source");
+
+            // intValue, not enumValueIndex: that one is the position in the inspector's popup,
+            // which matches the value only while nobody has numbered the enum by hand.
+            if (property.intValue == (int)source)
+            {
+                Debug.Log($"[RestCalib] Calibration source already {source}.");
+                return;
+            }
+
+            property.intValue = (int)source;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            Debug.Log($"[RestCalib] Calibration source set to {source}.");
+        }
+
         static bool Verify(Transform rest)
         {
             var marker = Object.FindAnyObjectByType<CalibrationPoint>();
@@ -227,13 +257,29 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 return false;
             }
 
+            bool worn = calibrator != null && calibrator.source == CalibrationSource.WornOnHead;
+
             if (marker.headsetRest == marker.transform)
             {
-                Debug.LogError("[RestCalib] RESULT: FAIL - the marker still has no rest pose, so a " +
-                               "calibration would line the headset up with the floor tape itself.");
-                return false;
+                // Only fatal for the procedure that reads it. Failing the whole run over a pose
+                // the configured source never touches would be the kind of noise that gets a
+                // check ignored.
+                if (!worn)
+                {
+                    Debug.LogError("[RestCalib] RESULT: FAIL - the marker still has no rest pose, so a " +
+                                   "calibration would line the headset up with the floor tape itself.");
+                    return false;
+                }
+
+                Debug.LogWarning("[RestCalib] WARN the marker has no rest pose. Harmless while the " +
+                                 "source is WornOnHead, which never reads it -- but switching to the " +
+                                 "cradle without measuring one would line the headset up with the " +
+                                 "floor tape itself.");
             }
-            Debug.Log($"[RestCalib] OK   rest pose '{marker.headsetRest.name}' at {marker.headsetRest.position}");
+            else
+            {
+                Debug.Log($"[RestCalib] OK   rest pose '{marker.headsetRest.name}' at {marker.headsetRest.position}");
+            }
 
             if (calibrator == null)
             {
@@ -249,6 +295,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
             }
             Debug.Log($"[RestCalib] OK   HeadsetRestCalibrator wired to the marker " +
                       $"({(calibrator.enabled ? "enabled" : "SWITCHED OFF -- the key will do nothing")})");
+
+            Debug.Log($"[RestCalib] OK   source {calibrator.source} -- " +
+                      (worn ? "staff wear it, stand on the marker and face its forward"
+                            : "staff place it in the cradle on the marker"));
 
             var panel = Object.FindAnyObjectByType<InteractionDebugPanel>(FindObjectsInactive.Include);
             if (panel == null)

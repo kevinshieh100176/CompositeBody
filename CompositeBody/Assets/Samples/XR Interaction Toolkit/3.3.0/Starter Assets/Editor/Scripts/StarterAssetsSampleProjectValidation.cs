@@ -78,7 +78,7 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples
                         IsRuleEnabled = () => s_ShaderGraphPackageAddRequest == null || s_ShaderGraphPackageAddRequest.IsCompleted,
                         Message = $"[{k_StarterAssetsSampleName}] Shader Graph ({k_ShaderGraphPackageName}) package must be installed for materials used in this sample.",
                         Category = k_Category,
-                        CheckPredicate = () => PackageVersionUtility.IsPackageInstalled(k_ShaderGraphPackageName),
+                        CheckPredicate = () => SamplePackageVersions.IsPackageInstalled(k_ShaderGraphPackageName),
                         FixIt = () =>
                         {
                             s_ShaderGraphPackageAddRequest = Client.Add(k_ShaderGraphPackageName);
@@ -98,7 +98,7 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples
                         IsRuleEnabled = () => s_InputSystemPackageAddRequest == null || s_InputSystemPackageAddRequest.IsCompleted,
                         Message = $"[{k_StarterAssetsSampleName}] Input System ({k_InputSystemPackageName}) package must be at version {s_RecommendedPackageVersion} or higher to use Project-wide Actions with {k_InputActionAssetName}.",
                         Category = k_Category,
-                        CheckPredicate = () => InputSystem.actions == null || PackageVersionUtility.GetPackageVersion(k_InputSystemPackageName) >= s_RecommendedPackageVersion,
+                        CheckPredicate = () => InputSystem.actions == null || SamplePackageVersions.GetPackageVersion(k_InputSystemPackageName) >= s_RecommendedPackageVersion,
                         FixIt = () =>
                         {
                             if (s_InputSystemPackageAddRequest == null || s_InputSystemPackageAddRequest.IsCompleted)

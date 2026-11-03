@@ -48,6 +48,33 @@ namespace CompositeBody.Multiplayer
             }
         }
 
+        /// <summary>
+        /// The role this machine is RENDERING AS -- the debug override when one is set, the real
+        /// local role otherwise. False when neither is available, which is the editor with no
+        /// session and the moments before the roles replicate.
+        ///
+        /// Exposed because the asymmetry is not only in components: a timeline clip that staggers
+        /// a dissolve between the two players (see
+        /// <see cref="CompositeBody.PointClouds.FigureRoleDissolveBehaviour"/>) has to answer the
+        /// same question, and if it answered it by reading the session directly then the debug
+        /// override would move every other role-dependent view and leave that one behind --
+        /// which is precisely the failure the override exists to rule out.
+        /// </summary>
+        public static bool TryGetViewRole(out PlayerRole role)
+        {
+            if (s_DebugRole.HasValue)
+            {
+                role = s_DebugRole.Value;
+                return role != PlayerRole.Unassigned;
+            }
+
+            GameSessionManager session = GameSessionManager.Instance;
+            if (session != null) return session.TryGetLocalRole(out role);
+
+            role = PlayerRole.Unassigned;
+            return false;
+        }
+
         /// <summary>Re-apply every live presenter. Cheap, and only called when something flips.</summary>
         public static void RefreshAll()
         {
@@ -97,19 +124,11 @@ namespace CompositeBody.Multiplayer
 
         void Refresh()
         {
-            if (s_DebugRole.HasValue)
-            {
-                // Unassigned is a real choice here: it is how the operator asks for the
-                // before-the-roles-arrive view, which is the one state a second headset cannot
-                // easily be made to show.
-                PlayerRole forced = s_DebugRole.Value;
-                ApplyForRole(forced, forced != PlayerRole.Unassigned);
-                return;
-            }
-
-            GameSessionManager session = GameSessionManager.Instance;
-            PlayerRole role = PlayerRole.Unassigned;
-            bool roleKnown = session != null && session.TryGetLocalRole(out role);
+            // Unassigned is a real choice for the override: it is how the operator asks for the
+            // before-the-roles-arrive view, which is the one state a second headset cannot
+            // easily be made to show. TryGetViewRole reports it as "not known", which is exactly
+            // what that view is.
+            bool roleKnown = TryGetViewRole(out PlayerRole role);
             ApplyForRole(role, roleKnown);
         }
 

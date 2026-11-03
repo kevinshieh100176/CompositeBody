@@ -8,7 +8,10 @@ Shader "CompositeBody/GraffitiWall"
         [MainTexture] _BaseMap("Albedo", 2D) = "white" {}
         [MainColor] _BaseColor("Color", Color) = (1,1,1,1)
 
-        _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
+        // Alpha clipping on this shader is the dissolve -- see GraffitiWallInput.hlsl. The cutoff
+        // is the amount, swept 0 to 1 by PropPresence; this is only how big the patches are.
+        _Cutoff("Dissolve Amount (alpha cutoff)", Range(0.0, 1.0)) = 0.5
+        _DissolveNoiseScale("Dissolve Patches Across The Surface", Range(1.0, 64.0)) = 10.0
 
         _Smoothness("Smoothness", Range(0.0, 1.0)) = 0.5
         _SmoothnessTextureChannel("Smoothness texture channel", Float) = 0

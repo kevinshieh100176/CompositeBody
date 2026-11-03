@@ -67,8 +67,6 @@ namespace CompositeBody.Experience
         float m_Rate = 60f;
 
         [Header("What to send")]
-        [SerializeField] bool m_SendHands = true;
-
         [SerializeField, Tooltip("Which scene is running, taken from the show timeline's Control " +
                                  "tracks. '/beat/number' (1 = the first scene, 0 = none) goes " +
                                  "out in every packet; the label only when the scene changes.")]
@@ -437,8 +435,8 @@ namespace CompositeBody.Experience
             if (m_SendBeat) WriteBeat(ref osc);
 
             // --- the players ----------------------------------------------------------------
-            WritePlayer(ref osc, m_PrefixA, m_PlayerA);
-            WritePlayer(ref osc, m_PrefixB, m_PlayerB);
+            WritePlayer(ref osc, m_PrefixA, PlayerRole.Player1, m_PlayerA);
+            WritePlayer(ref osc, m_PrefixB, PlayerRole.Player2, m_PlayerB);
 
             if (osc.overflowed)
             {
@@ -446,7 +444,8 @@ namespace CompositeBody.Experience
                 {
                     m_WarnedOverflow = true;
                     Debug.LogError("[TouchDesigner] the bundle outgrew one datagram and was not " +
-                                   "sent. Turn hands off, or split the send across two packets.",
+                                   "sent. Turn the beat label off, or split the send across two " +
+                                   "packets.",
                                    this);
                 }
                 return;
@@ -515,7 +514,7 @@ namespace CompositeBody.Experience
             osc.Message(m_Namespace, "/beat/code", show != null ? show.sceneCode : string.Empty);
         }
 
-        void WritePlayer(ref OscWriter osc, string prefix, XRINetworkPlayer player)
+        void WritePlayer(ref OscWriter osc, string prefix, PlayerRole role, XRINetworkPlayer player)
         {
             bool present = player != null && player.head != null;
 
@@ -525,31 +524,29 @@ namespace CompositeBody.Experience
             // Select or a Logic can read.
             osc.Message(prefix, "/present", present ? 1f : 0f);
 
+            // Asked of the relay rather than of the player object: the O-1 objects are local to
+            // the machine that owns them, so a replicated flag is the only way the host can know
+            // the other player has theirs in hand. 0 until the relay is spawned.
+            O1GrabRelay grab = O1GrabRelay.Instance;
+            bool holding = present && grab != null && grab.IsHolding(role);
+            osc.Message(prefix, "/grab", holding ? 1f : 0f);
+
             if (!present)
             {
                 osc.Message(prefix, "/head/pos", 0f, 0f, 0f);
-                osc.Message(prefix, "/head/rot", 0f, 0f, 0f);
-                if (m_SendHands)
-                {
-                    osc.Message(prefix, "/hand/l", 0f, 0f, 0f);
-                    osc.Message(prefix, "/hand/r", 0f, 0f, 0f);
-                }
+
+                // Identity, not four zeros: an all-zero quaternion is not a rotation, and a
+                // receiver that normalises it divides by zero. 'No player' is already said by
+                // /present; this value just has to be harmless.
+                osc.Message(prefix, "/head/rot", 0f, 0f, 0f, 1f);
                 return;
             }
 
             Vector3 position = Convert(player.head.position);
-            Vector3 rotation = ConvertEuler(player.head.eulerAngles);
+            Quaternion rotation = Convert(player.head.rotation);
 
             osc.Message(prefix, "/head/pos", position.x, position.y, position.z);
-            osc.Message(prefix, "/head/rot", rotation.x, rotation.y, rotation.z);
-
-            if (!m_SendHands) return;
-
-            Vector3 left = player.leftHand != null ? Convert(player.leftHand.position) : Vector3.zero;
-            Vector3 right = player.rightHand != null ? Convert(player.rightHand.position) : Vector3.zero;
-
-            osc.Message(prefix, "/hand/l", left.x, left.y, left.z);
-            osc.Message(prefix, "/hand/r", right.x, right.y, right.z);
+            osc.Message(prefix, "/head/rot", rotation.x, rotation.y, rotation.z, rotation.w);
         }
 
         /// <summary>
@@ -562,12 +559,18 @@ namespace CompositeBody.Experience
         }
 
         /// <summary>
-        /// Mirroring one axis also reverses the sense of rotation about the other two, so X and Y
-        /// negate while Z does not. Degrees either way, because TD's transforms take degrees.
+        /// The same mirror, expressed on a rotation. Reflecting one axis reverses the sense of
+        /// rotation about the other two, which on a quaternion is (x, y, z, w) -> (-x, -y, z, w)
+        /// -- the same pattern the euler form used, since it is the same reflection.
+        ///
+        /// Sent as a quaternion rather than as euler angles because euler brings two questions
+        /// with it that a quaternion does not: which order the three rotations compose in, and
+        /// what happens when the head looks straight up. Neither has a good answer across two
+        /// different packages.
         /// </summary>
-        Vector3 ConvertEuler(Vector3 euler)
+        Quaternion Convert(Quaternion q)
         {
-            return m_ConvertToRightHanded ? new Vector3(-euler.x, -euler.y, euler.z) : euler;
+            return m_ConvertToRightHanded ? new Quaternion(-q.x, -q.y, q.z, q.w) : q;
         }
 
         /// <summary>

@@ -61,7 +61,7 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples.SpatialKeyboard.Editor
                 IsRuleEnabled = () => s_UIPackageAddRequest == null || s_UIPackageAddRequest.IsCompleted,
                 Message = $"[{k_SampleDisplayName}] {k_UIPackageDisplayName} ({k_UIPackageName}) package must be installed for this sample.",
                 Category = k_Category,
-                CheckPredicate = () => PackageVersionUtility.IsPackageInstalled(k_UIPackageName),
+                CheckPredicate = () => SamplePackageVersions.IsPackageInstalled(k_UIPackageName),
                 FixIt = () =>
                 {
                     s_UIPackageAddRequest = Client.Add(k_UIPackageName);
@@ -76,11 +76,11 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples.SpatialKeyboard.Editor
 #if TEXT_MESH_PRO_PRESENT || (UGUI_2_0_PRESENT && UNITY_6000_0_OR_NEWER)
             new BuildValidationRule
             {
-                IsRuleEnabled = () => PackageVersionUtility.IsPackageInstalled(k_UIPackageName),
+                IsRuleEnabled = () => SamplePackageVersions.IsPackageInstalled(k_UIPackageName),
                 Message = $"[{k_SampleDisplayName}] TextMesh Pro - TMP Essentials must be installed for this sample.",
                 HelpText = "Can be installed using Window > TextMeshPro > Import TMP Essential Resources or by clicking this Edit button and then Import TMP Essentials in the window that appears.",
                 Category = k_Category,
-                CheckPredicate = () => PackageVersionUtility.IsPackageInstalled(k_UIPackageName) && TextMeshProEssentialsInstalled(),
+                CheckPredicate = () => SamplePackageVersions.IsPackageInstalled(k_UIPackageName) && TextMeshProEssentialsInstalled(),
                 FixIt = () =>
                 {
                     TMP_PackageResourceImporterWindow.ShowPackageImporterWindow();
@@ -134,7 +134,7 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples.SpatialKeyboard.Editor
         {
             sample = default;
 
-            if (!PackageVersionUtility.IsPackageInstalled(packageName))
+            if (!SamplePackageVersions.IsPackageInstalled(packageName))
                 return false;
 
             IEnumerable<Sample> packageSamples;

@@ -124,6 +124,12 @@ namespace CompositeBody.PointClouds.EditorTools
 
             /// <summary>Renderer names to leave out entirely, matched exactly.</summary>
             public readonly HashSet<string> exclude = new();
+
+            /// <summary>Scene object whose box crops the bake, or null.</summary>
+            public string insideName;
+
+            /// <summary>"cx,cy,cz,sx,sy,sz" in world space, or null.</summary>
+            public string boxSpec;
         }
 
         // ------------------------------------------------------------------------------------
@@ -162,6 +168,9 @@ namespace CompositeBody.PointClouds.EditorTools
             AssetDatabase.SaveAssets();
         }
 
+        /// <summary>
+        /// The command-line entry: reads the switches and hands over to <see cref="Execute"/>.
+        /// </summary>
         public static void Run()
         {
             string scenePath = (GetArg("-scene") ?? k_DefaultScene).Replace('\\', '/');
@@ -172,19 +181,57 @@ namespace CompositeBody.PointClouds.EditorTools
                 lighting = HasFlag("-bakeLighting"),
                 dryRun = HasFlag("-dryRun"),
                 outDir = (GetArg("-out") ?? k_OutDir).Replace('\\', '/'),
+                insideName = GetArg("-inside"),
+                boxSpec = GetArg("-box"),
             };
             if (int.TryParse(GetArg("-maxPoints"), out int budget) && budget > 0) settings.budget = budget;
             if (float.TryParse(GetArg("-spacing"), out float spacing) && spacing > 0f) settings.spacing = spacing;
             if (float.TryParse(GetArg("-exposure"), out float exposure) && exposure > 0f) settings.exposure = exposure;
+            AddExclusions(settings, GetArg("-exclude"));
 
-            string exclude = GetArg("-exclude");
-            if (!string.IsNullOrEmpty(exclude))
+            Execute(scenePath, targets, settings);
+        }
+
+        /// <summary>
+        /// The same bake, called with arguments instead of parsed out of a command line.
+        ///
+        /// This exists because the project drives the editor through the Unity CLI now rather
+        /// than through cold -batchmode starts, and inside a running editor
+        /// Environment.GetCommandLineArgs() holds the arguments the *editor* was launched with --
+        /// so <see cref="Run"/> would quietly bake its defaults no matter what was asked for.
+        /// Quietly, because every switch has a default and none of them is obviously wrong.
+        /// </summary>
+        public static void Execute(string scenePath, string targets, int maxPoints = 0,
+                                   float spacing = 0f, bool bakeLighting = false,
+                                   string inside = null, string box = null, string exclude = null,
+                                   bool dryRun = false, string outDir = null, float exposure = 1f)
+        {
+            var settings = new Settings
             {
-                foreach (string name in exclude.Split(',').Select(n => n.Trim()).Where(n => n.Length > 0))
-                    settings.exclude.Add(name);
-                Debug.Log($"[Cloud] leaving out: {string.Join(", ", settings.exclude)}.");
-            }
+                lighting = bakeLighting,
+                dryRun = dryRun,
+                outDir = (outDir ?? k_OutDir).Replace('\\', '/'),
+                insideName = inside,
+                boxSpec = box,
+                exposure = exposure,
+            };
+            if (maxPoints > 0) settings.budget = maxPoints;
+            if (spacing > 0f) settings.spacing = spacing;
+            AddExclusions(settings, exclude);
 
+            Execute(scenePath.Replace('\\', '/'), targets, settings);
+        }
+
+        static void AddExclusions(Settings settings, string exclude)
+        {
+            if (string.IsNullOrEmpty(exclude)) return;
+            foreach (string name in exclude.Split(',').Select(n => n.Trim()).Where(n => n.Length > 0))
+                settings.exclude.Add(name);
+            Debug.Log($"[Cloud] leaving out: {string.Join(", ", settings.exclude)}.");
+        }
+
+        static void Execute(string scenePath, string targets, Settings settings)
+        {
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
             {
                 Debug.LogError($"[Cloud] RESULT: FAIL - no scene at {scenePath}.");
@@ -260,8 +307,8 @@ namespace CompositeBody.PointClouds.EditorTools
         {
             error = null;
 
-            string inside = GetArg("-inside");
-            string box = GetArg("-box");
+            string inside = settings.insideName;
+            string box = settings.boxSpec;
 
             if (!string.IsNullOrEmpty(inside))
             {
@@ -491,6 +538,18 @@ namespace CompositeBody.PointClouds.EditorTools
                 }
 
                 if (DrawsAPointCloud(renderer) || mesh.vertexCount == 0)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                // Only the nearest LOD. A LODGroup holds the same rock two or three times at
+                // different triangle counts, and simplifying a mesh barely changes its surface
+                // area -- so every level asks for the same share of the budget, and sampling
+                // them all stacks two or three clouds in the same place while spending the
+                // points that should have gone somewhere visible. S1_v4 has 24 groups holding
+                // 71 renderers, 47 of them lower levels.
+                if (IsLowerLod(renderer))
                 {
                     skipped++;
                     continue;
@@ -900,6 +959,30 @@ namespace CompositeBody.PointClouds.EditorTools
         /// and everything above it is ignored. A prop switched off within the room is still a
         /// prop someone chose to hide, and is still left out.
         /// </summary>
+        /// <summary>
+        /// Whether this renderer is a fallback level of a LODGroup rather than the nearest one.
+        ///
+        /// Asked of the group rather than of the name: "_LOD2" in a mesh name is a convention
+        /// some exporters follow and others do not, and a renderer that merely has LOD in its
+        /// name while belonging to no group is ordinary geometry that should still be sampled.
+        /// A renderer the group does not list is also left alone.
+        /// </summary>
+        static bool IsLowerLod(Renderer renderer)
+        {
+            var group = renderer.GetComponentInParent<LODGroup>(true);
+            if (group == null) return false;
+
+            LOD[] levels = group.GetLODs();
+            for (int i = 0; i < levels.Length; i++)
+            {
+                Renderer[] members = levels[i].renderers;
+                if (members == null) continue;
+                foreach (Renderer member in members)
+                    if (member == renderer) return i > 0;
+            }
+            return false;
+        }
+
         static bool ActiveWithin(Transform root, Renderer renderer)
         {
             if (!renderer.enabled) return false;

@@ -14,33 +14,30 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// Puts S1 on the running order the new S1 script gives it: six beats instead of two, with
     /// the names and the boundaries off that sheet.
     ///
-    /// NOT PART OF BuildMainTimeline, AND IT CANNOT BE. That builder chains every beat end to
-    /// end from one duration table, which is the right model for a show whose sections are
-    /// authored in order -- and it is exactly the model S1 has now outgrown. S1 runs to 11:49
-    /// while S2-1 still starts at 09:20, because S2's own times have not been re-cut yet; the
-    /// two sections overlap on purpose and a chaining builder has no way to say that. So this
-    /// edits Main.playable in place, the way RetimeOnboardingHandoff does, and touches nothing
-    /// outside S1 and the two clips that straddle its edges.
+    /// NOT PART OF BuildMainTimeline, AND IT CANNOT BE. That builder authors the whole running
+    /// order from one duration table and would have to be given every beat's real length to be
+    /// run at all; S1 is the only section whose sheet has landed, and rebuilding from the table
+    /// would quietly undo the hand work on the Fade, Activation and Animation tracks that is not
+    /// in it. So this edits Main.playable in place, the way RetimeOnboardingHandoff does.
     ///
     /// THE SHEET'S TIMES, WITH ONE DELIBERATE DEPARTURE. The script gives 收黑 its own row at
     /// 06:40-06:50 and starts S1-1 at 06:50, which would take ten seconds off a beat whose end
-    /// is fixed at 09:30. The decision taken is to give those ten seconds back to S1-1 at the
-    /// front -- S1-1 runs 06:40-09:30, 170s, and its first ten seconds play under the blackout --
-    /// so nothing after 09:30 has to move. Every other boundary below is the sheet's own.
+    /// is fixed at 09:40. The decision taken is to give those ten seconds back to S1-1 at the
+    /// front -- S1-1 runs 06:40-09:40, 180s, and its first ten seconds play under the blackout --
+    /// so nothing after 09:40 has to move. Every other boundary below is the sheet's own.
     ///
     ///   收黑           0640 -> 0650    10s   centred on the join, so 400.0 is fully black
-    ///   S1-1 窗內的世界  0640 -> 0930   170s   (sheet says 0650; the 10s is added at the front)
-    ///   S1-2 門與草原    0930 -> 0930     -    the sheet's 時長 cell is empty; no clip yet
-    ///   S1-3 黑白房子群  0930 -> 1006    36s
-    ///   S1-4 紅色剖開房子 1006 -> 1049    43s
-    ///   S1-5 霧氣之房左  1049 -> 1111    22s
-    ///   S1-6 霧氣之房右  1111 -> 1149    38s
+    ///   S1-1 窗內的世界  0640 -> 0940   180s   (sheet says 0650; the 10s is added at the front)
+    ///   S1-2 門與草原    0940 -> 1010    30s
+    ///   S1-3 黑白房子群  1010 -> 1054    44s
+    ///   S1-4 紅色剖開房子 1054 -> 1147    53s
+    ///   S1-5 霧氣之房左  1147 -> 1209    22s
+    ///   S1-6 霧氣之房右  1209 -> 1247    38s
     ///
-    /// S1-2 IS A TRACK WITH NOTHING ON IT, which is what a beat with no agreed length is. The
-    /// sheet chains S1-3 off 09:30 regardless, so the beat has a position and no duration; a
-    /// placeholder clip would have to invent one, and a one-frame clip would be a beat that
-    /// silently never plays. The track, the holder and the sub-timeline are all here, so
-    /// deciding the length later is dragging a clip onto a track that is already wired.
+    /// 門與草原 HAS A LENGTH NOW, and the second pass of the sheet is where it got one. It was
+    /// a track with no clip while its 時長 cell was empty -- a beat with a position and no
+    /// duration -- and it is an ordinary 30s beat from here on. A zero in the table still means
+    /// the empty-cell case, because the sheet has done it once and can do it again.
     ///
     /// THE BLACKOUT STRADDLES THE JOIN rather than sitting after it. The sheet writes 收黑 as a
     /// row of its own running 06:40-06:50, but a fade placed to start at the cut is clear at the
@@ -51,6 +48,18 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// AND THE S1 ROOM HAS TO STAY UP FOR ALL OF IT. The activation clip holding Beat_S1/Content
     /// was cut to end at 580 when S1 was two beats long; left alone it would switch the S1 world
     /// off in the middle of S1-4. It is widened to cover the whole section.
+    ///
+    /// EVERYTHING AFTER S1 HANGS OFF S1'S END, which is why this tool moves clips it did not
+    /// author. The back half was chained to 11:49 when that was where S1 finished; the second
+    /// sheet pushed S1 out to 12:47 and left the handover behind, so the S1 → S2 blackout fired
+    /// in the middle of S1-5, S2's content switched on over S1-6, and S2-1 ran underneath both.
+    /// A section boundary is a relationship, not a number typed twice.
+    ///
+    /// SO IT IS ANCHORED, NOT SHIFTED. The whole block after S1 is moved as one rigid piece, by
+    /// the gap between where it currently starts and where S1 now ends -- durations, gaps and
+    /// overlaps inside it are preserved exactly, nothing is re-chained, and once it is in place
+    /// the gap is zero and a second run moves nothing. A delta would have been simpler to write
+    /// and would double every time somebody ran this twice.
     ///
     /// IDEMPOTENT. Every clip is anchored to an absolute time from the table rather than shifted
     /// by a delta, and holders, tracks and sub-timelines are found before they are made, so a
@@ -66,6 +75,24 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_TimelineFolder = "Assets/_Timeline";
         const string k_FadeTrack = "Fade";
 
+        /// <summary>
+        /// The one clip on the Fade track this tool owns, by name.
+        ///
+        /// THE FADE TRACK CARRIES EVERY SECTION'S BLACKOUT, not just this one. It gained a
+        /// 黑場 S1 → S2 while this tool was away, and an earlier version of this method retimed
+        /// every clip it found on the track -- so the S1 → S2 blackout was dragged on top of
+        /// this one at 395s, which is the sort of damage that looks like nothing until the show
+        /// runs. Where S1 hands over to S2 is S2's boundary to decide, not this tool's, so it
+        /// moves the one blackout it is responsible for and says what it left alone.
+        /// </summary>
+        const string k_FadeClip = "黑場 Onboarding → S1";
+
+        /// <summary>
+        /// The blackout at S1's other end. Its length is left as whoever authored it set it --
+        /// how long a blackout lasts is a decision, and only where it sits is derivable.
+        /// </summary>
+        const string k_FadeOutClip = "黑場 S1 → S2";
+
         /// <summary>How long the blackout is, from the 收黑 row. It is centred on S1's start.</summary>
         const double k_FadeDuration = 10d;
 
@@ -77,21 +104,21 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// <c>duration</c> of zero means the beat is on the order but has no length yet, so its
         /// track is left without a clip.
         ///
-        /// 門與草原 GETS NO TIMELINE ASSET YET, and the existing S1_2.playable is not it. That
-        /// file carries the old S1-2 吊掛的家's two VO files out of _Audio/old, and the beat
-        /// replacing it is a different beat; inheriting a dead beat's audio by name would be a
-        /// worse kind of wrong than having nothing. A beat with no agreed length has nothing to
-        /// author into a timeline anyway, so its holder and track wait and the asset is made
-        /// when the length lands.
+        /// S1_2.playable IS NOT THE ONE THAT WAS THERE. The file that held that name carried the
+        /// old S1-2 吊掛的家's two VO files out of _Audio/old -- 98s and 111s of them, which do
+        /// not fit a 30s beat and were never for this one. Nothing referenced it, so it moved to
+        /// _Timeline/old/ the way superseded audio goes to _Audio/old, and 門與草原 gets a clean
+        /// asset at the name its beat is called. Inheriting a dead beat's voice-over by name
+        /// would have been the quiet kind of wrong.
         /// </summary>
         static readonly (string id, string label, string holder, string sub, double start, double duration)[] k_S1 =
         {
-            ("S1-1", "S1-1 窗內的世界",   "Beat_S1-1", "S1_1", 400d, 170d),
-            ("S1-2", "S1-2 門與草原",     "Beat_S1-2", null,   570d,   0d),
-            ("S1-3", "S1-3 黑白房子群",   "Beat_S1-3", "S1_3", 570d,  36d),
-            ("S1-4", "S1-4 紅色剖開房子", "Beat_S1-4", "S1_4", 606d,  43d),
-            ("S1-5", "S1-5 霧氣之房左",   "Beat_S1-5", "S1_5", 649d,  22d),
-            ("S1-6", "S1-6 霧氣之房右",   "Beat_S1-6", "S1_6", 671d,  38d),
+            ("S1-1", "S1-1 窗內的世界",   "Beat_S1-1", "S1_1", 400d, 180d),
+            ("S1-2", "S1-2 門與草原",     "Beat_S1-2", "S1_2", 580d,  30d),
+            ("S1-3", "S1-3 黑白房子群",   "Beat_S1-3", "S1_3", 610d,  44d),
+            ("S1-4", "S1-4 紅色剖開房子", "Beat_S1-4", "S1_4", 654d,  53d),
+            ("S1-5", "S1-5 霧氣之房左",   "Beat_S1-5", "S1_5", 707d,  22d),
+            ("S1-6", "S1-6 霧氣之房右",   "Beat_S1-6", "S1_6", 729d,  38d),
         };
 
         [MenuItem("Tools/Show/Retime S1 to the new script")]
@@ -183,8 +210,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
             double s1End = 0d;
             foreach (var beat in k_S1) s1End = System.Math.Max(s1End, beat.start + beat.duration);
 
-            Fade(timeline, boundary);
+            Fade(timeline, k_FadeClip, boundary, k_FadeDuration);
             HoldS1Room(timeline, boundary, s1End);
+            HandOverToS2(timeline, boundary, s1End);
 
             EditorUtility.SetDirty(timeline);
             EditorUtility.SetDirty(director);
@@ -324,8 +352,16 @@ namespace CompositeBody.Multiplayer.EditorSetup
             EditorUtility.SetDirty(director);
         }
 
-        /// <summary>The blackout: the sheet's length, centred on the join.</summary>
-        static void Fade(TimelineAsset timeline, double boundary)
+        /// <summary>
+        /// Centre one named blackout on a boundary, and leave every other clip on the Fade track
+        /// exactly where it is. A <paramref name="length"/> of zero keeps the clip's own.
+        ///
+        /// BY NAME, AND ONLY BY NAME. The Fade track carries a blackout per section handover and
+        /// an earlier version of this swept all of them onto S1's front door, which put the
+        /// S1 → S2 blackout 300s out of place and reported success. A clip this cannot find is a
+        /// warning, never a guess at which of the others was meant.
+        /// </summary>
+        static void Fade(TimelineAsset timeline, string clipName, double boundary, double length)
         {
             foreach (TrackAsset track in timeline.GetRootTracks())
             {
@@ -333,18 +369,116 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 foreach (TimelineClip clip in track.GetClips())
                 {
-                    double start = boundary - k_FadeDuration * 0.5d;
-                    Debug.Log($"[RetimeS1] 收黑 '{clip.displayName}': " +
+                    if (clip.displayName != clipName) continue;
+
+                    double width = length > 0d ? length : clip.duration;
+                    double start = boundary - width * 0.5d;
+
+                    if (System.Math.Abs(clip.start - start) < 0.001d &&
+                        System.Math.Abs(clip.duration - width) < 0.001d)
+                    {
+                        Debug.Log($"[RetimeS1] 收黑 '{clipName}' is already centred on " +
+                                  $"{boundary:F1}s at {clip.start:F1}-{clip.start + clip.duration:F1}s.");
+                        return;
+                    }
+
+                    Debug.Log($"[RetimeS1] 收黑 '{clipName}': " +
                               $"{clip.start:F1}-{clip.start + clip.duration:F1}s -> " +
-                              $"{start:F1}-{start + k_FadeDuration:F1}s, centred on {boundary:F1}.");
+                              $"{start:F1}-{start + width:F1}s, centred on {boundary:F1}.");
                     clip.start = start;
-                    clip.duration = k_FadeDuration;
+                    clip.duration = width;
+                    return;
                 }
+
+                Debug.LogWarning($"[RetimeS1] no clip called '{clipName}' on the '{k_FadeTrack}' " +
+                                 "track, so that blackout was not retimed. Nothing else on the " +
+                                 "track was moved in its place; rename the clip, or fix the " +
+                                 "constant here, rather than letting this guess.");
                 return;
             }
 
-            Debug.LogWarning($"[RetimeS1] no '{k_FadeTrack}' track on the timeline; the blackout " +
-                             "across the Onboarding -> S1 join was not retimed.");
+            Debug.LogWarning($"[RetimeS1] no '{k_FadeTrack}' track on the timeline, so '{clipName}' " +
+                             "was not retimed.");
+        }
+
+        /// <summary>Whether a track is one of S1's own, by the ids in <see cref="k_S1"/>.</summary>
+        static bool IsS1Track(TrackAsset track)
+        {
+            foreach ((string id, _, _, _, _, _) in k_S1)
+                if (track.name.StartsWith(id + " ")) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Put everything after S1 back against S1's end, as one rigid block.
+        ///
+        /// The block is every Control clip that is neither one of S1's nor part of the onboarding
+        /// in front of it, plus the activation clips and hold markers that sit with it. It moves
+        /// by the gap between where it starts now and where S1 now ends, so a run that finds it
+        /// already there moves nothing.
+        /// </summary>
+        static void HandOverToS2(TimelineAsset timeline, double s1Start, double s1End)
+        {
+            var block = new List<TimelineClip>();
+            double anchor = double.MaxValue;
+
+            foreach (TrackAsset track in timeline.GetRootTracks())
+            {
+                if (track is not ControlTrack || IsS1Track(track)) continue;
+                foreach (TimelineClip clip in track.GetClips())
+                {
+                    if (clip.start < s1Start) continue;   // the onboarding beats, in front of S1
+                    block.Add(clip);
+                    anchor = System.Math.Min(anchor, clip.start);
+                }
+            }
+
+            if (block.Count == 0)
+            {
+                Debug.Log("[RetimeS1] nothing after S1 on the running order to hand over to.");
+                return;
+            }
+
+            double delta = s1End - anchor;
+            if (System.Math.Abs(delta) < 0.001d)
+            {
+                Debug.Log($"[RetimeS1] the {block.Count} beat(s) after S1 already start where S1 " +
+                          $"ends, at {s1End:F1}s.");
+            }
+            else
+            {
+                foreach (TimelineClip clip in block) clip.start += delta;
+
+                int rooms = 0;
+                foreach (TrackAsset track in timeline.GetRootTracks())
+                {
+                    if (track is not ActivationTrack) continue;
+                    foreach (TimelineClip clip in track.GetClips())
+                    {
+                        if (clip.start < anchor - 0.001d) continue;
+                        clip.start += delta;
+                        rooms++;
+                    }
+                }
+
+                int holds = 0;
+                if (timeline.markerTrack != null)
+                {
+                    foreach (IMarker marker in timeline.markerTrack.GetMarkers())
+                    {
+                        if (marker.time < anchor - 0.001d) continue;
+                        marker.time += delta;
+                        holds++;
+                    }
+                }
+
+                Debug.Log($"[RetimeS1] moved the {block.Count} beat(s) after S1 by " +
+                          $"{delta:+0.0;-0.0}s -- they started at {anchor:F1}s and S1 now ends at " +
+                          $"{s1End:F1}s -- along with {rooms} activation clip(s) and {holds} hold " +
+                          "marker(s). Durations and every gap inside the block are unchanged.");
+            }
+
+            Fade(timeline, k_FadeOutClip, s1End, 0d);
         }
 
         /// <summary>
@@ -411,27 +545,44 @@ namespace CompositeBody.Multiplayer.EditorSetup
         }
 
         /// <summary>
-        /// The running order as it now stands, so the overlap with S2 is on the record rather
-        /// than a surprise in the Timeline window. S2's own times are not this tool's business.
+        /// The running order as it now stands, with every blackout in its place, so an overlap
+        /// is on the record rather than a surprise in the Timeline window.
         /// </summary>
         static void Report(TimelineAsset timeline)
         {
-            var rows = new List<(double start, double end, string name)>();
+            var rows = new List<(double start, double end, string name, bool beat)>();
+            double reach = 0d;
+
             foreach (TrackAsset track in timeline.GetRootTracks())
             {
-                if (track is not ControlTrack) continue;
                 foreach (TimelineClip clip in track.GetClips())
-                    rows.Add((clip.start, clip.start + clip.duration, track.name));
+                {
+                    if (track is ControlTrack)
+                    {
+                        rows.Add((clip.start, clip.start + clip.duration, track.name, true));
+                        reach = System.Math.Max(reach, clip.start + clip.duration);
+                    }
+                    else if (track is PlayableTrack && track.name == k_FadeTrack)
+                    {
+                        rows.Add((clip.start, clip.start + clip.duration, clip.displayName, false));
+                    }
+                }
             }
+
             rows.Sort((a, b) => a.start.CompareTo(b.start));
 
-            double reach = 0d;
-            foreach ((double start, double end, string name) in rows)
+            // Only beats can overlap each other meaningfully; a blackout straddling a boundary is
+            // the whole point of a blackout and must not be reported as a clash.
+            double covered = 0d;
+            foreach ((double start, double end, string name, bool beat) in rows)
             {
-                string flag = start < reach - 0.001d ? "   <- overlaps what is above it" : "";
+                string flag = beat && start < covered - 0.001d ? "   <- overlaps the beat above it" : "";
                 Debug.Log($"[RetimeS1]   {start,6:F1} -> {end,6:F1}  {name}{flag}");
-                reach = System.Math.Max(reach, end);
+                if (beat) covered = System.Math.Max(covered, end);
             }
+
+            Debug.Log($"[RetimeS1] the show now runs {reach:F0}s = " +
+                      $"{(int)reach / 60}m{(int)reach % 60:00}s.");
         }
 
         static GameObject FindInScene(Scene scene, string name)

@@ -215,6 +215,37 @@ namespace CompositeBody.Experience
             // Awake, not OnEnable, so a beat that is switched off still has a debug row rather
             // than looking like an interaction nobody built.
             InteractionDebug.Register(this);
+
+            // A ROW PER WAVE'S GATE, so the wait has a name before anyone has touched anything.
+            // The row above says what THIS machine can see -- "1/2 held here" -- and that is all
+            // a machine knows, because the other player's grab is a flag on the server. These
+            // rows read that flag, so they are the only place that says WHICH player the beat is
+            // still waiting on, which is the question staff actually have when the room has gone
+            // quiet and nothing is arriving.
+            //
+            // WITHOUT THEM THE ROW ARRIVES LATE AND UNNAMED. InteractionDebugPanel registers a
+            // bare row for every task it finds in the progress list, but a task is only IN that
+            // list once somebody has reported it -- so before the first grab there was no row at
+            // all, and after it one labelled 'o1.hold.1'. The gate that holds up the whole chain
+            // was the one thing in the panel with no name on it.
+            //
+            // NOT FOR A PAUSE. Its taskId is authored like any other wave's, but nothing ever
+            // reports it -- it speaks when the lines before it are done. A gate row for it would
+            // sit unreported for the whole beat and read as the thing that was stuck.
+            //
+            // AND NO timeoutSource, because these gates have no clock. The fallback that
+            // eventually clears O-1 belongs to O1DropSequence and counts down against the BEAT;
+            // nothing rescues a wave whose object one player never picked up. A row that showed
+            // a countdown here would promise a release that is not coming.
+            for (int i = 0; i < m_Waves.Length; i++)
+            {
+                Wave wave = m_Waves[i];
+                if (wave == null || wave.isPause) continue;
+                if (string.IsNullOrWhiteSpace(wave.taskId)) continue;
+
+                InteractionDebug.RegisterTaskGate(
+                    wave.taskId, $"O-1 {Label(wave, i)} -- both players are holding theirs");
+            }
         }
 
         void OnEnable()

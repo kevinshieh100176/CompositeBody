@@ -42,20 +42,23 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_PrefabPath = "Assets/_Scenes/Onboarding.prefab";
 
         /// <summary>
-        /// THE GRABS HAVE NO CUE OF THEIR OWN, and the two that had one are gone. This used to
-        /// be S0-1-A and S0-1-B, a sound per player on the first pick-up; they are no longer in
-        /// _Audio, and this builder has been failing on the missing file ever since -- RETURNING
-        /// BEFORE ITS SAVE, so the orbit hand-over and the footprints it also does were silently
-        /// not being applied either. That is the real cost of asking for a file that the running
-        /// order has moved on from.
+        /// ONE CUE PER PLAYER, ON EVERY OBJECT THEY PICK UP. 「兩人必須都抓住物件才會觸發VO，要不然只
+        /// 有音效」 -- the speech answers BOTH players having their object in hand, which is
+        /// <see cref="O1GrabWaves"/>; a single player's grab is the half that gets 音效 and
+        /// nothing else. That sound is the only confirmation a grab registered at all, and
+        /// without it a player whose partner has not caught up is stood in a silent room with
+        /// no way to tell a gate waiting on someone else from a grab that simply missed.
         ///
-        /// 「兩人必須都抓住物件才會觸發VO，要不然只有音效」: the speech answers BOTH players having their
-        /// object in hand, which is O1GrabWaves, and a single player's grab is now the quiet
-        /// half. So the stations are wired with no clip and <see cref="O1GrabStation"/> is
-        /// silent -- which is what BuildO1Timeline used to do by clearing the cue after the
-        /// fact. A per-player sound effect, if one is ever recorded, goes here.
+        /// THEY LIVE IN _Audio/old BECAUSE THE RUNNING ORDER MOVED ON, not because they were
+        /// retired: S0-1-A and S0-1-B are still imported, still in LFS, and still the only
+        /// per-player grab sounds that exist. This was null for a while, and before that it
+        /// named a path in _Audio that no longer held them -- which made the builder FAIL AND
+        /// RETURN BEFORE ITS SAVE, so the orbit hand-over and the footprints it also does were
+        /// silently not being applied either. If these ever move again, move the paths with
+        /// them; do not blank them.
         /// </summary>
-        const string k_Cue = null;
+        const string k_CueA = "Assets/_Audio/old/S0-1-A.wav";
+        const string k_CueB = "Assets/_Audio/old/S0-1-B.wav";
 
         [MenuItem("Tools/O-1/Wire Grab Cues and Payoff")]
         public static void Run()
@@ -86,9 +89,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 // on both players having theirs.
                 foreach (BuildO1Grab.Prop prop in BuildO1Grab.Props)
                 {
-                    if (!WireStation(root.transform, prop.StationA, PlayerRole.Player1, k_Cue))
+                    if (!WireStation(root.transform, prop.StationA, PlayerRole.Player1, k_CueA))
                         return;
-                    if (!WireStation(root.transform, prop.StationB, PlayerRole.Player2, k_Cue))
+                    if (!WireStation(root.transform, prop.StationB, PlayerRole.Player2, k_CueB))
                         return;
                 }
 
@@ -172,7 +175,33 @@ namespace CompositeBody.Multiplayer.EditorSetup
             var existing = station.GetComponent<O1GrabStation>();
             if (existing != null)
             {
-                Debug.Log($"[O1Payoff] '{name}' already has a grab station; left as it is.");
+                // THE CUE IS RE-APPLIED; THE REST OF THE STATION IS LEFT ALONE. Everything else
+                // on a station that already exists may have been placed or tuned by hand, but
+                // the cue is this builder's to own -- and returning here without touching it
+                // meant that every station built while the path was null or missing stayed
+                // silent however often this was run, under a log line saying it was fine.
+                var had = new SerializedObject(existing);
+                SerializedProperty cue = had.FindProperty("m_Cue");
+
+                if (cue.objectReferenceValue == clip)
+                {
+                    Debug.Log($"[O1Payoff] '{name}' already has a grab station and its cue; " +
+                              "left as it is.");
+                    return true;
+                }
+
+                cue.objectReferenceValue = clip;
+                had.ApplyModifiedPropertiesWithoutUndo();
+
+                // The component copies m_Cue onto its source in Awake, so this only matters for
+                // what the prefab SHOWS -- which is the whole reason the source is wired here
+                // rather than left to Awake.
+                var hadSource = had.FindProperty("m_Source").objectReferenceValue as AudioSource;
+                if (hadSource == null) hadSource = station.GetComponent<AudioSource>();
+                if (hadSource != null) hadSource.clip = clip;
+
+                Debug.Log($"[O1Payoff] '{name}' already had a grab station; its cue is now " +
+                          $"{(clip != null ? $"{clip.name} ({clip.length:F1}s)" : "none")}.");
                 return true;
             }
 

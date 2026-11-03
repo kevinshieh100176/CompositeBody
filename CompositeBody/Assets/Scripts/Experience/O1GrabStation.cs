@@ -73,6 +73,14 @@ namespace CompositeBody.Experience
         /// <summary>Whether this object has been picked up yet, on this machine.</summary>
         public bool grabbed => m_Grabbed;
 
+        /// <summary>
+        /// Whether it is in a hand <em>right now</em>, which is a different question from
+        /// <see cref="grabbed"/>: that one latches on the first pick-up and never clears, because
+        /// it exists to say the cue has played. This one goes back down when the object is put
+        /// down, and it is what the TouchDesigner stream sends.
+        /// </summary>
+        public bool held => m_Grab != null && m_Grab.isSelected;
+
         public PlayerRole owner => m_Owner;
 
         /// <summary>The cue this object plays when it is picked up.</summary>

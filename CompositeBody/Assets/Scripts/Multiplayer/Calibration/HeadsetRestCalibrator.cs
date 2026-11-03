@@ -16,32 +16,58 @@ using XRNode = UnityEngine.XR.XRNode;
 namespace CompositeBody.Multiplayer
 {
     /// <summary>
-    /// Calibrates the shared origin from the headset itself, sitting in the cradle on the
-    /// physical marker, with staff pressing a key on that headset's own PC.
+    /// Which of the two procedures a machine's calibration is read from. They trade the same
+    /// thing against each other: how much of the measurement is a person.
+    /// </summary>
+    public enum CalibrationSource
+    {
+        /// <summary>
+        /// Somebody wears the headset, stands on the marker and faces the way it points. Needs
+        /// nothing measured and nothing built, so it works the first time it is asked -- and the
+        /// person's stance and facing are inside the answer, worth a handspan and some degrees.
+        /// </summary>
+        WornOnHead = 0,
+
+        /// <summary>
+        /// The headset sits in a cradle on the marker and reports its own pose. Accurate to the
+        /// headset's own tracking with nobody estimating anything, and good for nothing at all
+        /// until the cradle's rest pose has been measured against the real cradle.
+        /// </summary>
+        RestingInCradle = 1,
+    }
+
+    /// <summary>
+    /// Calibrates this machine's shared origin against the physical marker, with staff pressing
+    /// a key on that headset's own PC. It drives either of the two procedures -- see
+    /// <see cref="CalibrationSource"/> -- and everything around the measurement, the arming, the
+    /// settling, the refusals, the hand correction, is the same either way.
     ///
-    /// WHY THIS AND NOT THE PINCH. <see cref="HandPinchCalibrator"/> takes its position from a
-    /// fingertip and its facing from the player's head, and the head is the weak half: asking
-    /// someone to "face the marker" is good to perhaps five degrees, which is a quarter of a
-    /// metre of disagreement between the two headsets at three metres away, and it grows with
-    /// distance. A headset resting in a cradle reports its own pose to the accuracy of its own
-    /// tracking, nobody is estimating anything, and the person involved only presses a key.
+    /// THE NAME IS OLDER THAN THE CHOICE. This started as the cradle-only calibrator and keeps
+    /// its name because the scene refers to the component by it; <see cref="m_Source"/> is what
+    /// says which procedure a machine is actually set up for, and it defaults to the worn one.
     ///
-    /// ARM, THEN CAPTURE WHEN IT SETTLES, rather than sampling on the keystroke. Staff place the
-    /// headset and walk to the PC, or press first and then place it; either way the pose at the
-    /// instant of the press may be a hand still letting go. The key arms a capture and the
-    /// capture happens on the first frame the headset has been still long enough to believe,
-    /// which also means both orders of operation give the same answer.
+    /// ARM, THEN CAPTURE WHEN IT SETTLES, rather than sampling on the keystroke. This is what
+    /// makes a key on the PC usable at all for the worn procedure: nobody can press a key on the
+    /// desk and stand on the marker at the same time, so the key arms a capture, staff walk over,
+    /// and it fires on the first frame the pose has held still long enough to believe. For the
+    /// cradle it does the same job for the same reason -- the pose at the instant of the press
+    /// may be a hand still letting go -- and it makes both orders of operation, place-then-press
+    /// and press-then-place, give the same answer.
     ///
     /// WHAT IT REFUSES, because reducing human error is mostly about the errors a key press can
     /// still make: a headset that is not tracking (taken off, proximity sensor asleep, Link
-    /// dropped), a headset that is still moving, and a headset whose tilt does not match the
-    /// cradle, which is what being on someone's head looks like from here. A refusal moves
-    /// nothing and says why.
+    /// dropped), a headset that is still moving, and a pose that does not look like the procedure
+    /// it was asked for -- on a head when the cradle was expected, or in the cradle when a head
+    /// was. A refusal moves nothing and says why.
     /// </summary>
     public class HeadsetRestCalibrator : MonoBehaviour, IDebugInteraction
     {
         [SerializeField, Tooltip("The marker whose rest pose the headset is lined up with. Found in the scene if left empty.")]
         CalibrationPoint m_Marker;
+
+        [Header("What it reads")]
+        [SerializeField, Tooltip("Which procedure this machine is set up for. Worn: the player stands on the marker facing its forward -- works straight away, and their stance is inside the answer. Cradle: the headset rests in the cradle and reports itself -- more accurate, but refuses until HeadsetRest has been measured against the real cradle.")]
+        CalibrationSource m_Source = CalibrationSource.WornOnHead;
 
         [Header("Trigger")]
         [SerializeField, Tooltip("The key staff press on this machine's own PC. Each PC calibrates its own headset.")]
@@ -57,11 +83,17 @@ namespace CompositeBody.Multiplayer
         [SerializeField, Min(0.05f), Tooltip("How long the headset has to hold still before the pose is believed.")]
         float m_StillSeconds = 0.4f;
 
-        [SerializeField, Min(0.0001f), Tooltip("Per-frame movement, in metres, under which the headset counts as still. Tracking noise on a headset lying on the floor is a few tenths of a millimetre.")]
+        [SerializeField, Min(0.0001f), Tooltip("CRADLE ONLY. Per-frame movement, in metres, under which the headset counts as still. Tracking noise on a headset lying on the floor is a few tenths of a millimetre.")]
         float m_StillPosition = 0.001f;
 
-        [SerializeField, Min(0.001f), Tooltip("Per-frame rotation, in degrees, under which the headset counts as still.")]
+        [SerializeField, Min(0.001f), Tooltip("CRADLE ONLY. Per-frame rotation, in degrees, under which the headset counts as still.")]
         float m_StillAngle = 0.15f;
+
+        [SerializeField, Min(0.0001f), Tooltip("WORN ONLY. Per-frame movement, in metres, under which a headset on a head counts as still. Far looser than the cradle figure, and it has to be: see the note on stillPosition.")]
+        float m_WornStillPosition = 0.006f;
+
+        [SerializeField, Min(0.001f), Tooltip("WORN ONLY. Per-frame rotation, in degrees, under which a headset on a head counts as still.")]
+        float m_WornStillAngle = 0.8f;
 
         [Header("Reporting")]
         [SerializeField, Tooltip("StoryProgressManager task to report once this headset has calibrated, so a timeline hold can wait for both of them. Empty reports nothing.")]
@@ -104,8 +136,11 @@ namespace CompositeBody.Multiplayer
             m_Armed = true;
             m_ArmedUntil = Time.unscaledTime + m_ArmSeconds;
             m_LastFailure = null;
-            Utils.Log("[HeadsetRest] Armed. Place the headset in the cradle; it calibrates as soon as " +
-                      $"it is still. Gives up in {m_ArmSeconds:0}s.");
+            Utils.Log(m_Source == CalibrationSource.WornOnHead
+                ? "[HeadsetRest] Armed. Stand on the marker facing the way it points; it calibrates " +
+                  $"as soon as you hold still. Gives up in {m_ArmSeconds:0}s."
+                : "[HeadsetRest] Armed. Place the headset in the cradle; it calibrates as soon as " +
+                  $"it is still. Gives up in {m_ArmSeconds:0}s.");
         }
 
         public void Cancel()
@@ -159,6 +194,24 @@ namespace CompositeBody.Multiplayer
         }
 
         /// <summary>
+        /// What counts as still, which is a different number for each procedure and not a tweak
+        /// of one figure.
+        ///
+        /// A PERSON CANNOT HOLD A MILLIMETRE. The cradle thresholds are tracking noise on a
+        /// headset lying on something solid -- a few tenths of a millimetre a frame. Quiet
+        /// standing is livelier than that by an order of magnitude: breathing alone moves a head
+        /// several millimetres, and the window resets to zero on any single frame over the limit,
+        /// so thirty consecutive good frames at the cradle's figure is not something a standing
+        /// person produces. Left shared, the worn capture would simply never fire, and it would
+        /// look like the key had done nothing.
+        /// </summary>
+        float stillPosition =>
+            m_Source == CalibrationSource.WornOnHead ? m_WornStillPosition : m_StillPosition;
+
+        float stillAngle =>
+            m_Source == CalibrationSource.WornOnHead ? m_WornStillAngle : m_StillAngle;
+
+        /// <summary>
         /// How still the headset has been, measured frame to frame on the camera.
         ///
         /// Run every frame rather than only while armed, so the stillness is already established
@@ -186,7 +239,7 @@ namespace CompositeBody.Multiplayer
             float moved = Vector3.Distance(cam.position, m_PreviousPosition);
             float turned = Quaternion.Angle(cam.rotation, m_PreviousRotation);
 
-            m_StillFor = moved <= m_StillPosition && turned <= m_StillAngle
+            m_StillFor = moved <= stillPosition && turned <= stillAngle
                 ? m_StillFor + Time.unscaledDeltaTime
                 : 0f;
 
@@ -238,7 +291,12 @@ namespace CompositeBody.Multiplayer
 
         void Capture()
         {
-            if (!m_Marker.CalibrateFromHeadsetRest(out string failure))
+            string failure;
+            bool calibrated = m_Source == CalibrationSource.WornOnHead
+                ? m_Marker.CalibrateFromWornHeadset(out failure)
+                : m_Marker.CalibrateFromHeadsetRest(out failure);
+
+            if (!calibrated)
             {
                 // Stays armed. The refusals this hits are all states staff can fix where they
                 // are standing -- take the headset off, turn it round, let go of it -- and
@@ -315,6 +373,19 @@ namespace CompositeBody.Multiplayer
         {
             if (!canNudge) return;
             if (!TryGetCamera(out Transform cam)) return;
+
+            // CORRECTING BY HAND CALLS OFF A PENDING CAPTURE, and this is not tidiness: an armed
+            // capture fires on the first frame the headset holds still, which is moments after
+            // staff stop clicking these buttons. It then lines the origin up with the cradle and
+            // clears the correction -- so without this, a correction made while a capture was
+            // still armed would silently undo itself a second later, and it would look like the
+            // panel had thrown the work away rather than the calibrator having completed.
+            if (m_Armed)
+            {
+                m_Armed = false;
+                Utils.Log("[HeadsetRest] Hand correction started, so the pending capture is " +
+                          "cancelled -- it would have overwritten this.");
+            }
 
             DropStaleSnapshot();
             RememberBeforeNudge();
@@ -465,7 +536,9 @@ namespace CompositeBody.Multiplayer
 
         public string debugId => "calibration.rest";
 
-        public string debugLabel => "Calibrate origin (headset in the cradle)";
+        public string debugLabel => m_Source == CalibrationSource.WornOnHead
+            ? "Calibrate origin (worn, standing on the marker)"
+            : "Calibrate origin (headset in the cradle)";
 
         public DebugInteractionScope debugScope => DebugInteractionScope.LocalMachine;
 
@@ -504,7 +577,10 @@ namespace CompositeBody.Multiplayer
             {
                 if (!isActiveAndEnabled) return "component disabled -- the key does nothing";
                 if (m_Marker == null) return "no CalibrationPoint in the scene";
-                if (m_Armed) return m_LastFailure ?? "armed, waiting for a still headset";
+                if (m_Armed)
+                    return m_LastFailure ?? (m_Source == CalibrationSource.WornOnHead
+                        ? "armed -- stand on the marker, face its forward, hold still"
+                        : "armed, waiting for a still headset in the cradle");
 
                 string detail = m_LastFailure != null
                     ? "last attempt refused: " + m_LastFailure
@@ -543,6 +619,12 @@ namespace CompositeBody.Multiplayer
 
         /// <summary>The key staff press on this machine, for a panel to name rather than guess.</summary>
         public Key calibrateKey => m_CalibrateKey;
+
+        /// <summary>
+        /// Which procedure this machine is set up for, so a panel can tell staff what to do with
+        /// the headset rather than make them remember which build they are standing in front of.
+        /// </summary>
+        public CalibrationSource source => m_Source;
 
         public bool DebugCanFire(DebugFireTarget target)
         {
