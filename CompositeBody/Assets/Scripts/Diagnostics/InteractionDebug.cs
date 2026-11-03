@@ -119,7 +119,17 @@ namespace CompositeBody.Diagnostics
     /// </summary>
     public static class InteractionDebug
     {
-        /// <summary>Command line switch that makes the Fire buttons live in a player build.</summary>
+        /// <summary>
+        /// Command line switch that LOCKS the Fire buttons, for a build an audience is in front
+        /// of. The default is unlocked -- see <see cref="fireEnabled"/>.
+        /// </summary>
+        public const string LockArgument = "-lockinteractiondebug";
+
+        /// <summary>
+        /// What used to turn the buttons ON in a player build. Kept because it costs a line and
+        /// because every note, shortcut and habit that says to pass it should keep working now
+        /// that it is the default; passing it does nothing.
+        /// </summary>
         public const string FireArgument = "-debuginteractions";
 
         static readonly List<IDebugInteraction> s_Entries = new();
@@ -133,29 +143,39 @@ namespace CompositeBody.Diagnostics
         public static event Action onEntriesChanged;
 
         /// <summary>
-        /// Whether the panel's buttons may actually do anything.
+        /// Whether the panel's buttons may actually do anything. LIVE EVERYWHERE unless the
+        /// build was told to lock them.
         ///
-        /// THE LIST IS ALWAYS READABLE AND THE BUTTONS ARE NOT. A show that stalls in front of an
-        /// audience is exactly when staff need to see which half of a gate is missing, so
-        /// stripping this from the venue build would remove the tool at the moment it is worth
-        /// having. Firing a gate by clicking a stray button during a performance, on the other
-        /// hand, is a thing that must not be one misclick away -- so in a build the buttons need
-        /// the switch above, and in the editor they are simply live.
+        /// THIS USED TO BE THE OTHER WAY ROUND, and the reasoning was about an audience: a gate
+        /// fired by a stray click during a performance must not be one misclick away, so a
+        /// player build needed -debuginteractions and the editor was simply live. What that
+        /// costs is paid every day and by the people least able to afford it -- both machines in
+        /// this piece are rehearsal machines for months before they are venue machines, the
+        /// panel is how a two-machine stall is diagnosed at all, and a build launched by
+        /// double-clicking the exe (which is how anyone actually starts it) showed a full list
+        /// of interactions above a row of dead buttons and a line of small print. The failure
+        /// mode of the old default was a test session lost to "why is nothing happening"; the
+        /// failure mode of this one is a misclick, and the lock is still there for the night it
+        /// matters.
+        ///
+        /// THE LIST IS ALWAYS READABLE EITHER WAY. A show that stalls in front of an audience is
+        /// exactly when staff need to see which half of a gate is missing, so nothing here ever
+        /// strips the panel itself from a build.
         /// </summary>
         public static bool fireEnabled
         {
             get
             {
-                s_FireEnabled ??= Application.isEditor || HasFireArgument();
+                s_FireEnabled ??= !HasArgument(LockArgument);
                 return s_FireEnabled.Value;
             }
         }
 
-        static bool HasFireArgument()
+        static bool HasArgument(string flag)
         {
             foreach (string arg in Environment.GetCommandLineArgs())
             {
-                if (string.Equals(arg, FireArgument, StringComparison.OrdinalIgnoreCase)) return true;
+                if (string.Equals(arg, flag, StringComparison.OrdinalIgnoreCase)) return true;
             }
             return false;
         }

@@ -7,15 +7,20 @@ using CompositeBody.Multiplayer;
 namespace CompositeBody.Experience
 {
     /// <summary>
-    /// O-1 鬼的控制, end to end: each player puts their objects into their box, one line of
-    /// speech answers each one, and the beat is over when both of them have finished AND the
-    /// last line has stopped sounding.
+    /// O-1 鬼的控制, end to end: each player is shown their objects one at a time, a line of
+    /// speech answers both of them holding each one, and the beat is over when the last line has
+    /// stopped sounding -- 「都有抓過就好」.
     ///
     /// THE GATE MOVED UP HERE FROM THE BOX. <see cref="O1DropBox"/> used to report
     /// beat.O1_Control the moment something landed in it, which was right while there was one
     /// object each. With several per player, and with a line of speech owed to every one of them,
     /// "this player is done" is a count and a silent speaker -- neither of which a single box can
     /// see. So the boxes report to this, and this reports to the show.
+    ///
+    /// AND THEN IT STOPPED WAITING FOR THEM. The cartons are still the instruction and still
+    /// make their sound; what they no longer do is hold the show up. A lamp put down beside the
+    /// carton rather than in it used to cost three minutes of a frozen room, waiting out the
+    /// fallback with the beat already over -- see <see cref="Finished"/>.
     ///
     /// ONE SPEAKER, ONE QUEUE, NEVER TWO AT ONCE. 「如果前一個音檔還沒播完下一個物件就被放入 音檔不會
     /// 同時撥放 而是等候前一個音檔撥放完後接著撥放」. Two people putting things away at the same time
@@ -102,6 +107,13 @@ namespace CompositeBody.Experience
                                           "gate so one player cannot strand the other.")]
         float m_Timeout = 180f;
 
+        [SerializeField, Tooltip("Also wait for every box to be filled before reporting. OFF: " +
+                                 "the beat ends when every object has been held and the last " +
+                                 "line has been heard -- 「都有抓過就好」. The boxes are still " +
+                                 "there and still what the players are asked to do; the show " +
+                                 "simply no longer stops for them.")]
+        bool m_WaitForBoxes;
+
         readonly Queue<AudioClip> m_Queue = new();
 
         bool m_Reported;
@@ -139,7 +151,9 @@ namespace CompositeBody.Experience
             if (string.IsNullOrWhiteSpace(m_TaskId)) return;
 
             TaskGateInteraction gate = InteractionDebug.RegisterTaskGate(
-                m_TaskId, "O-1 -- both players fill every box, and the lines finish");
+                m_TaskId, m_WaitForBoxes
+                    ? "O-1 -- both players fill every box, and the lines finish"
+                    : "O-1 -- both players hold every object, and the lines finish");
 
             if (gate != null) gate.timeoutSource = () => secondsUntilTimeout;
         }
@@ -266,28 +280,45 @@ namespace CompositeBody.Experience
         }
 
         /// <summary>
-        /// 「當兩個玩家都把所有該擺放的物件都放完 音檔也都撥放完畢後」 -- but only this machine's half of
-        /// it. The other player's half is reported from their own machine, and the show's hold
-        /// is what waits for both.
+        /// What this machine's player still owes the beat -- which is 「都有抓過就好」: every
+        /// object held, every line heard. The other player's half is reported from their own
+        /// machine, and the show's hold is what waits for both.
+        ///
+        /// THE BOXES NO LONGER GATE THE SHOW. They used to: 「當兩個玩家都把所有該擺放的物件都放完
+        /// 音檔也都撥放完畢後」. What that cost is three minutes of a frozen room every time
+        /// somebody put a lamp down beside the carton instead of in it -- the hold simply sat
+        /// there until the 180-second fallback let it go, with the beat already over and nothing
+        /// left to watch. Holding every object is the thing the beat actually asks of the two
+        /// players, and a wave cannot be heard until both of them have done it, so the chain of
+        /// lines already says everything the gate needs to know.
+        ///
+        /// PUTTING THEM AWAY IS STILL THE INSTRUCTION, and the cartons, the drops and their
+        /// sounds are untouched -- it is only the show's waiting that stopped depending on them.
+        /// Turn <see cref="m_WaitForBoxes"/> back on for the old behaviour.
         /// </summary>
         bool Finished()
         {
             bool any = false;
+            bool boxesFull = true;
 
             foreach (Side side in m_Sides)
             {
                 if (side == null || !Mine(side)) continue;
                 any = true;
-                if (!side.done) return false;
+                if (!side.done) boxesFull = false;
             }
 
             if (!any) return false;
 
-            // AND NOT UNTIL THE CHAIN OF LINES HAS RUN OUT. The speech moved to
-            // <see cref="O1GrabWaves"/> -- both players holding an object is what answers them
-            // now -- and those lines are long: a player who fills their box early would
-            // otherwise clear the hold, and the dissolve-out would run over the top of a line
-            // the two of them are listening to together.
+            // AND WITH NO CHAIN WIRED, THE BOXES ARE ALL THERE IS. A beat whose waves component
+            // is missing would otherwise report the moment the show reached the gate, which is
+            // the one way this could fail open.
+            if ((m_WaitForBoxes || m_Waves == null) && !boxesFull) return false;
+
+            // AND NOT UNTIL THE CHAIN OF LINES HAS RUN OUT, which is now the whole condition.
+            // 「vo撥放完成才會解鎖停頓點」: the lines are long and the two players listen to them
+            // together, so a gate that cleared on the last grab would start the dissolve-out
+            // over the top of the line that grab had just earned them.
             //
             // FINISHED, NOT SPEAKING. 「播放結束timeline才會繼續到o-2」 is about the LAST line, and
             // between two waves the speaker is silent for the gap -- long enough for a frame of
@@ -346,7 +377,9 @@ namespace CompositeBody.Experience
         public string debugId => "o1.sequence";
 
         // ASCII, because the panel's font has no CJK glyphs; see AvatarFormationSync.debugLabel.
-        public string debugLabel => "O-1 -- fill the boxes, hear the lines";
+        public string debugLabel => m_WaitForBoxes
+            ? "O-1 -- fill the boxes, hear the lines"
+            : "O-1 -- hold every object, hear the lines";
 
         public DebugInteractionScope debugScope => DebugInteractionScope.LocalMachine;
 
@@ -386,7 +419,18 @@ namespace CompositeBody.Experience
                 ? $", speaking ({m_Queue.Count} queued)"
                 : m_Queue.Count > 0 ? $", {m_Queue.Count} line(s) queued" : "";
 
-            state.detail = wired == 0 ? "no boxes wired" : $"{filled}/{wired} in the box{lines}";
+            // WHAT IT IS WAITING FOR FIRST, then the boxes as information. A row that led with
+            // "1/2 in the box" while the beat no longer waits for boxes is the kind of thing
+            // that sends staff to fetch a lamp when the show is actually waiting on a line.
+            string waiting = m_Waves != null && !m_Waves.finished
+                ? "waiting on the lines"
+                : "lines done";
+
+            string boxes = wired == 0
+                ? "no boxes wired"
+                : $"{filled}/{wired} in the box" + (m_WaitForBoxes ? "" : " (not required)");
+
+            state.detail = $"{waiting}{lines}; {boxes}";
             return state;
         }
 

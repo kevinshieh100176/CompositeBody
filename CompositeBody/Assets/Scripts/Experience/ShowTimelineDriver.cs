@@ -301,6 +301,51 @@ namespace CompositeBody.Experience
         /// </summary>
         public int sceneNumber => SceneIndexAt(showTime) + 1;
 
+        /// <summary>
+        /// When a scene runs, by its code -- 'O-0', 'O-1', 'S2-3'.
+        ///
+        /// EXISTS SO NOBODY KEEPS A SECOND COPY OF THE RUNNING ORDER. O1PayoffTestRunner did,
+        /// as four serialized seconds-into-the-show fields, and when O-1 grew from 90 seconds to
+        /// 170 every one of them pointed into the wrong part of the piece: the test scrubbed to
+        /// 218s looking for a hold that is now at 301s, waited a minute and reported eleven
+        /// failures that were all the same stale number. The table is on the timeline asset and
+        /// this is how to read it.
+        /// </summary>
+        public bool TryGetScene(string code, out float start, out float end)
+        {
+            start = 0f;
+            end = 0f;
+            if (string.IsNullOrWhiteSpace(code)) return false;
+
+            foreach ((double from, double to, string id) in m_Scenes)
+            {
+                if (!string.Equals(id, code, System.StringComparison.OrdinalIgnoreCase)) continue;
+                start = (float)from;
+                end = (float)to;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Where the show stops for a gate, by task id, or false when no marker gates it. The
+        /// other half of <see cref="TryGetScene"/>: a hold is authored as a marker and moves
+        /// with the beat it belongs to.
+        /// </summary>
+        public bool TryGetHold(string taskId, out float at)
+        {
+            at = 0f;
+            if (string.IsNullOrWhiteSpace(taskId)) return false;
+
+            foreach ((double time, string id) in m_Holds)
+            {
+                if (id != taskId) continue;
+                at = (float)time;
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>The script's code for the scene playing now ('O-0', 'S2-3'), or empty.</summary>
         public string sceneCode
         {

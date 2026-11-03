@@ -42,23 +42,29 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_PrefabPath = "Assets/_Scenes/Onboarding.prefab";
 
         /// <summary>
-        /// ONE CUE PER PLAYER, ON EVERY OBJECT THEY PICK UP. 「兩人必須都抓住物件才會觸發VO，要不然只
-        /// 有音效」 -- the speech answers BOTH players having their object in hand, which is
-        /// <see cref="O1GrabWaves"/>; a single player's grab is the half that gets 音效 and
-        /// nothing else. That sound is the only confirmation a grab registered at all, and
-        /// without it a player whose partner has not caught up is stood in a silent room with
-        /// no way to tell a gate waiting on someone else from a grab that simply missed.
+        /// THE GRAB IS SILENT, AND THAT IS THE DECISION -- not a path somebody forgot to fill.
+        /// 「兩人必須都抓住物件才會觸發VO，要不然只有音效」 asks for 音效 on a single player's grab, and
+        /// the speech for both of them holding one, which is <see cref="O1GrabWaves"/>. The
+        /// second half is built; the first is not, because no 音效 for it exists.
         ///
-        /// THEY LIVE IN _Audio/old BECAUSE THE RUNNING ORDER MOVED ON, not because they were
-        /// retired: S0-1-A and S0-1-B are still imported, still in LFS, and still the only
-        /// per-player grab sounds that exist. This was null for a while, and before that it
-        /// named a path in _Audio that no longer held them -- which made the builder FAIL AND
-        /// RETURN BEFORE ITS SAVE, so the orbit hand-over and the footprints it also does were
-        /// silently not being applied either. If these ever move again, move the paths with
-        /// them; do not blank them.
+        /// WHAT USED TO BE HERE WAS NOT A SOUND EFFECT. These named _Audio/old/S0-1-A.wav and
+        /// S0-1-B.wav, which are the opening seconds of the same recording as the retired
+        /// O-1AB_紀念日快樂 -- a line of SPEECH. So every grab laid an old voice-over take over
+        /// the wave line that was already playing, and both players heard it twice: once on the
+        /// lamp and once on the jacket, because all four stations shared the two clips. That is
+        /// what the room was actually hearing, and it is why these are null.
+        ///
+        /// WHICH MEANS A LONE GRAB NOW CONFIRMS ITSELF VISUALLY ONLY -- the object follows the
+        /// hand, and the debug panel has the gate row. If a real 音效 is ever cut for this, put
+        /// its path here and the wiring below needs no other change. Do not reach back into
+        /// _Audio/old for one: everything in there is dialogue.
+        ///
+        /// A NAMED PATH THAT IS MISSING STILL FAILS, and the failure returns before this
+        /// builder's save, so the orbit hand-over and the footprints it also does would silently
+        /// not be applied either. Null is the one safe way to say "no cue"; a stale path is not.
         /// </summary>
-        const string k_CueA = "Assets/_Audio/old/S0-1-A.wav";
-        const string k_CueB = "Assets/_Audio/old/S0-1-B.wav";
+        const string k_CueA = null;
+        const string k_CueB = null;
 
         [MenuItem("Tools/O-1/Wire Grab Cues and Payoff")]
         public static void Run()

@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using CompositeBody.Experience;
 using CompositeBody.Multiplayer;
 using CompositeBody.PointClouds;
@@ -10,10 +13,18 @@ namespace CompositeBody.Diagnostics
 {
     /// <summary>
     /// Runs O-0's handover and the whole of O-1 in play mode: the 真人 dissolve on O-0's own
-    /// timeline and the player's body arrives after them, the objects and the boxes dissolve in,
-    /// the show waits at its hold, a grab does NOT clear it, putting the object in the box and
-    /// hearing the line out does, the room then dissolves out, and the orbit lights, the
-    /// footprints and S0-2 arrive in order in O-2.
+    /// timeline and the player's body arrives after them, the first wave's objects and the
+    /// cartons dissolve in, the show waits at its hold, and then the chain -- pick an object up,
+    /// both players holding it unlocks its line, put it in the box, the next object arrives when
+    /// that line is over -- until the last line has been heard and the gate clears. The room then
+    /// dissolves out, and the orbit lights, the footprints and S0-2 arrive in order in O-2.
+    ///
+    /// THE GRABS ARE REAL GRABS. A hand with no input behind it (<see cref="TestHand"/>) closes
+    /// on the object through the interaction manager, carries it to the carton and opens there,
+    /// which is the only way to see what the players actually complain about: that an object
+    /// floating with gravity off keeps any push it is given for ever, and that it has to become
+    /// an ordinary falling object the moment a hand opens on it. Calling Grab() proves the cue
+    /// fires and nothing else.
     ///
     /// NOBODY TOUCHES ANYTHING IN O-0 ANY MORE, which is the half of this that had no coverage
     /// at all: the beat used to hang on a player reaching out, and the three things it starts --
@@ -37,36 +48,46 @@ namespace CompositeBody.Diagnostics
         [SerializeField, Min(1f)] float m_StepTimeout = 60f;
 
         /// <summary>
-        /// Seconds before each point of interest to drop the show at, so the test is not four
-        /// minutes long. These are show time, and they follow BuildMainTimeline's running order:
-        /// O-0 runs 0-140s with its handover at 109-119s, O-1 runs 140-230s and holds at 221s,
-        /// and O-2 runs 230-350s.
+        /// THE RUNNING ORDER IS READ OFF THE TIMELINE, NOT WRITTEN DOWN HERE. This used to be
+        /// four serialized show times -- 10, 108, 140, 218 -- copied from BuildMainTimeline's
+        /// table, with the hold at 221s and O-2 at 230s as constants beside them. Every one of
+        /// them went stale the day O-1 grew from 90 seconds to 170: the test scrubbed to 218s
+        /// looking for a hold that is now at 301s, waited its minute out, and reported eleven
+        /// failures that were all the same wrong number. Worse, they were reported in the
+        /// language of the show -- "the show does not hold for the boxes" -- which is exactly
+        /// what a real fault would say.
         ///
-        /// THEY ARE A SECOND COPY OF THAT TABLE AND THEY WILL GO STALE. They were written for an
-        /// 80-second O-0 and stayed behind when the two 自白 made it 185 and then the second pair
-        /// was moved under the body's arrival to bring it back to 140 -- a run in between would
-        /// have scrubbed into the middle of the first 自白 and reported that the 真人 were not
-        /// dissolving. Nothing can read the durations from here (the runner is play-mode code and
-        /// BuildMainTimeline is an editor script), so when O-0's length moves, these move.
+        /// So the driver is asked where each beat is (<see cref="ShowTimelineDriver.TryGetScene"/>)
+        /// and where the hold marker sits (<see cref="ShowTimelineDriver.TryGetHold"/>), both of
+        /// which come off the asset the show actually plays. What is left below is OFFSETS -- how
+        /// far into a beat to look for something, which is a property of the beat's own shape and
+        /// does not move when the running order does.
         /// </summary>
-        [SerializeField] float m_ScrubToEmptyRoom = 10f;
+        [SerializeField, Min(0f), Tooltip("How far into O-0 to check the room is still empty. " +
+                                          "The 真人 arrive with the first 自白, not at the top.")]
+        float m_IntoO0 = 10f;
 
-        [SerializeField] float m_ScrubToHandover = 108f;
+        [SerializeField, Min(0f), Tooltip("Seconds before the END of O-0 that the 真人 are still " +
+                                          "whole. The handover is authored to land on the beat's " +
+                                          "last word -- the dissolve runs 109-119s of a 140s " +
+                                          "O-0 -- so it moves with the end, not with the start.")]
+        float m_WholeBeforeO0Ends = 31f;
 
-        [SerializeField] float m_ScrubToO1 = 140f;
+        [SerializeField, Min(0f), Tooltip("Seconds before the end of O-0 to sample the dissolve " +
+                                          "half-done.")]
+        float m_HalfGoneBeforeO0Ends = 26f;
 
-        [SerializeField] float m_ScrubTo = 218f;
+        [SerializeField, Min(1f), Tooltip("How far before the hold marker to drop the show in. " +
+                                          "Far enough to see it arrive, near enough not to wait.")]
+        float m_BeforeHold = 6f;
 
-        /// <summary>Where O-1's hold sits, and where O-2 starts. From the running order.</summary>
-        const float k_HoldAt = 221f;
-        const float k_O2At = 230f;
-        const float k_AfterO2 = 352f;
+        [SerializeField, Min(0f), Tooltip("How far into O-1 the dissolve-in is under way -- " +
+                                          "sampled mid-fade, where a curve that snaps from 0 to " +
+                                          "1 is caught.")]
+        float m_IntoDissolveIn = 4.5f;
 
-        /// <summary>
-        /// Halfway through the 真人 dissolve, which is where "they come apart rather than
-        /// vanishing" is sampled. O-0's dissolve runs 109-119s.
-        /// </summary>
-        const float k_HalfGoneAt = 114f;
+        /// <summary>The gate O-1 holds on. The one id the show and this test have to agree on.</summary>
+        const string k_Gate = "beat.O1_Control";
 
         /// <summary>
         /// Where AvatarFormation's authored m_BodyCurve leaves zero. Below this the player has a
@@ -84,6 +105,14 @@ namespace CompositeBody.Diagnostics
         Light[] m_Lamps;
         float[] m_FullIntensity;
         bool m_AudioWorks;
+
+        // The running order, as the show itself has it. Filled by ReadRunningOrder.
+        float m_O0Start, m_O0End, m_O1Start, m_O1End, m_O2Start, m_O2End, m_HoldAt;
+
+        /// <summary>The role this machine holds, which is the side of O-1 it can actually play.</summary>
+        PlayerRole m_Role = PlayerRole.Player1;
+
+        PlayerRole m_Absent => m_Role == PlayerRole.Player1 ? PlayerRole.Player2 : PlayerRole.Player1;
 
         IEnumerator Start()
         {
@@ -145,6 +174,13 @@ namespace CompositeBody.Diagnostics
             Check(Mathf.Abs(m_Driver.driftSeconds) < 0.25f,
                   $"it tracks the shared clock (drift {m_Driver.driftSeconds * 1000f:0}ms)");
 
+            // --- where the beats are, according to the show ---
+            if (!ReadRunningOrder()) yield break;
+
+            m_Role = InteractionDebug.LocalRole();
+            Check(m_Role != PlayerRole.Unassigned,
+                  $"this machine holds a role ({m_Role}), so its reports can be attributed");
+
             // --- find what the payoff is supposed to move ---
             if (!FindFixtures()) yield break;
 
@@ -155,14 +191,14 @@ namespace CompositeBody.Diagnostics
             yield return CheckDissolveIn();
 
             // --- the hold ---
-            m_Driver.ScrubTo(m_ScrubTo);
-            yield return WaitUntil(() => m_Driver.waitingOn == "beat.O1_Control",
-                                   "the show to reach the O-1 hold");
+            m_Driver.ScrubTo(m_HoldAt - m_BeforeHold);
+            yield return WaitUntil(() => m_Driver.waitingOn == k_Gate,
+                                   "the show to reach the O-1 hold", m_BeforeHold + 20f);
 
-            Check(m_Driver.waitingOn == "beat.O1_Control",
+            Check(m_Driver.waitingOn == k_Gate,
                   $"the show holds for the boxes at {m_Driver.showTime:0.0}s");
-            Check(Mathf.Abs(m_Driver.showTime - k_HoldAt) < 1.5f,
-                  $"at the authored {k_HoldAt:0}s, nine seconds before O-1 ends " +
+            Check(Mathf.Abs(m_Driver.showTime - m_HoldAt) < 1.5f,
+                  $"at its marker's {m_HoldAt:0}s, {m_O1End - m_HoldAt:0}s before O-1 ends " +
                   $"(measured {m_Driver.showTime:0.0}s)");
             Check(!m_Orbits.activeInHierarchy,
                   "and the orbits are still off WHILE it holds -- the hold is before the payoff");
@@ -171,206 +207,176 @@ namespace CompositeBody.Diagnostics
             if (heldSpeaker != null)
                 Check(!heldSpeaker.isPlaying, "and S0-2 is silent while the show waits");
 
-            // --- the grab, and then the box that clears it ---
-            O1GrabStation station = FindStation(PlayerRole.Player1);
-            if (!Check(station != null, "Player A's grab station is in the scene")) yield break;
+            // --- the chain: both players' objects, one wave at a time ---
+            //
+            // THIS IS NOT THE BEAT THE TEST WAS WRITTEN FOR. O-1 was one object each, picked up
+            // and put in a box, with the line owed to the drop. It is a chain now:
+            // 「玩家自己把自己的物品放進箱子後就會跑出下一樣自己的物品」 -- several objects each, a line
+            // answering BOTH players holding that wave's object, and the next wave arriving only
+            // once that line has been heard. So this follows the chain O1GrabWaves actually has
+            // rather than a copy of it written out here.
+            O1GrabWaves waves = FindWaves();
+            if (!Check(waves != null, "O-1 has a chain of waves to run")) yield break;
+            if (!Check(waves.waves.Count > 0, "with waves wired in it")) yield break;
 
-            O1DropBox box = FindBox(PlayerRole.Player1);
-            if (!Check(box != null, "and the box they are asked to put it in")) yield break;
-
-            Check(!station.grabbed, "nothing has been grabbed yet");
-            Check(!box.deposited, "and the box is empty");
-            Check(box.target != null, "the box knows which object belongs in it");
-
-            // THE GATE MOVED OFF THE BOX. With several objects each and a line of speech owed to
-            // every one of them, "this player is finished" is a count and a silent speaker,
-            // which one box cannot see -- so O1DropSequence reports it and carries the fallback.
-            // A box still reporting one would clear the hold on the first drop, with a line
-            // still sounding and the other object on the floor.
             O1DropSequence sequence = FindSequence();
-            if (!Check(sequence != null, "O-1 has a drop sequence to run the beat")) yield break;
-
+            if (!Check(sequence != null, "and a drop sequence to carry the gate")) yield break;
             Check(!sequence.reported, "which has not reported anything yet");
 
-            // Counted from the show ARRIVING here, so it starts a frame after the hold does --
-            // hence the wait rather than a bare read.
+            // ONE MACHINE CANNOT BE TWO PLAYERS, and the beat's lines wait on both of them.
+            // 「vo還是要兩個玩家都抓過自己的那個後才會出現」 is a flag per role on the server, and
+            // StoryProgressManager raises its unlock only when BOTH flags are in -- the solo
+            // accommodation is on IsTaskComplete, not on the unlock. So this plays its own side
+            // for real, through XRI, and forces the absent player's half of each wave the way
+            // the debug panel's 'as P2' does. What is under test is the local half: the grab,
+            // the physics, the box, the queue and the gate.
+            Log($"this machine plays {m_Role}; {m_Absent}'s halves are forced server-side.");
+
+            // Counted from the show ARRIVING at the gate, so it starts a frame after the hold.
             yield return WaitUntil(() => sequence.secondsUntilTimeout > 0f,
                                    "the sequence's fallback to start counting", 5f);
             Check(sequence.secondsUntilTimeout > 0f,
                   $"its fallback is counting down ({sequence.secondsUntilTimeout:0}s left)");
-            Check(box.secondsUntilTimeout < 0f,
-                  "and the box is not running a second countdown of its own");
 
-            // THE GRAB IS SILENT NOW. S0-1-A and S0-1-B played when the object was picked up;
-            // 「每當玩家把一個物件放進箱子後會按順序撥放音檔」 puts the speech on the drop, and leaving
-            // the old cue in place would be a line on the grab and another on the drop for the
-            // same object.
-            O1GrabStation other = FindStation(PlayerRole.Player2);
-            Check(other != null, "Player B's grab station is in the scene too");
-            Check(station.cue == null,
-                  $"Player A's object is silent on the grab (carries {(station.cue != null ? station.cue.name : "nothing")})");
-            Check(other == null || other.cue == null,
-                  $"and so is Player B's (carries {(other != null && other.cue != null ? other.cue.name : "nothing")})");
+            O1DropBox[] mine = BoxesFor(m_Role);
+            if (!Check(mine.Length > 0, $"{m_Role} has box watchers to fill ({mine.Length})"))
+                yield break;
 
-            station.Grab();
+            // THE SAME ANSWER FOR EVERY OBJECT, whichever answer it is. Whether a grab makes its
+            // own short sound has changed more than once -- the cue was on the grab, then the
+            // speech moved to the drop and the cue came off, then the speech moved to the wave
+            // and the cue came back, and it was taken off again while this test was being
+            // written. Asserting either state pins a decision that is not this file's to make;
+            // what IS a fault, and a silent one, is three stations carrying a cue and the fourth
+            // not -- the player who gets that object hears nothing and reports their headset.
+            CheckCuesAgree(waves);
 
-            Check(station.grabbed, "grabbing latches");
-            Check(sequence.queued == 0,
-                  "and says nothing -- the line is owed to the box, not the hand");
+            // A hand with no input behind it, so the grabs below take the real XRI path: the
+            // interactable's own select events, its dynamic attach, its rigidbody handling.
+            var hand = new GameObject("Test hand").AddComponent<TestHand>();
+            yield return null;                 // let it register with the interaction manager
 
-            // THE GRAB IS NOT THE GATE. The beat asks for the object to end up in the box, and a
-            // show that came off its hold the moment a hand closed would resume with a coat
-            // still swinging from it. Read a frame later, so a report sent on the grab's own
-            // frame would have landed by the time this looks.
-            yield return null;
-            Check(!StoryProgressManager.Instance.IsTaskComplete("beat.O1_Control"),
-                  "picking it up does NOT clear the gate on its own");
-            Check(m_Driver.waitingOn == "beat.O1_Control",
-                  "and the show is still holding, waiting for the box");
-
-            // THE OBJECT IS PUT IN, not the component told that it was. Calling Deposit() would
-            // prove the report works and nothing about the thing the player actually does --
-            // whether the trigger is where the box is, whether it is big enough to catch an
-            // object let go of over it, whether the settle time ever elapses. So the coat is
-            // moved into the mouth and dropped, and the box is left to notice by itself.
-            if (Check(box.mouth != null, "the box has a volume to be filled"))
+            for (int i = 0; i < waves.waves.Count; i++)
             {
-                // HELD IN THE OPENING AND LET GO OF, which is exactly what the box asks for:
-                // inside the volume, and not in a hand, for a quarter of a second.
-                //
-                // IT USED TO BE DROPPED FROM ABOVE, on the argument that this was the honest
-                // test. It was also a coin toss. The coat is 0.99 m along its longest axis and
-                // the carton's mouth is 0.84 m across, so it cannot go in -- it lands on the rim
-                // and slides, and which way it slides is physics noise: one run it grazed the
-                // trigger on the way past and filled the box, the next it bounced clear and came
-                // to rest on the floor 70 cm behind it. A test that passes or fails on that is
-                // not telling anyone anything about the show.
-                //
-                // Kinematic while it is placed, because the carton is a real mesh collider and
-                // an object moved inside its walls is thrown straight back out by the
-                // depenetration. Not kinematic is restored afterwards, so what the player then
-                // sees -- a coat draped over a carton rather than sitting in it -- is still
-                // whatever physics makes of it.
-                var body = box.target.GetComponent<Rigidbody>();
-                Bounds held = BoundsOf(box.target.transform);
-                Vector3 over = box.mouth.bounds.center;
+                O1GrabWaves.Wave wave = waves.waves[i];
+                if (wave == null) continue;
 
-                if (body != null)
+                string label = string.IsNullOrEmpty(wave.name) ? $"wave {i + 1}" : wave.name;
+
+                // A WAVE WITH NO OBJECTS IS THE PAUSE -- 「兩人要將紙箱封箱」, a line and nothing
+                // else, 「這裡先不要加互動」. Nothing reports it and there is nothing to pick up: it
+                // speaks as soon as the lines before it have been heard.
+                if (wave.isPause)
                 {
-                    body.linearVelocity = Vector3.zero;
-                    body.angularVelocity = Vector3.zero;
-                    body.isKinematic = true;
+                    Log($"  {label}: a pause -- a line with no object behind it.");
+                    yield return WaitUntil(() => wave.spoken, $"{label} to speak by itself", 30f);
+                    Check(wave.spoken,
+                          $"{label} speaks for itself once the lines before it are done");
+                    yield return WaitOutLine(waves, label);
+                    continue;
                 }
 
-                // The transform is moved by the offset its CENTRE OF MASS needs, not to the
-                // point itself: the pivot of these props is not in the middle of them, and the
-                // box tests the centre of mass.
-                Vector3 centre = body != null ? body.worldCenterOfMass : box.target.transform.position;
-                box.target.transform.position += over - centre;
+                O1GrabStation station = StationIn(wave, m_Role);
+                if (!Check(station != null, $"{label} has an object for {m_Role}")) continue;
 
-                // SAY WHAT THE DROP IS ACTUALLY DOING. A box that never fills is the one failure
-                // here with no visible cause -- the object may be resting on the rim, sleeping
-                // in mid-air, or inside a trigger that is switched off -- and all three read as
-                // "timed out waiting for the box to notice". These numbers are the difference
-                // between a bug report and a guess.
-                Bounds volume = box.mouth.bounds;
-                Log($"  drop: mouth {volume.center.ToString("F2")} +/- {volume.extents.ToString("F2")}, " +
-                    $"object {held.size.ToString("F2")} let go of at {over.ToString("F2")}");
+                // IT HAS TO BE HERE BEFORE IT CAN BE TAKEN. Every wave after the first fades in
+                // once the previous line has been heard, and PropPresence keeps the grab
+                // switched off until the object is substantially there.
+                if (i > 0)
+                {
+                    yield return WaitUntil(() => station.grab != null && station.grab.enabled,
+                                           $"{label}'s object to arrive for {m_Role}", 30f);
+                    Check(station.grab != null && station.grab.enabled,
+                          $"{label} arrives for {m_Role} and can be picked up");
+                }
+
+                if (!Check(station.grab != null, $"{station.name} has something to take hold of"))
+                    continue;
+
+                Check(!station.grabbed, $"{station.name} has not been picked up yet");
+
+
+                yield return CheckItFloats(station);
+
+                // --- a real grab, through XRI, not station.Grab() ---
+                if (!GrabWith(hand, station))
+                {
+                    Fail($"could not put a hand on {station.name}");
+                    continue;
+                }
 
                 yield return null;
 
-                // The trigger really does contain what this calls the middle of the box. It is
-                // worth asking, because every other assertion here is downstream of it: a mouth
-                // whose collider had been switched off, or whose volume had drifted away from
-                // the carton, would read exactly like a box nobody managed to fill.
-                Check(box.objectInside, "the object is inside the box's volume");
-                Check(!box.objectHeld, "and nobody is holding it");
+                Check(station.grab.isSelected, $"{station.name} is in a hand");
+                Check(station.grabbed, "and the grab latches");
 
-                // SAY WHAT IT IS DOING WHILE IT SETTLES. A box that never fills is otherwise the
-                // one failure here with no visible cause.
-                float started = Time.realtimeSinceStartup;
-                while (!box.deposited && Time.realtimeSinceStartup - started < 8f)
-                {
-                    yield return new WaitForSeconds(1f);
-                    Vector3 com = body != null ? body.worldCenterOfMass : box.target.transform.position;
-                    Log($"  drop +{Time.realtimeSinceStartup - started:0.0}s: " +
-                        $"com {com.ToString("F2")}, inside {box.objectInside}, " +
-                        $"held {box.objectHeld}, " +
-                        $"trigger {(box.mouth.enabled && box.mouth.gameObject.activeInHierarchy)}");
-                }
+                // Only when there is one to hear. A station with no clip is silent on purpose or
+                // not, and CheckCuesAgree above is where that is judged.
+                if (m_AudioWorks && station.cue != null)
+                    Check(station.cuePlaying, "and its cue sounds");
 
-                Check(box.deposited,
-                      "and letting go of it in there fills the box, with nothing else told");
+                // --- the other player, who is not in this run ---
+                Check(!wave.unlocked, $"{label} does not unlock on one player's grab");
 
-                // Back to a thing that falls, so the beat is left in the state it would really
-                // be in. The coat does not fit the carton, so this is where it drapes.
-                if (body != null) body.isKinematic = false;
+                StoryProgressManager.Instance.DebugSetRoleDone(wave.taskId, m_Absent, true);
+                yield return null;
+
+                // THE FLAGS AND THE CHAIN ARE TWO DIFFERENT QUESTIONS, and a test that only
+                // waited for the wave to unlock could not say which of them had gone wrong. The
+                // server holding both halves while the beat knows nothing about it is a listener
+                // that never attached -- O1GrabWaves subscribes to onTaskBeatUnlocked in
+                // OnEnable, which in MainScene races StoryProgressManager's own Awake.
+                Check(StoryProgressManager.Instance.IsTaskComplete(wave.taskId),
+                      $"the server holds both halves of '{wave.taskId}'");
+
+                yield return WaitUntil(() => wave.unlocked,
+                                       $"{label} to unlock once both halves are in", 10f);
+                Check(wave.unlocked, $"{label} unlocks when both players are holding theirs");
+                Check(waves.speaking, "and its line starts");
+
+                // --- and into the box, by letting go of it in there ---
+                O1DropBox box = BoxFor(mine, station);
+                if (!Check(box != null, $"a box watcher is waiting for {station.name}")) continue;
+                if (!Check(box.mouth != null, "which has a volume to be filled")) continue;
+                Check(!box.deposited, "and is empty");
+
+                yield return PutInBox(hand, station, box, label);
+                yield return WaitOutLine(waves, label);
             }
 
-            // 「音檔也都撥放完畢後」 -- the drop owes a line, and the beat is not over until it has
-            // been heard. ONE AudioSource and one queue, so two lines cannot sound at once by
-            // construction; what has to be checked is that the gate waits for the queue.
-            //
-            // Only when there is a device. With none, isPlaying is false on the frame Play() is
-            // called, so the queue drains instantly and there is no waiting to observe -- which
-            // is a fact about batch mode, not about the show.
-            if (m_AudioWorks)
-            {
-                Check(sequence.queued > 0 || sequence.speaking,
-                      "the drop owes a line, and it is queued rather than fired");
-                Check(!StoryProgressManager.Instance.IsTaskComplete("beat.O1_Control"),
-                      "and the gate does NOT clear while the line is still sounding");
+            Destroy(hand.gameObject);
 
-                // HOW LONG THE LINE ACTUALLY IS, rather than a budget guessed here. The only
-                // clip O-1 has at the moment is three minutes long -- longer than the beat --
-                // so waiting it out would time out every run and say nothing about the show.
-                AudioSource lineSpeaker = FindLineSpeaker();
-                float left = lineSpeaker != null && lineSpeaker.clip != null
-                    ? lineSpeaker.clip.length - lineSpeaker.time
-                    : 0f;
+            // NOT ON THE FRAME THE LAST CLIP RAN OUT. 'speaking' goes false the moment the
+            // clip's length is up, but the chain holds the gap after it before it lets go of the
+            // wave -- so asking here instead of waiting reported a beat that was half a second
+            // from being over as a beat that never finished.
+            yield return WaitUntil(() => waves.finished, "the chain to let go of its last line", 10f);
+            Check(waves.finished, "every one of O-1's lines has been heard");
 
-                if (left > 30f)
-                {
-                    Log($"  NOTE: the queued line is {lineSpeaker.clip.length:0}s long -- longer " +
-                        "than O-1 itself, so it cannot be heard out here. Stopping it by hand; " +
-                        "the gate has already been shown to be waiting on it.");
-                    lineSpeaker.Stop();
-                    left = 0f;
-                }
-
-                yield return WaitUntil(() => !sequence.speaking && sequence.queued == 0,
-                                       "the line to finish", left + 15f);
-                Check(!sequence.speaking && sequence.queued == 0,
-                      "and the queue drains when the speaker falls silent");
-            }
-            else
-            {
-                Log("  SKIPPED: no audio device in this run, so the queue cannot be heard out.");
-            }
-
+            // --- which is what the gate was waiting for ---
             yield return WaitUntil(() => sequence.reported, "the sequence to report its half", 20f);
-            Check(sequence.reported, "the sequence reports once the boxes are full and it is quiet");
+            Check(sequence.reported,
+                  "the sequence reports once every object has been held and the last line has stopped");
 
-            yield return WaitUntil(() => StoryProgressManager.Instance.IsTaskComplete("beat.O1_Control"),
-                                   "the gate to be satisfied");
+            yield return WaitUntil(() => StoryProgressManager.Instance.IsTaskComplete(k_Gate),
+                                   "the gate to be satisfied", 20f);
 
-            yield return WaitUntil(() => m_Driver.waitingOn == null, "the show to resume");
+            yield return WaitUntil(() => m_Driver.waitingOn == null, "the show to resume", 20f);
             Check(m_Driver.waitingOn == null, "the show comes off its hold");
 
             // --- and the room empties on the way out ---
             //
-            // THE HOLD IS NINE SECONDS BEFORE THE END OF O-1, not at it, so this tail is the
-            // dissolve-out. A hold left at the end of the beat would hand O-2 a room with two
-            // cartons and a wall of boxes still standing in it.
-            PropPresence[] props = FindObjectsByType<PropPresence>(FindObjectsInactive.Include,
-                                                                    FindObjectsSortMode.None);
+            // THE HOLD IS BEFORE THE END OF O-1, not at it, so this tail is the dissolve-out. A
+            // hold left at the end of the beat would hand O-2 a room with two cartons and a wall
+            // of boxes still standing in it.
+            PropPresence[] props = O1Props();
             Check(MinPresence(props) > 0.9f, "the props are still there as the hold clears");
 
             yield return WaitUntil(() => MaxPresence(props) < 0.01f,
                                    "the objects, boxes and wall to dissolve out", 25f);
             Check(MaxPresence(props) < 0.01f,
-                  $"they are gone by {m_Driver.showTime:0.0}s, before O-2 starts at {k_O2At:0}s");
-            Check(m_Driver.showTime < k_O2At + 1f,
+                  $"they are gone by {m_Driver.showTime:0.0}s, before O-2 starts at {m_O2Start:0}s");
+            Check(m_Driver.showTime < m_O2Start + 1f,
                   $"and the room is empty when O-2 begins (measured {m_Driver.showTime:0.0}s)");
 
             // --- the lights ---
@@ -380,13 +386,21 @@ namespace CompositeBody.Diagnostics
             Check(m_Orbits.activeInHierarchy, $"the orbit lights come up at {orbitsAt:0.0}s");
 
             // They are O-2's doing now, so they must not arrive before that beat does.
-            Check(orbitsAt >= k_O2At,
-                  $"inside O-2, which starts at {k_O2At:0}s (measured {orbitsAt:0.0}s)");
+            Check(orbitsAt >= m_O2Start,
+                  $"inside O-2, which starts at {m_O2Start:0}s (measured {orbitsAt:0.0}s)");
 
             // Mid-fade, so a clip that snapped them on is caught. Sampled a beat after the
             // activation rather than on the frame of it, where the ramp is legitimately at zero.
+            //
+            // AND THE CLOCK IS NAMED WHEN IT IS NOT SETTLED. These cues fire on the DIRECTOR's
+            // time and are measured against the SHARED clock, and the two disagree for a while
+            // after a hold: the driver nudges the director's speed in small steps rather than
+            // jumping it, deliberately, because a jump is audible. So a run where the gate
+            // cleared promptly can read the two-second gap as 1.26s and the two-second fade as
+            // already finished -- which is a measurement, not a fault, and must say so rather
+            // than being quietly widened into a tolerance that would hide a real snap.
             yield return new WaitForSeconds(1.2f);
-            Check(PartlyUp(), $"they fade in rather than snapping on ({Describe()})");
+            Check(PartlyUp(), $"they fade in rather than snapping on ({Describe()}){Settling()}");
 
             yield return WaitUntil(() => m_Footprints.activeInHierarchy,
                                    "the footprints to appear");
@@ -397,7 +411,7 @@ namespace CompositeBody.Diagnostics
             // being sampled on the next frame.
             float gap = printsAt - orbitsAt;
             Check(gap > 1.5f && gap < 2.6f,
-                  $"about two seconds after the lights (measured {gap:0.00}s)");
+                  $"about two seconds after the lights (measured {gap:0.00}s){Settling()}");
 
             var ring = m_Footprints.GetComponentInChildren<FootprintRing>(true);
             if (Check(ring != null, "a footprint ring is under it"))
@@ -438,11 +452,12 @@ namespace CompositeBody.Diagnostics
             //
             // AN ACTIVATION TRACK TURNS ITS TARGET OFF AGAIN once its director stops, unless the
             // track is told otherwise. These cues belong to O-2 but outlast it, so if that
-            // setting were wrong the orbits and the prints would vanish at 270s -- a beat
-            // boundary nobody is watching, three minutes after the thing that was checked.
-            m_Driver.ScrubTo(k_AfterO2);
-            yield return WaitUntil(() => m_Driver.showTime >= k_AfterO2,
-                                   "the show to pass the end of O-2");
+            // setting were wrong the orbits and the prints would vanish at the end of the beat
+            // -- a boundary nobody is watching, minutes after the thing that was checked.
+            float afterO2 = m_O2End + 2f;
+            m_Driver.ScrubTo(afterO2);
+            yield return WaitUntil(() => m_Driver.showTime >= afterO2,
+                                   $"the show to pass the end of O-2 at {m_O2End:0}s");
             yield return new WaitForSeconds(0.5f);
 
             Check(m_Orbits.activeInHierarchy, "the orbits are still up after O-2 ends");
@@ -479,8 +494,9 @@ namespace CompositeBody.Diagnostics
             // like when they were there from the first frame: the arrival composes with the
             // dissolve inside the component, so only the figures can say whether anyone is in
             // the room.
-            m_Driver.ScrubTo(m_ScrubToEmptyRoom);
-            yield return WaitUntil(() => m_Driver.showTime >= m_ScrubToEmptyRoom,
+            float emptyAt = m_O0Start + m_IntoO0;
+            m_Driver.ScrubTo(emptyAt);
+            yield return WaitUntil(() => m_Driver.showTime >= emptyAt,
                                    "the show to reach the top of O-0");
             yield return null;
 
@@ -488,9 +504,10 @@ namespace CompositeBody.Diagnostics
                   $"the room is empty at {m_Driver.showTime:0.0}s, before the 真人 arrive " +
                   $"(dissolve {FigureDissolve():0.00})");
 
-            m_Driver.ScrubTo(m_ScrubToHandover);
-            yield return WaitUntil(() => m_Driver.showTime >= m_ScrubToHandover,
-                                   "the show to reach O-0's handover");
+            float wholeAt = m_O0End - m_WholeBeforeO0Ends;
+            m_Driver.ScrubTo(wholeAt);
+            yield return WaitUntil(() => m_Driver.showTime >= wholeAt,
+                                   $"the show to reach O-0's handover at {wholeAt:0}s");
             yield return null;
 
             Check(handover.progress < 0.05f,
@@ -506,8 +523,9 @@ namespace CompositeBody.Diagnostics
             Check(!awakening.awakened, "and nobody has touched anything");
 
             // --- half gone ---
-            yield return WaitUntil(() => m_Driver.showTime >= k_HalfGoneAt,
-                                   "the 真人 to be half gone", 25f);
+            float halfGoneAt = m_O0End - m_HalfGoneBeforeO0Ends;
+            yield return WaitUntil(() => m_Driver.showTime >= halfGoneAt,
+                                   $"the 真人 to be half gone at {halfGoneAt:0}s", 25f);
 
             float half = handover.progress;
             Check(half > 0.2f && half < 0.8f,
@@ -552,11 +570,18 @@ namespace CompositeBody.Diagnostics
         /// MID-WAY AS WELL AS AT THE ENDS, because the failure this is really looking for is a
         /// presence that goes straight from 0 to 1 -- which is what a broken curve path, a
         /// missing Animator binding or an opaque material with no clipping all look like.
+        ///
+        /// AND ONLY THE FIRST WAVE ARRIVES HERE. This used to read every PropPresence in the
+        /// scene and wait for all of them to reach 1, which two changes made impossible: the
+        /// later waves' objects stand in the room at presence 0 until their own wave brings them
+        /// in, and other beats have props of their own with a presence of their own -- one of
+        /// them sitting at 1 made "the room is empty when O-1 starts" fail against a room that
+        /// was empty. So the group is O-1's own, and the objects that have not been cued yet are
+        /// taken out of it and checked for the opposite.
         /// </summary>
         IEnumerator CheckDissolveIn()
         {
-            PropPresence[] props = FindObjectsByType<PropPresence>(FindObjectsInactive.Include,
-                                                                   FindObjectsSortMode.None);
+            PropPresence[] props = O1Props();
             if (!Check(props.Length >= 3,
                        $"O-1's props, cartons and box wall each have a PropPresence (found {props.Length})"))
                 yield break;
@@ -564,25 +589,39 @@ namespace CompositeBody.Diagnostics
             Check(FindWall() != null,
                   "Showcase_CB_boxes is in O-1's group, driven with the rest of them");
 
-            m_Driver.ScrubTo(m_ScrubToO1);
-            yield return WaitUntil(() => m_Driver.showTime >= m_ScrubToO1 + 0.4f,
+            PropPresence[] later = LaterWaveProps();
+            PropPresence[] first = Except(props, later);
+            Log($"O-1's presences: {props.Length}, of which {later.Length} belong to a later " +
+                $"wave and arrive when its line is over.");
+
+            m_Driver.ScrubTo(m_O1Start);
+            yield return WaitUntil(() => m_Driver.showTime >= m_O1Start + 0.4f,
                                    "the show to reach the start of O-1");
             yield return null;
 
             Check(MaxPresence(props) < 0.2f,
                   $"the room is empty when O-1 starts (highest presence {MaxPresence(props):0.00})");
 
-            yield return WaitUntil(() => m_Driver.showTime >= m_ScrubToO1 + 4.5f,
+            yield return WaitUntil(() => m_Driver.showTime >= m_O1Start + m_IntoDissolveIn,
                                    "the dissolve-in to be under way", 25f);
 
-            float mid = MaxPresence(props);
+            float mid = MaxPresence(first);
             Check(mid > 0.1f && mid < 0.95f,
                   $"they dissolve in rather than appearing (presence {mid:0.00} at {m_Driver.showTime:0.0}s)");
 
-            yield return WaitUntil(() => MinPresence(props) > 0.98f,
+            yield return WaitUntil(() => MinPresence(first) > 0.98f,
                                    "the dissolve-in to finish", 25f);
-            Check(MinPresence(props) > 0.98f,
-                  $"all {props.Length} of them are fully there by {m_Driver.showTime:0.0}s");
+            Check(MinPresence(first) > 0.98f,
+                  $"all {first.Length} of the first wave's are fully there by " +
+                  $"{m_Driver.showTime:0.0}s");
+
+            // 「兩個人都抓完燈後 vo跑完 外套才會出現」 -- the jacket is not in the room yet, and a
+            // later wave standing there from the start of the beat is the one failure the check
+            // above cannot see.
+            if (later.Length > 0)
+                Check(MaxPresence(later) < 0.02f,
+                      $"and the {later.Length} later-wave object(s) are not here yet " +
+                      $"(highest {MaxPresence(later):0.00})");
         }
 
         /// <summary>
@@ -647,25 +686,270 @@ namespace CompositeBody.Diagnostics
             return true;
         }
 
-        static O1GrabStation FindStation(PlayerRole role)
+        /// <summary>
+        /// Where each beat runs and where O-1 stops, asked of the show rather than remembered
+        /// here. Every one of these is a hard failure: a test that cannot find the beat it is
+        /// about would otherwise report the beat as broken.
+        /// </summary>
+        bool ReadRunningOrder()
         {
-            foreach (var station in FindObjectsByType<O1GrabStation>(FindObjectsInactive.Include,
-                                                                     FindObjectsSortMode.None))
+            bool ok = Check(m_Driver.TryGetScene("O-0", out m_O0Start, out m_O0End),
+                            "O-0 is on the running order");
+            ok &= Check(m_Driver.TryGetScene("O-1", out m_O1Start, out m_O1End), "and so is O-1");
+            ok &= Check(m_Driver.TryGetScene("O-2", out m_O2Start, out m_O2End), "and O-2");
+            ok &= Check(m_Driver.TryGetHold(k_Gate, out m_HoldAt),
+                        $"and a hold marker gates it on '{k_Gate}'");
+
+            if (ok)
+                Log($"running order: O-0 {m_O0Start:0}-{m_O0End:0}s, " +
+                    $"O-1 {m_O1Start:0}-{m_O1End:0}s holding at {m_HoldAt:0}s, " +
+                    $"O-2 {m_O2Start:0}-{m_O2End:0}s. Read off the timeline, not from this file.");
+
+            return ok;
+        }
+
+        static O1GrabWaves FindWaves() =>
+            FindFirstObjectByType<O1GrabWaves>(FindObjectsInactive.Include);
+
+        /// <summary>
+        /// Every station in a wave carries a cue, or none of them does. Which of the two is the
+        /// beat's business; the mixture is the fault, and it is one a single player hits and
+        /// nobody else can reproduce.
+        /// </summary>
+        void CheckCuesAgree(O1GrabWaves waves)
+        {
+            int withCue = 0, total = 0;
+            var names = new List<string>();
+
+            foreach (O1GrabWaves.Wave wave in waves.waves)
             {
-                if (station.owner == role) return station;
+                if (wave == null || wave.isPause) continue;
+
+                foreach (O1GrabWaves.Side side in wave.sides)
+                {
+                    if (side?.station == null) continue;
+                    total++;
+                    if (side.station.cue == null) continue;
+                    withCue++;
+                    names.Add(side.station.cue.name);
+                }
+            }
+
+            Check(withCue == 0 || withCue == total,
+                  withCue == 0
+                      ? $"every grab in the beat is silent ({total} objects, no cues)"
+                      : $"all {total} grabs carry a cue ({string.Join(", ", names)})");
+        }
+
+        /// <summary>This role's object in one wave, or null when the wave has none for them.</summary>
+        static O1GrabStation StationIn(O1GrabWaves.Wave wave, PlayerRole role)
+        {
+            foreach (O1GrabWaves.Side side in wave.sides)
+            {
+                if (side != null && side.role == role && side.station != null) return side.station;
             }
             return null;
         }
 
-        /// <summary>Every renderer under an object, in one box, in world space.</summary>
-        static Bounds BoundsOf(Transform thing)
+        /// <summary>Every box watcher belonging to one player. There is one per object now.</summary>
+        static O1DropBox[] BoxesFor(PlayerRole role)
         {
-            var renderers = thing.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0) return new Bounds(thing.position, Vector3.zero);
+            var found = new List<O1DropBox>();
+            foreach (var box in FindObjectsByType<O1DropBox>(FindObjectsInactive.Include,
+                                                              FindObjectsSortMode.None))
+            {
+                if (box.owner == role) found.Add(box);
+            }
+            return found.ToArray();
+        }
 
-            Bounds bounds = renderers[0].bounds;
-            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
-            return bounds;
+        /// <summary>
+        /// The watcher waiting for one particular object, matched on the object itself rather
+        /// than on its owner: one carton holds everything a player has to put away, so owner
+        /// alone names two of these and the first match is the wrong one half the time.
+        /// </summary>
+        static O1DropBox BoxFor(O1DropBox[] boxes, O1GrabStation station)
+        {
+            foreach (O1DropBox box in boxes)
+            {
+                if (box != null && box.target != null && box.target == station.grab) return box;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// O-1's own presences -- the group the beat's dissolve drives -- taken from under
+        /// whatever object carries the drop sequence. Scene-wide would also catch other beats'
+        /// props, which have a presence of their own and nothing to do with this one.
+        /// </summary>
+        static PropPresence[] O1Props()
+        {
+            O1DropSequence sequence = FindSequence();
+            if (sequence == null) return new PropPresence[0];
+
+            Transform root = sequence.transform;
+            return root.GetComponentsInChildren<PropPresence>(true);
+        }
+
+        /// <summary>
+        /// The presences that belong to a wave AFTER the first, which are the objects that have
+        /// not been cued in yet. Read off the chain's own wiring: a wave's side names the
+        /// PropPresence that fades its object in.
+        /// </summary>
+        static PropPresence[] LaterWaveProps()
+        {
+            var found = new List<PropPresence>();
+
+            O1GrabWaves waves = FindWaves();
+            if (waves == null) return found.ToArray();
+
+            for (int i = 1; i < waves.waves.Count; i++)
+            {
+                O1GrabWaves.Wave wave = waves.waves[i];
+                if (wave == null) continue;
+
+                foreach (O1GrabWaves.Side side in wave.sides)
+                {
+                    if (side?.appears != null && !found.Contains(side.appears))
+                        found.Add(side.appears);
+                }
+            }
+            return found.ToArray();
+        }
+
+        static PropPresence[] Except(PropPresence[] all, PropPresence[] remove)
+        {
+            var kept = new List<PropPresence>();
+            foreach (PropPresence p in all)
+            {
+                bool drop = false;
+                foreach (PropPresence r in remove)
+                {
+                    if (r == p) drop = true;
+                }
+                if (!drop) kept.Add(p);
+            }
+            return kept.ToArray();
+        }
+
+        /// <summary>
+        /// What the box tests: the centre of mass, not the pivot. These props have their origin
+        /// well outside the mesh -- the lamp's is most of a metre under it -- so moving the
+        /// transform to a point puts the object somewhere else entirely.
+        /// </summary>
+        static Vector3 CentreOf(O1GrabStation station) =>
+            station.body != null ? station.body.worldCenterOfMass : station.grab.transform.position;
+
+        /// <summary>
+        /// Close a hand on the object, through the interaction manager, which is the real path:
+        /// the interactable's select events fire, its dynamic attach is computed, and its
+        /// rigidbody is handed over and handed back by XRI rather than by this file.
+        ///
+        /// THE HAND GOES WHERE THE OBJECT IS FIRST. The grab uses a dynamic attach -- held where
+        /// the hand closed rather than snapped to the pivot -- so the offset between the two is
+        /// taken at this moment, and a hand that closed a metre away would carry the lamp a metre
+        /// away for the rest of the beat.
+        /// </summary>
+        bool GrabWith(TestHand hand, O1GrabStation station)
+        {
+            XRInteractionManager manager = hand.interactionManager;
+            if (manager == null || station.grab == null) return false;
+
+            hand.transform.position = CentreOf(station);
+            manager.SelectEnterUnconditionally(hand, station.grab);
+            return station.grab.isSelected;
+        }
+
+        /// <summary>
+        /// The object floats where it was put and CANNOT BE PUSHED -- which is the whole of
+        /// 「很容易碰到後 道具無重力的飛出去 不好抓」. A body with gravity off and no damping keeps
+        /// whatever push it is given for ever: there is nothing to pull it down and nothing to
+        /// slow it, so a hand or a knee catching the lamp on the way past sent it across the room
+        /// at walking pace and it never came back. O1GrabStation holds it kinematic until a hand
+        /// has opened on it; this is the assertion that it does.
+        /// </summary>
+        IEnumerator CheckItFloats(O1GrabStation station)
+        {
+            Rigidbody body = station.body;
+            if (!Check(body != null, $"{station.name} has a body to hold still")) yield break;
+
+            Check(body.isKinematic && !body.useGravity,
+                  $"{station.name} floats where it was put (kinematic {body.isKinematic}, " +
+                  $"gravity {body.useGravity})");
+
+            Vector3 before = station.grab.transform.position;
+            body.AddForce(new Vector3(0f, 0f, 25f), ForceMode.Impulse);
+            body.AddTorque(new Vector3(0f, 12f, 0f), ForceMode.Impulse);
+
+            yield return new WaitForSeconds(0.4f);
+
+            float moved = Vector3.Distance(station.grab.transform.position, before);
+            Check(moved < 0.005f, $"and a shove does not move it ({moved * 1000f:0} mm)");
+        }
+
+        /// <summary>
+        /// Carry the object to the box and let go of it in there, which is exactly what the box
+        /// asks for: inside the mouth, out of a hand, for a quarter of a second.
+        ///
+        /// CARRIED AND RELEASED, NOT DROPPED FROM ABOVE. The mouth is 0.84 m across and some of
+        /// these objects are longer than that, so an object dropped over the carton lands on the
+        /// rim and slides -- and which way it slides is physics noise. One run it grazed the
+        /// trigger on the way past and filled the box, the next it came to rest on the floor 70
+        /// cm behind it, and the test passed or failed on that.
+        /// </summary>
+        IEnumerator PutInBox(TestHand hand, O1GrabStation station, O1DropBox box, string label)
+        {
+            Bounds mouth = box.mouth.bounds;
+            hand.transform.position += mouth.center - CentreOf(station);
+
+            // Two frames: one for XRI to drive the object to the hand, one for the box's own
+            // reading of where it is.
+            yield return null;
+            yield return null;
+
+            Log($"  {label}: mouth {mouth.center.ToString("F2")} +/- {mouth.extents.ToString("F2")}, " +
+                $"object's centre of mass now {CentreOf(station).ToString("F2")}");
+
+            Check(box.objectInside, $"{station.name} is inside {box.owner}'s box");
+            Check(box.objectHeld, "and still in a hand, which is not a drop");
+            Check(!box.deposited, "so the box has not counted it yet");
+
+            // Cast, because the overload that takes the concrete types is the deprecated one and
+            // it is the better match for an XRBaseInteractor and an XRGrabInteractable.
+            hand.interactionManager.SelectExit((IXRSelectInteractor)hand,
+                                               (IXRSelectInteractable)station.grab);
+            yield return null;
+
+            // THE OTHER HALF OF THE HOLD: once a hand has opened on it, it is an ordinary object
+            // again. XRI restores the kinematic flag it found -- which is the hold's own -- so
+            // without that handover the object would hang in mid-air wherever the hand opened.
+            Check(station.released, $"{station.name} has been let go of");
+            Check(station.body == null || !station.body.isKinematic, "its body is dynamic again");
+            Check(station.body == null || station.body.useGravity,
+                  "with gravity on, so it falls rather than hanging where the hand opened");
+
+            yield return WaitUntil(() => box.deposited, $"{label} to settle in the box", 10f);
+            Check(box.deposited, "and letting go of it in there fills the box, with nothing else told");
+        }
+
+        /// <summary>
+        /// Wait for a wave's line to finish.
+        ///
+        /// THERE IS NO SHORTENING IT. The queue is timed off the length of the longest clip on
+        /// the show's own clock rather than off AudioSource.isPlaying -- deliberately, so a muted
+        /// run and a debug unlock still advance -- which means stopping the speaker here would
+        /// change nothing. O-1 is 170 seconds long for this reason: its three lines are 74, 34
+        /// and 37 seconds, and the beat has to hold them.
+        /// </summary>
+        IEnumerator WaitOutLine(O1GrabWaves waves, string label)
+        {
+            if (!waves.speaking) yield break;
+
+            float left = waves.secondsOfLineLeft;
+            Log($"  {label}: waiting its line out, {left:0}s left on the clock.");
+
+            yield return WaitUntil(() => !waves.speaking, $"{label}'s line to finish", left + 25f);
+            Check(!waves.speaking, $"{label}'s line finishes");
         }
 
         /// <summary>
@@ -697,19 +981,16 @@ namespace CompositeBody.Diagnostics
             FindFirstObjectByType<O1DropSequence>(FindObjectsInactive.Include);
 
         /// <summary>
-        /// The speaker the drop sequence talks through. Found by name, like S0-2's: an
-        /// AudioSource is the one thing in this beat that has to be reached from outside the
-        /// component that owns it, because how long a line has left is a property of the clip
-        /// and not of the queue.
+        /// A note for any timing read while the director is still catching up with the shared
+        /// clock -- empty once they agree. Appended to the measurements that are taken in that
+        /// window, so a number that looks wrong says why before anyone goes looking.
         /// </summary>
-        static AudioSource FindLineSpeaker()
+        string Settling()
         {
-            foreach (var source in FindObjectsByType<AudioSource>(FindObjectsInactive.Include,
-                                                                   FindObjectsSortMode.None))
-            {
-                if (source.name == "Cue O-1") return source;
-            }
-            return null;
+            float drift = m_Driver != null ? m_Driver.driftSeconds : 0f;
+            return Mathf.Abs(drift) < 0.05f
+                ? ""
+                : $" -- NOTE: the clock was still catching up after the hold, drift {drift * 1000f:0}ms";
         }
 
         static float MaxPresence(PropPresence[] props)
@@ -724,16 +1005,6 @@ namespace CompositeBody.Diagnostics
             float least = 1f;
             foreach (PropPresence p in props) least = Mathf.Min(least, p.presence);
             return props.Length == 0 ? 0f : least;
-        }
-
-        static O1DropBox FindBox(PlayerRole role)
-        {
-            foreach (var box in FindObjectsByType<O1DropBox>(FindObjectsInactive.Include,
-                                                             FindObjectsSortMode.None))
-            {
-                if (box.owner == role) return box;
-            }
-            return null;
         }
 
         /// <summary>
@@ -805,5 +1076,27 @@ namespace CompositeBody.Diagnostics
         void Fail(string what) => m_Failures.Add(what);
 
         static void Log(string message) => Debug.Log($"[PayoffTest] {message}");
+    }
+
+    /// <summary>
+    /// A hand with no input behind it, for a test that has to pick things up where there is no
+    /// headset and no controller.
+    ///
+    /// WHY NOT AN XRDirectInteractor: the input-driven interactors decide for themselves whether
+    /// they are selecting, from an input reader that reads nothing in batch mode -- so the
+    /// interaction manager would take the object straight back out of the hand on the frame
+    /// after it was put there. <see cref="XRBaseInteractor"/>'s own isSelectActive is simply
+    /// true, and keepSelectedTargetValid keeps a forced selection alive even though this hand
+    /// never finds a valid target of its own, which together is exactly a hand that holds what
+    /// it is told to hold until it is told to let go.
+    ///
+    /// AND IT IS STILL THE REAL PATH. The grab goes through the interaction manager, so the
+    /// interactable runs its own select-enter and select-exit: the dynamic attach, the rigidbody
+    /// being made kinematic and handed back, forceGravityOnDetach, O1GrabStation's cue and its
+    /// hold. Calling O1GrabStation.Grab() instead -- which is what this test used to do -- proves
+    /// that the cue fires and nothing at all about the physics the players complain about.
+    /// </summary>
+    class TestHand : XRBaseInteractor
+    {
     }
 }

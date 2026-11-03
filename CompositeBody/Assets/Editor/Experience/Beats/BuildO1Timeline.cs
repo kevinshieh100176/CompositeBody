@@ -487,7 +487,12 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// everything else in this beat does anyway, and they go back to writing depth and
         /// casting shadows like the solid things they are meant to be.
         /// </summary>
-        static bool MakePropClippable(string materialPath)
+        /// <remarks>
+        /// Public because SwapO1Garment prepares a material for a prop this builder has not been
+        /// run over yet, and the two must dissolve identically -- a second copy of the noise and
+        /// the clip setup would drift from this one the first time either was touched.
+        /// </remarks>
+        public static bool MakePropClippable(string materialPath)
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
             if (material == null)
@@ -865,9 +870,11 @@ namespace CompositeBody.Multiplayer.EditorSetup
             }
 
             // AND THE GRAB NO LONGER SPEAKS. S0-1-A and S0-1-B played when the object was picked
-            // up, which with the new audio would be a line on the grab and another on the drop
-            // for the same object. 「每當玩家把一個物件放進箱子後會按順序撥放音檔」 -- the drop is where
-            // the speech belongs, so the grab keeps its own row in the debug panel and is silent.
+            // up, which laid an old voice-over take over the wave line already playing -- twice
+            // per player, since all four stations shared the two clips. The speech belongs to
+            // O1GrabWaves, which waits for BOTH players; a lone grab keeps its row in the debug
+            // panel and is silent. WireO1Payoff agrees now -- its cue paths are null -- so this
+            // is a safety net rather than the two builders undoing each other's work.
             var grab = station.GetComponent<O1GrabStation>();
             if (grab != null)
             {

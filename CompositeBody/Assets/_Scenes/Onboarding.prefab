@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4513091953212375876}
   - component: {fileID: 4690397821781453643}
   m_Layer: 0
-  m_Name: Drop (Jacket)
+  m_Name: Drop (T-shirt)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1030,7 +1030,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 9e59d5e9ae8bfe644b3b2499d805575c, type: 3}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -1129,11 +1129,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.O1GrabStation
   m_Owner: 2
-  m_Cue: {fileID: 8300000, guid: 9e59d5e9ae8bfe644b3b2499d805575c, type: 3}
+  m_Cue: {fileID: 0}
   m_Source: {fileID: 1270827365427798620}
   m_Grab: {fileID: 0}
   m_Spatial: 1
   m_MaxDistance: 12
+  m_SteadyUntilReleased: 1
+  m_LinearDamping: 1.5
+  m_AngularDamping: 1
 --- !u!114 &6031974160805573029
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8279,7 +8282,7 @@ GameObject:
   - component: {fileID: 4366139796403638022}
   - component: {fileID: 7067194666881682856}
   m_Layer: 0
-  m_Name: Jacket
+  m_Name: T-shirt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8294,8 +8297,8 @@ Transform:
   m_GameObject: {fileID: 2774791878600334486}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.2685049, y: 0.77478284, z: 1.3}
-  m_LocalScale: {x: 1.0320512, y: 1.0320512, z: 1.0320512}
+  m_LocalPosition: {x: -1.265368, y: 1.2526708, z: 1.2969643}
+  m_LocalScale: {x: 0.691522, y: 0.691522, z: 0.691522}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3223531293664884583}
@@ -8307,7 +8310,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2774791878600334486}
-  m_Mesh: {fileID: -7118489557429230658, guid: a9bb20f39a2589443ac6b9a9d35fe914, type: 3}
+  m_Mesh: {fileID: 5760311709439383091, guid: 75c88d55c75b42a4cbfcfefd4213c5e5, type: 3}
 --- !u!23 &4432376507615362371
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -8333,7 +8336,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f16dadc5aa293894f924e4e4d09aed52, type: 2}
+  - {fileID: 2100000, guid: 8458b1c9b297f484d862150313ef8a7e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8378,7 +8381,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -7118489557429230658, guid: a9bb20f39a2589443ac6b9a9d35fe914, type: 3}
+  m_Mesh: {fileID: 5760311709439383091, guid: 75c88d55c75b42a4cbfcfefd4213c5e5, type: 3}
 --- !u!54 &4366139796403638022
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -8806,7 +8809,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 690a492b7b45b5741b611c29e6b0ca46, type: 3}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -8905,11 +8908,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.O1GrabStation
   m_Owner: 1
-  m_Cue: {fileID: 8300000, guid: 690a492b7b45b5741b611c29e6b0ca46, type: 3}
+  m_Cue: {fileID: 0}
   m_Source: {fileID: 8615038537542491476}
   m_Grab: {fileID: 0}
   m_Spatial: 1
   m_MaxDistance: 12
+  m_SteadyUntilReleased: 1
+  m_LinearDamping: 1.5
+  m_AngularDamping: 1
 --- !u!114 &3539033064324284063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21132,7 +21138,7 @@ GameObject:
   - component: {fileID: 3134227705261889551}
   - component: {fileID: 8171563814484754864}
   m_Layer: 0
-  m_Name: Jacket (Player A)
+  m_Name: T-shirt (Player A)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -21179,7 +21185,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 690a492b7b45b5741b611c29e6b0ca46, type: 3}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -21278,11 +21284,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.O1GrabStation
   m_Owner: 1
-  m_Cue: {fileID: 8300000, guid: 690a492b7b45b5741b611c29e6b0ca46, type: 3}
+  m_Cue: {fileID: 0}
   m_Source: {fileID: 792601753370205380}
   m_Grab: {fileID: 0}
   m_Spatial: 1
   m_MaxDistance: 12
+  m_SteadyUntilReleased: 1
+  m_LinearDamping: 1.5
+  m_AngularDamping: 1
 --- !u!114 &8171563814484754864
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26522,7 +26531,7 @@ GameObject:
   - component: {fileID: 6521768642857813299}
   - component: {fileID: 3153990627554353790}
   m_Layer: 0
-  m_Name: Jacket
+  m_Name: T-shirt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26537,8 +26546,8 @@ Transform:
   m_GameObject: {fileID: 5117843168582725771}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.2685049, y: 0.77478284, z: 1.3}
-  m_LocalScale: {x: 1.0320512, y: 1.0320512, z: 1.0320512}
+  m_LocalPosition: {x: 1.2716417, y: 1.2526708, z: 1.2969643}
+  m_LocalScale: {x: 0.691522, y: 0.691522, z: 0.691522}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6962292257933115278}
@@ -26550,7 +26559,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5117843168582725771}
-  m_Mesh: {fileID: -7118489557429230658, guid: a9bb20f39a2589443ac6b9a9d35fe914, type: 3}
+  m_Mesh: {fileID: 5760311709439383091, guid: 75c88d55c75b42a4cbfcfefd4213c5e5, type: 3}
 --- !u!23 &6631206644424888670
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -26576,7 +26585,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d1f4656748b3c2b4f9234515bf677a1b, type: 2}
+  - {fileID: 2100000, guid: 83cb4217b01991448bb9bb3dec2a63ba, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -26621,7 +26630,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -7118489557429230658, guid: a9bb20f39a2589443ac6b9a9d35fe914, type: 3}
+  m_Mesh: {fileID: 5760311709439383091, guid: 75c88d55c75b42a4cbfcfefd4213c5e5, type: 3}
 --- !u!54 &6521768642857813299
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -28560,7 +28569,7 @@ GameObject:
   - component: {fileID: 8468701228391465870}
   - component: {fileID: 5205866475980973168}
   m_Layer: 0
-  m_Name: Drop (Jacket)
+  m_Name: Drop (T-shirt)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -29822,7 +29831,7 @@ GameObject:
   - component: {fileID: 7409400796521698545}
   - component: {fileID: 2792365377743456241}
   m_Layer: 0
-  m_Name: Jacket (Player B)
+  m_Name: T-shirt (Player B)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -29869,7 +29878,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 9e59d5e9ae8bfe644b3b2499d805575c, type: 3}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -29968,11 +29977,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.O1GrabStation
   m_Owner: 2
-  m_Cue: {fileID: 8300000, guid: 9e59d5e9ae8bfe644b3b2499d805575c, type: 3}
+  m_Cue: {fileID: 0}
   m_Source: {fileID: 918808121007469566}
   m_Grab: {fileID: 0}
   m_Spatial: 1
   m_MaxDistance: 12
+  m_SteadyUntilReleased: 1
+  m_LinearDamping: 1.5
+  m_AngularDamping: 1
 --- !u!114 &2792365377743456241
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -31801,6 +31813,7 @@ MonoBehaviour:
   m_Waves: {fileID: 1534336668398355797}
   m_TaskId: beat.O1_Control
   m_Timeout: 180
+  m_WaitForBoxes: 0
 --- !u!114 &1534336668398355797
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -31827,7 +31840,7 @@ MonoBehaviour:
     ownLines: []
     unlocked: 0
     spoken: 0
-  - name: Jacket
+  - name: T-shirt
     taskId: o1.hold.2
     sides:
     - role: 1

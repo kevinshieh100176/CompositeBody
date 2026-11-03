@@ -29,8 +29,10 @@ namespace CompositeBody.Diagnostics
     /// component to register itself: those are read off the beat sheet and off whatever the
     /// server already has flags for.
     ///
-    /// Hidden by default and toggled with a key, and its buttons are dead unless the build was
-    /// told to enable them -- see <see cref="InteractionDebug.fireEnabled"/> for why that split.
+    /// Hidden by default and toggled with a key. Its buttons are live, in a build as well as in
+    /// the editor, until a build is launched with <see cref="InteractionDebug.LockArgument"/> --
+    /// see <see cref="InteractionDebug.fireEnabled"/> for why that default is the way round it
+    /// is.
     /// </summary>
     public class InteractionDebugPanel : MonoBehaviour
     {
@@ -367,7 +369,8 @@ namespace CompositeBody.Diagnostics
             string buttons = InteractionDebug.fireEnabled
                 ? "Buttons live. 'as P1/P2/both' write flags server-side or ask the other machine; " +
                   "the local button takes the real path."
-                : $"Buttons DISABLED in this build. Relaunch with {InteractionDebug.FireArgument} to enable them.";
+                : $"Buttons LOCKED by {InteractionDebug.LockArgument}. Relaunch without it to " +
+                  "enable them.";
 
             // NAME THE HIDDEN ROWS. A list that quietly ends at the bottom of the window is how
             // an interaction comes to look as though it was never built.

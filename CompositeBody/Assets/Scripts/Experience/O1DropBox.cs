@@ -7,10 +7,15 @@ namespace CompositeBody.Experience
 {
     /// <summary>
     /// O-1, second half: the player picks their object up off the floor and puts it in a
-    /// cardboard box. THE BOX IS WHAT THE SHOW WAITS FOR -- the grab only sounds the cue (see
-    /// <see cref="O1GrabStation"/>); this is what counts, so the hold near the end of O-1 clears
-    /// when both players have actually put something somewhere, not when they have merely closed
-    /// a hand around it.
+    /// cardboard box.
+    ///
+    /// THE SHOW NO LONGER WAITS FOR IT. It did -- the hold near the end of O-1 used to need both
+    /// players to have actually put something somewhere, not merely to have closed a hand around
+    /// it -- and the cost of that was a frozen room whenever a lamp ended up beside the carton
+    /// instead of in it. 「都有抓過就好」: <see cref="O1DropSequence"/> now reports on the chain of
+    /// lines alone, and a wave cannot be heard until both players are holding that object. So
+    /// this still counts, still sounds, and still tells the sequence -- it simply cannot strand
+    /// the beat any more.
     ///
     /// IT NO LONGER REPORTS THE GATE ITSELF. With one object each it did, and that was right.
     /// With several each, and a line of speech owed to every one of them, "this player is

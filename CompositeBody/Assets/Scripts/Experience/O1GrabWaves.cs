@@ -182,8 +182,23 @@ namespace CompositeBody.Experience
 
         readonly List<string> m_Reported = new();
 
+        /// <summary>Whether this is actually attached to the server's unlock. See Listen().</summary>
+        bool m_Listening;
+
         /// <summary>Whether a line is sounding right now.</summary>
         public bool speaking => m_Speaking >= 0 && ExperienceClock.now < m_LineEndsAt;
+
+        /// <summary>
+        /// The chain itself, in running order, read-only. For the payoff test, which has to walk
+        /// the beat the way the two players do -- grab this wave's object, hear this wave's line,
+        /// wait for the next one to arrive -- and cannot do that against a list of wave names and
+        /// task ids written out a second time in the test.
+        /// </summary>
+        public IReadOnlyList<Wave> waves => m_Waves;
+
+        /// <summary>Seconds the line now sounding has left, or 0 when the room is quiet.</summary>
+        public float secondsOfLineLeft =>
+            m_Speaking < 0 ? 0f : Mathf.Max(m_LineEndsAt - ExperienceClock.now, 0f);
 
         /// <summary>Whether every line has been heard and nothing is still on its way in.</summary>
         public bool finished
@@ -248,16 +263,64 @@ namespace CompositeBody.Experience
             }
         }
 
-        void OnEnable()
-        {
-            StoryProgressManager progress = StoryProgressManager.Instance;
-            if (progress != null) progress.onTaskBeatUnlocked += HandleUnlocked;
-        }
+        void OnEnable() => Listen();
 
         void OnDisable()
         {
+            if (!m_Listening) return;
+
             StoryProgressManager progress = StoryProgressManager.Instance;
             if (progress != null) progress.onTaskBeatUnlocked -= HandleUnlocked;
+            m_Listening = false;
+        }
+
+        /// <summary>
+        /// Attach to the server's unlock, and KEEP TRYING UNTIL IT IS ACTUALLY ATTACHED.
+        ///
+        /// THE ONE LINE THAT USED TO DO THIS WAS A RACE, AND IT LOST SILENTLY. OnEnable asked for
+        /// <see cref="StoryProgressManager.Instance"/> once and gave up if it was not there yet;
+        /// both components live in MainScene and are active from the first frame, so which of
+        /// Awake and OnEnable ran first was Unity's business, not the show's. When this one went
+        /// first there was no subscription, nothing ever replaced it, and the whole beat came
+        /// apart in a way that looks like something else:
+        ///
+        /// a grab was still reported, the server still set both halves of the wave's task and
+        /// still raised the unlock -- to nobody. So no wave was ever marked unlocked, no line was
+        /// ever spoken, the object after it never faded in (an arrival is a line being over), and
+        /// O1DropSequence waited on a chain that could not finish until its own 180-second
+        /// fallback reported the gate and the show moved on in silence. Every single one of those
+        /// reads as a missing clip or a dead timeline rather than as a missing '+='.
+        ///
+        /// So the subscription is a state, not an event: once it is on, it stays on until this
+        /// component is switched off, and until it is on, <see cref="Update"/> keeps asking.
+        /// </summary>
+        void Listen()
+        {
+            if (m_Listening) return;
+
+            StoryProgressManager progress = StoryProgressManager.Instance;
+            if (progress == null) return;
+
+            progress.onTaskBeatUnlocked += HandleUnlocked;
+            m_Listening = true;
+
+            Debug.Log("[O1Waves] listening for the server's unlocks; a wave can now be answered " +
+                      "by both players holding it.", this);
+
+            // AND WHAT THE SERVER ALREADY KNOWS, because an event only reaches whoever was
+            // listening when it fired. A task already satisfied before this attached -- staff
+            // jumping back into the beat, a client arriving late, the frames before the session
+            // existed -- would otherwise sit done on the server with its wave still waiting for
+            // an announcement that has been and gone.
+            for (int i = 0; i < m_Waves.Length; i++)
+            {
+                Wave wave = m_Waves[i];
+                if (wave == null || wave.unlocked || wave.isPause) continue;
+                if (string.IsNullOrWhiteSpace(wave.taskId)) continue;
+                if (!progress.IsTaskComplete(wave.taskId)) continue;
+
+                Unlock(i, "already done on the server");
+            }
         }
 
         void OnDestroy()
@@ -575,6 +638,10 @@ namespace CompositeBody.Experience
 
         void Update()
         {
+            // First, and every frame until it takes: the session that owns the unlock may not
+            // exist yet when this component wakes up, and missing it is silent. See Listen().
+            Listen();
+
             DriveArrivals();
 
             if (m_Speaking < 0) return;

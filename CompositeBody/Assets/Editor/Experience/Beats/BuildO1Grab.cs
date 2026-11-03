@@ -101,9 +101,15 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
         /// <summary>
         /// O-1's objects IN THE ORDER THEY APPEAR, which is v4's: 鬼的抓取1 the lamp, 鬼的抓取2 the
-        /// jacket. The sheet writes the second one as a T-shirt; the model used is SmallProps'
-        /// jacket, which is the garment this project actually has, and 「搶衣服」 reads the same
-        /// either way.
+        /// T-shirt. The sheet asked for a T-shirt from the start and got the jacket, because
+        /// that was the garment SmallProps had; SmallProps has a T-shirt now, so the second
+        /// object is the one the sheet wrote.
+        ///
+        /// THE TABLE IS STILL THE SOURCE OF THE NAMES even though <see cref="Run"/> can no
+        /// longer run: <see cref="k_PrefabPath"/> points at Assets/_Scenes/O_1.prefab, which was
+        /// deleted when the beats were gathered into Onboarding.prefab. BuildO1Box and
+        /// BuildO1Timeline both read this table and both work on the live prefab, so the station
+        /// names here have to agree with what is in it -- which is what SwapO1Garment keeps true.
         ///
         /// THE ORDER IS THE RUNNING ORDER. <see cref="BuildO1Timeline"/> puts the first one on
         /// the beat's animation track -- it arrives at an authored time -- and hands every later
@@ -120,9 +126,13 @@ namespace CompositeBody.Multiplayer.EditorSetup
                      "Assets/_models/SmallProps/Lamp.mat",
                      0.40f),
 
-            new Prop("Jacket",
-                     "Assets/_models/SmallProps/Jacket.fbx",
-                     "Assets/_models/SmallProps/Jacket.mat",
+            // A PREFAB, not an FBX, because that is how SmallProps carries this one -- and it
+            // arrives with an LODGroup and two LODs. SwapO1Garment takes LOD00 and leaves the
+            // group behind: a prop you hold at arm's length does not need the second mesh, and
+            // an LODGroup inside a grabbable is one more thing to get wrong than a mesh is.
+            new Prop("T-shirt",
+                     "Assets/_models/SmallProps/Prefab/T-shirt.prefab",
+                     "Assets/AtmosphericHouse/Materials/Clothes_hanging_clean.mat",
                      0.55f),
         };
 
@@ -139,6 +149,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
         {
             ("Coat (Player A)", "Lamp (Player A)"),
             ("Mug (Player B)", "Lamp (Player B)"),
+            ("Jacket (Player A)", "T-shirt (Player A)"),
+            ("Jacket (Player B)", "T-shirt (Player B)"),
         };
 
         /// <summary>

@@ -47,8 +47,10 @@ namespace CompositeBody.Experience
                                  "grab it, or hear its cue.")]
         PlayerRole m_Owner = PlayerRole.Player1;
 
-        [SerializeField, Tooltip("The cue that plays on the first grab. S0-1-A for the coat, " +
-                                 "S0-1-B for the mug.")]
+        [SerializeField, Tooltip("A short sound effect on the first grab. Deliberately empty: " +
+                                 "the speech belongs to O1GrabWaves, which waits for BOTH " +
+                                 "players, and nothing in _Audio/old is a sound effect -- it is " +
+                                 "all dialogue. See WireO1Payoff.")]
         AudioClip m_Cue;
 
         [SerializeField, Tooltip("Plays the cue. Made on this object if left empty.")]
@@ -127,6 +129,15 @@ namespace CompositeBody.Experience
         public bool released => m_Released;
 
         public PlayerRole owner => m_Owner;
+
+        /// <summary>
+        /// The thing that is actually grabbed, and the body under it. For the payoff test, which
+        /// has to put a hand on this object through XRI rather than call <see cref="Grab"/> --
+        /// the hold is a fact about the Rigidbody and only a real select proves it comes off.
+        /// </summary>
+        public XRGrabInteractable grab => m_Grab;
+
+        public Rigidbody body => m_Body;
 
         /// <summary>The cue this object plays when it is picked up.</summary>
         public AudioClip cue => m_Cue;
