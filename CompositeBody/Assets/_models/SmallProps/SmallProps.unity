@@ -429,41 +429,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 566010008306089395, guid: bfd3c10e36d87d8419a60abc87a8d859,
-        type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 42c7838cbb7cac54994863b308425d48, type: 2}
-    - target: {fileID: 1014142816053542593, guid: bfd3c10e36d87d8419a60abc87a8d859,
-        type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 42c7838cbb7cac54994863b308425d48, type: 2}
-    - target: {fileID: 2938783687711048275, guid: bfd3c10e36d87d8419a60abc87a8d859,
-        type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 42c7838cbb7cac54994863b308425d48, type: 2}
-    - target: {fileID: 5234013063385329264, guid: bfd3c10e36d87d8419a60abc87a8d859,
-        type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 42c7838cbb7cac54994863b308425d48, type: 2}
-    - target: {fileID: 5598367095848665225, guid: bfd3c10e36d87d8419a60abc87a8d859,
-        type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 42c7838cbb7cac54994863b308425d48, type: 2}
     - target: {fileID: 7325725928776439995, guid: bfd3c10e36d87d8419a60abc87a8d859,
         type: 3}
       propertyPath: m_Name
       value: Camera
       objectReference: {fileID: 0}
-    - target: {fileID: 7712209808661933193, guid: bfd3c10e36d87d8419a60abc87a8d859,
-        type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 42c7838cbb7cac54994863b308425d48, type: 2}
     - target: {fileID: 7989918210212676097, guid: bfd3c10e36d87d8419a60abc87a8d859,
         type: 3}
       propertyPath: m_LocalPosition.x
