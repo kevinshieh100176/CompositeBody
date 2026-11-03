@@ -7,7 +7,7 @@ using CompositeBody.Multiplayer;
 namespace CompositeBody.Experience
 {
     /// <summary>
-    /// S2-3 組裝娃娃屋 -- 「在 playspace 中央空中會出現一些碎片跟一個在正中央的
+    /// S2-3｜隱藏的記憶 -- 「在 playspace 中央空中會出現一些碎片跟一個在正中央的
     /// Lowpoly_Wall.Floor_small，玩家要合力完成這個互動。當這個小碎片正確拚上後，LowPolyWall 裡對應的
     /// 大碎片也會從天上飛下來對到正確的位置。當全部碎片都拼完，LowPolyWall 跟 LowPolyWall (small) 都會
     /// dissolve out，然後 Inner_Wall 會 dissolve in」.

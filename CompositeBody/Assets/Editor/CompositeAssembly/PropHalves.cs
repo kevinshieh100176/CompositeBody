@@ -12,7 +12,7 @@ namespace CompositeBody.Assembly.EditorTools
     /// The general form of what <see cref="ChairHalves"/> does for the rustic chair. The chair's
     /// version stays as it is because two builders share it and the cut has to be the same cut
     /// in both; this is for the show's own 碎片 beats, which cut a SmallProps model each -- S2-2
-    /// the lamp, S2-3 the cup -- and want the same treatment with a different model path.
+    /// the lamp -- and want the same treatment with a different model path.
     ///
     /// IT SCALES BEFORE IT CUTS, which the chair's version does not have to. The chair OBJ
     /// imports in metres; SmallProps models do not agree with each other about units, and O-1

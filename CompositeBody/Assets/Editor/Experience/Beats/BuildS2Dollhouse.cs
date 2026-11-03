@@ -14,7 +14,7 @@ using CompositeBody.Multiplayer;
 namespace CompositeBody.Multiplayer.EditorSetup
 {
     /// <summary>
-    /// S2-3 組裝娃娃屋 -- the low-poly house cut into a dollhouse the two players rebuild in mid-air,
+    /// S2-3｜隱藏的記憶 -- the low-poly house cut into a dollhouse the two players rebuild in mid-air,
     /// wired into MainScene so that 「碎片靠 Lowpoly_Wall.Floor_small 就吸上去，對應的大碎片從天上飛下來,
     /// 全部拼完兩組 LowPolyWall 都 dissolve out，Inner_Wall dissolve in」.
     ///
