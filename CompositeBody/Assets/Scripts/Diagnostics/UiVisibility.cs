@@ -9,11 +9,11 @@ namespace CompositeBody.Diagnostics
     /// <summary>
     /// One key that takes every piece of UI off the screen, and puts it back.
     ///
-    /// The panels have grown a key each -- F1 for the interaction list, F2 for the scrubber,
-    /// F1..F8 for the debug scenery, F12 for the role view -- and clearing the screen before a
-    /// screenshot, a video capture or someone walking up to the monitor has meant remembering
-    /// all of them and which of them were open. This is the master switch: press it, the screen
-    /// is the piece; press it again, every panel is exactly as it was.
+    /// The panels have grown a key each -- F2 for the scrubber, F3 for the interaction list,
+    /// F4 for calibration, F9 for the staff panel's diagnostics drawer -- and clearing the
+    /// screen before a screenshot, a video capture or someone walking up to the monitor has
+    /// meant remembering all of them and which of them were open. This is the master switch:
+    /// press it, the screen is the piece; press it again, every panel is exactly as it was.
     ///
     /// IT HIDES, IT DOES NOT CLOSE. Each panel keeps its own open/closed state while the master
     /// switch is down, so un-hiding restores what was on screen rather than a default layout.

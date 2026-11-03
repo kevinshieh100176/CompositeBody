@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using CompositeBody.Multiplayer;
 
 namespace CompositeBody.Diagnostics
@@ -16,6 +15,13 @@ namespace CompositeBody.Diagnostics
     ///
     /// Targets are resolved by name when nothing is wired explicitly, because these objects get
     /// renamed as the room changes and a tool for finding problems should not become one.
+    ///
+    /// BUTTONS ONLY -- NO KEYBOARD SHORTCUTS, DELIBERATELY. The rows used to answer F1..F8 by
+    /// position in the list and the role row answered F12, which made the binding of any given
+    /// key a property of how many targets happened to be wired that day. Worse, F1..F8 are not
+    /// this panel's to take: F2 is the show scrubber, F3 the interaction list, F4 the
+    /// calibration panel. Nothing here is urgent enough to need a shortcut, and the operator is
+    /// already at the mouse.
     /// </summary>
     public class DebugViewToggle : MonoBehaviour
     {
@@ -35,16 +41,8 @@ namespace CompositeBody.Diagnostics
         [SerializeField, Tooltip("Draw the buttons at all. Off leaves the keyboard shortcuts.")]
         bool m_ShowPanel = true;
 
-        [SerializeField, Tooltip("Which side of the screen the panel sits on. Right keeps it off " +
-                                 "the staff panel, which builds itself down the left.")]
-        Side m_Side = Side.Right;
-
-        [SerializeField, Tooltip("Pixels in from the edge.")]
+        [SerializeField, Tooltip("Pixels in from whichever corner the panel has settled in.")]
         Vector2 m_Margin = new(12f, 12f);
-
-        [SerializeField, Tooltip("F1 toggles the first target, F2 the second, and so on. Handy " +
-                                 "when the panel itself is in the way of what you are looking at.")]
-        bool m_FunctionKeys = true;
 
         [SerializeField, Tooltip("Hide every target at startup, so a build does not open with the " +
                                  "debug scenery switched on in front of an audience.")]
@@ -55,16 +53,17 @@ namespace CompositeBody.Diagnostics
                                  "checking the asymmetric views without a second headset.")]
         bool m_RoleSwitch = true;
 
-        [SerializeField, Tooltip("F12 steps the role view. Off leaves the button.")]
-        bool m_RoleKey = true;
-
-        public enum Side { Left, Right }
-
         readonly List<GameObject> m_Resolved = new();
         readonly List<MonoBehaviour> m_ResolvedBehaviours = new();
 
+        // Resolved once rather than in OnGUI, which runs twice a frame -- a FindAnyObjectByType
+        // in there would be a scene-wide search on every layout and every repaint.
+        InteractionDebugPanel m_InteractionList;
+
         void Start()
         {
+            m_InteractionList = FindAnyObjectByType<InteractionDebugPanel>(FindObjectsInactive.Include);
+
             m_Resolved.Clear();
             m_ResolvedBehaviours.Clear();
 
@@ -97,25 +96,6 @@ namespace CompositeBody.Diagnostics
                       (m_ResolvedBehaviours.Count > 0
                           ? $" | {m_ResolvedBehaviours.Count} component(s)"
                           : ""));
-        }
-
-        void Update()
-        {
-            // Input System rather than the legacy Input class. With the project set to the new
-            // input handling only, UnityEngine.Input throws the moment it is touched -- and an
-            // exception here would stop everything below it in the same Update from running.
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard == null) return;
-
-            if (m_FunctionKeys)
-            {
-                for (int i = 0; i < m_Resolved.Count && i < 8; i++)
-                {
-                    if (keyboard[Key.F1 + i].wasPressedThisFrame) Toggle(i);
-                }
-            }
-
-            if (m_RoleSwitch && m_RoleKey && keyboard[Key.F12].wasPressedThisFrame) StepRoleView();
         }
 
         /// <summary>
@@ -163,16 +143,35 @@ namespace CompositeBody.Diagnostics
 
             const float k_Width = 230f, k_Height = 26f, k_Gap = 4f;
 
-            // Anchored to the edge every frame rather than to a stored pixel, so it stays put
-            // when the game view is resized.
-            float x = m_Side == Side.Right ? Screen.width - k_Width - m_Margin.x : m_Margin.x;
-            float y = m_Margin.y;
-
             // One extra row for the all-at-once switch, which is what you actually want before
             // someone puts the headset on, and one for the input readout.
             string status = StatusLine();
             int extra = 1 + (string.IsNullOrEmpty(status) ? 0 : 1) + (m_RoleSwitch ? 1 : 0);
             float panelHeight = (k_Height + k_Gap) * (rows + extra) + 12f;
+
+            // BOTTOM-RIGHT, UNLESS THE INTERACTION LIST IS OPEN, AND NOT A CHOICE EITHER WAY --
+            // which is why there is no longer a field for it. Every other corner is spoken for:
+            // StaffControlPanel builds two columns down from the top-left, CalibrationPanel
+            // anchors itself to the bottom-left and grows upward, and ShowScrubber takes a 150px
+            // bar across the bottom. That leaves the bottom-right.
+            //
+            // Except when F3 is up: InteractionDebugPanel is 520 reference pixels wide, anchored
+            // top-right and sized to the full canvas height, so while it is open there is no
+            // right-hand corner at all. The one rectangle free in every combination is the strip
+            // under the staff panel's second column, so that is where this goes instead. It
+            // looks adrift in the middle of the screen, which is why it is the fallback and not
+            // the home.
+            //
+            // Scaled, because those are canvas panels laid out against a 1280-wide reference
+            // that stretches with the window, while OnGUI counts real pixels. Growing upward
+            // from the bottom is why panelHeight has to be known before y.
+            const float k_ScrubberStrip = 166f;
+            bool listOpen = m_InteractionList != null && m_InteractionList.visible;
+
+            float x = listOpen
+                ? 380f * (Screen.width / 1280f) + m_Margin.x
+                : Screen.width - k_Width - m_Margin.x;
+            float y = Screen.height - k_ScrubberStrip - m_Margin.y - panelHeight + 6f;
 
             GUI.Box(new Rect(x - 6f, y - 6f, k_Width + 12f, panelHeight), GUIContent.none);
 
@@ -192,8 +191,7 @@ namespace CompositeBody.Diagnostics
                 if (target == null) continue;
 
                 bool on = target.activeSelf;
-                string key = m_FunctionKeys && i < 8 ? $"F{i + 1}  " : "";
-                if (Row(new Rect(x, y, k_Width, k_Height), $"{key}{target.name}", on))
+                if (Row(new Rect(x, y, k_Width, k_Height), target.name, on))
                     Toggle(i);
                 y += k_Height + k_Gap;
             }
@@ -214,8 +212,7 @@ namespace CompositeBody.Diagnostics
             {
                 Color was = GUI.backgroundColor;
                 GUI.backgroundColor = RoleColour();
-                string key = m_RoleKey ? "F12  " : "";
-                if (GUI.Button(new Rect(x, y, k_Width, k_Height), $"{key}See as: {RoleLabel()}"))
+                if (GUI.Button(new Rect(x, y, k_Width, k_Height), $"See as: {RoleLabel()}"))
                     StepRoleView();
                 GUI.backgroundColor = was;
                 y += k_Height + k_Gap;

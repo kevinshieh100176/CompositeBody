@@ -65,14 +65,24 @@ namespace CompositeBody.Multiplayer
         }
 
         /// <summary>
-        /// Solo is allowed by the inspector flag, or by -solo on the command line so a built
-        /// player can be run through without rebuilding.
+        /// The staff panel's switch, and the reason it is not serialized: a solo run is a
+        /// decision about tonight, not about the project. A flag that survived into the next
+        /// launch is exactly how the venue ends up running a one-person show without anyone
+        /// having chosen to. Host-local and never replicated -- what the clients need is
+        /// <see cref="solo"/>, which is set from this at the moment the show starts.
         /// </summary>
-        bool soloAllowed
+        public bool allowSoloFromPanel { get; set; }
+
+        /// <summary>
+        /// Solo is allowed by the inspector flag, by the staff panel's switch, or by -solo on
+        /// the command line so a built player can be run through without rebuilding. Public so
+        /// the panel can show the effective answer rather than re-deriving it and disagreeing.
+        /// </summary>
+        public bool soloAllowed
         {
             get
             {
-                if (m_AllowSolo) return true;
+                if (m_AllowSolo || allowSoloFromPanel) return true;
 
                 // Always allowed in the editor, because that is where someone is working alone
                 // and there is no command line to pass. A BUILD stays strict unless told
