@@ -727,32 +727,91 @@ namespace CompositeBody.Experience
         public bool DebugCanFire(DebugFireTarget target)
         {
             if (finished) return false;
-            if (target != DebugFireTarget.Local) return false;
             if (!isActiveAndEnabled) return false;
 
-            foreach (Wave wave in m_Waves)
-            {
-                if (wave != null && !wave.spoken) return true;
-            }
-            return false;
+            if (target == DebugFireTarget.Local) return NextUnspoken() >= 0;
+
+            // The tier above Local writes the wave's gate on the server, so it needs a server
+            // and a wave with a gate to write. A pause has no task id and nothing ever reports
+            // it, so it is not something these buttons can send.
+            return InteractionDebugRelay.canForce &&
+                   StoryProgressManager.Instance != null &&
+                   NextGated() >= 0;
         }
 
         /// <summary>
-        /// Unlock the next line that has not been heard, without waiting for either player to
-        /// pick anything up. Staff rescue for a grab that will not register -- it does NOT mark
-        /// the objects as held and does NOT bring in the next object, because the boxes still
-        /// have to be filled and those rows must keep telling the truth about where things are.
+        /// Send 「這個玩家抓到了」 for the wave the beat is waiting on, as either player or as both
+        /// -- which is the thing the host's panel could not do until now.
+        ///
+        /// THE THREE TIERS ARE NOT THE SAME RESCUE, and the difference matters on a two-machine
+        /// run. Local unlocks the next line ON THIS MACHINE ONLY: nothing crosses the network,
+        /// so the other headset does not hear the line and does not see the next object arrive
+        /// -- fine on a desk with no session, misleading in the venue, where it looks like the
+        /// beat advanced and leaves the two players in different places.
+        ///
+        /// as P1 / as P2 / both write the wave's task flags server-side instead, exactly as the
+        /// gate rows do, which is the SAME path a real grab ends in: the server raises
+        /// <see cref="StoryProgressManager.onTaskBeatUnlocked"/> on every machine, so the line
+        /// lands on both headsets on the same frame and the next wave's objects fade in for both
+        /// players. One role alone is the half-report -- press "as P2" and the beat is then
+        /// waiting on P1's real grab, which is what makes it useful for finding out WHICH
+        /// machine is not reporting.
+        ///
+        /// IT DOES NOT MARK THE OBJECTS AS HELD and does not fill anything: the stations' and
+        /// boxes' own rows have to keep telling the truth about where the props actually are.
         /// </summary>
         public void DebugFire(DebugFireTarget target)
         {
             if (!DebugCanFire(target)) return;
 
-            for (int i = 0; i < m_Waves.Length; i++)
+            if (target == DebugFireTarget.Local)
             {
-                if (m_Waves[i] == null || m_Waves[i].spoken) continue;
-                Unlock(i, "debug");
+                int local = NextUnspoken();
+                if (local >= 0) Unlock(local, "debug");
                 return;
             }
+
+            int index = NextGated();
+            if (index < 0) return;
+
+            Wave wave = m_Waves[index];
+            StoryProgressManager progress = StoryProgressManager.Instance;
+            if (progress == null) return;
+
+            if (target != DebugFireTarget.Player2)
+                progress.DebugSetRoleDone(wave.taskId, PlayerRole.Player1, true);
+            if (target != DebugFireTarget.Player1)
+                progress.DebugSetRoleDone(wave.taskId, PlayerRole.Player2, true);
+
+            Debug.Log($"[O1Waves] {Label(wave, index)}: '{wave.taskId}' forced as {target} from " +
+                      "the panel. Both halves in means every machine unlocks it, hears the line " +
+                      "and brings in the next object.", this);
+        }
+
+        /// <summary>The first wave nobody has heard yet, pause or not.</summary>
+        int NextUnspoken()
+        {
+            for (int i = 0; i < m_Waves.Length; i++)
+            {
+                if (m_Waves[i] != null && !m_Waves[i].spoken) return i;
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// The first unheard wave that has a gate to write -- pauses skipped, because their line
+        /// comes when the lines before it are done and there is nothing to report for them.
+        /// </summary>
+        int NextGated()
+        {
+            for (int i = 0; i < m_Waves.Length; i++)
+            {
+                Wave wave = m_Waves[i];
+                if (wave == null || wave.spoken || wave.isPause) continue;
+                if (string.IsNullOrWhiteSpace(wave.taskId)) continue;
+                return i;
+            }
+            return -1;
         }
 
         public bool DebugCanReset()

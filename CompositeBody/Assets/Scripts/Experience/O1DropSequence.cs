@@ -392,23 +392,38 @@ namespace CompositeBody.Experience
 
         public bool DebugCanFire(DebugFireTarget target)
         {
-            if (m_Reported) return false;
+            // THIS MACHINE'S HALF, through the real path, which is all a machine may do for
+            // itself -- and only once.
+            if (target == DebugFireTarget.Local) return !m_Reported && isActiveAndEnabled;
 
-            if (target == DebugFireTarget.Local) return isActiveAndEnabled;
-            if (target == DebugFireTarget.Both) return InteractionDebugRelay.canForce;
+            if (!InteractionDebugRelay.canForce) return false;
+            if (string.IsNullOrWhiteSpace(m_TaskId)) return false;
 
-            PlayerRole role = target == DebugFireTarget.Player1
-                ? PlayerRole.Player1
-                : PlayerRole.Player2;
+            StoryProgressManager progress = StoryProgressManager.Instance;
+            if (progress == null) return false;
 
-            return InteractionDebugRelay.canForce &&
-                   InteractionDebugRelay.TryGetClientForRole(role, out _);
+            // THE ROLE TIERS OUTLIVE THIS MACHINE'S OWN HALF, which is the whole point of them
+            // on the host: the gate needs two reports, and the half that is missing is by
+            // definition the other player's. These buttons used to go dead the moment this
+            // machine finished -- so the one screen that could push the missing half was the one
+            // place it could no longer be pushed from. Live until the gate is actually complete.
+            return !progress.IsTaskComplete(m_TaskId);
         }
 
         /// <summary>
-        /// Report this machine's half without waiting for the objects or the lines. Staff rescue
-        /// -- NOT a shortcut that fakes the drops: the boxes keep their own buttons for that, and
-        /// firing one of those plays the line it owes, which this deliberately does not.
+        /// 「這個玩家做完了」, sent from the panel. Staff rescue -- NOT a shortcut that fakes the
+        /// drops: the boxes keep their own buttons for that, and firing one of those plays the
+        /// line it owes, which this deliberately does not.
+        ///
+        /// LOCAL IS THIS MACHINE REPORTING ITSELF: the same owner-attributed RPC a real finish
+        /// sends, so it proves that path works. It is also the only tier a client build can use.
+        ///
+        /// as P1 / as P2 / both WRITE THE FLAG ON THE SERVER, exactly as the gate rows do, and
+        /// they no longer need that player's machine to be connected -- which is what the host
+        /// needed. Pressing "both" on the host clears O-1's hold on its own: no headset, no
+        /// boxes, no waiting out the lines. Where the role's machine IS connected it is also
+        /// asked to finish its own side, so its sequence stops counting down and its rows agree
+        /// with the flags rather than claiming the beat is still waiting on it.
         /// </summary>
         public void DebugFire(DebugFireTarget target)
         {
@@ -424,10 +439,26 @@ namespace CompositeBody.Experience
             if (target != DebugFireTarget.Player1) FireForRole(PlayerRole.Player2);
         }
 
-        static void FireForRole(PlayerRole role)
+        void FireForRole(PlayerRole role)
         {
-            if (InteractionDebugRelay.TryGetClientForRole(role, out ulong clientId))
-                InteractionDebugRelay.Instance?.FireOnClient(clientId, "o1.sequence");
+            StoryProgressManager progress = StoryProgressManager.Instance;
+            if (progress == null) return;
+
+            // The flag first, so the gate clears whether or not anybody is holding that role.
+            progress.DebugSetRoleDone(m_TaskId, role, true);
+
+            if (!InteractionDebugRelay.TryGetClientForRole(role, out ulong clientId))
+            {
+                Debug.LogWarning($"[O1Sequence] nobody is holding {role}, so '{m_TaskId}' was " +
+                                 "forced server-side for them. The show will come off its hold; " +
+                                 "nothing was put in any box.", this);
+                return;
+            }
+
+            // And the machine as well, so its own half goes in by its own code and its rows stop
+            // showing a beat it is still waiting to finish. Routed back to this machine when the
+            // role is the host's own.
+            InteractionDebugRelay.Instance?.FireOnClient(clientId, debugId);
         }
 
         /// <summary>

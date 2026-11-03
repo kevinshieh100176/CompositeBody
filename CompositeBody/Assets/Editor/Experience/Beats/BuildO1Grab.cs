@@ -323,14 +323,23 @@ namespace CompositeBody.Multiplayer.EditorSetup
             if (rb == null) rb = prop.AddComponent<Rigidbody>();
             rb.mass = 1f;
 
-            // FLOATING, AND NOT KINEMATIC. 「浮在箱子正上方」 -- a non-kinematic body with gravity
-            // off has no forces on it and stays exactly where it was put, which is the float;
-            // forceGravityOnDetach below turns gravity on the first time the player lets go, and
-            // XRI's restore-on-release only ever OR-s that flag, never clears it. A kinematic
-            // body would hover too and would come back kinematic on release, leaving a lamp that
-            // hangs wherever the player's hand opened.
+            // FLOATING. 「浮在箱子正上方」 -- gravity off, so nothing pulls it down until
+            // forceGravityOnDetach below turns gravity on the first time the player lets go
+            // (XRI's restore-on-release only ever OR-s that flag, never clears it).
+            //
+            // AND HELD STILL BY THE STATION, which is the half this file used to get wrong. A
+            // non-kinematic body with gravity off has no forces on it and stays exactly where it
+            // was put -- and that is as true of a knee catching it on the way past as it is of
+            // gravity: the push stuck, nothing damped it, and the lamp sailed off across the
+            // room at walking pace. O1GrabStation keeps the body kinematic until a hand has
+            // opened on it and makes it dynamic again on release, so the state serialised here
+            // is only what the object is AFTER it has been put down once. The damping is set
+            // here as well as there so a prop grabbed before the component has run still
+            // behaves; XRI stores and restores both values around every grab.
             rb.useGravity = false;
             rb.isKinematic = false;
+            rb.linearDamping = 1.5f;
+            rb.angularDamping = 1f;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 

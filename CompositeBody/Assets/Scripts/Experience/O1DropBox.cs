@@ -89,6 +89,15 @@ namespace CompositeBody.Experience
         Vector3 m_ObjectHome;
         Quaternion m_ObjectHomeRotation;
 
+        // The station that owns the OBJECT this box waits for -- which owns its float, and so is
+        // the only thing that can put the float back. See DebugReset.
+        //
+        // FOUND FROM THE OBJECT, NOT FROM THIS WATCHER'S PARENTS. There is one carton per
+        // player and a watcher per object under it, and that carton hangs off the LAMP's
+        // station: so every watcher's nearest station in the hierarchy is the lamp's, and the
+        // jacket's watcher would have reset the lamp. The object knows whose it is.
+        O1GrabStation m_Station;
+
         /// <summary>
         /// Raised the first time something is put in, on the machine it happened on.
         /// <see cref="O1DropSequence"/> counts these and queues the line each one is owed.
@@ -149,6 +158,8 @@ namespace CompositeBody.Experience
                 m_ObjectHome = m_Object.transform.position;
                 m_ObjectHomeRotation = m_Object.transform.rotation;
             }
+
+            if (m_Object != null) m_Station = m_Object.GetComponentInParent<O1GrabStation>(true);
 
             if (m_Cue != null)
             {
@@ -427,13 +438,17 @@ namespace CompositeBody.Experience
                 return local == PlayerRole.Unassigned || local == m_Owner;
             }
 
-            if (target == DebugFireTarget.Both) return false;
-
+            // BOTH MEANS "WHEREVER THIS BOX LIVES", not "both players": a box has one owner and
+            // one object, so there is no second half of it to fill. The button was dead on these
+            // rows, and the host -- the machine with the panel in front of it -- is exactly
+            // where somebody presses "both" rather than working out whose carton this is.
             DebugFireTarget mine = m_Owner == PlayerRole.Player1
                 ? DebugFireTarget.Player1
                 : DebugFireTarget.Player2;
 
-            return target == mine && InteractionDebugRelay.canForce &&
+            if (target != mine && target != DebugFireTarget.Both) return false;
+
+            return InteractionDebugRelay.canForce &&
                    InteractionDebugRelay.TryGetClientForRole(m_Owner, out _);
         }
 
@@ -455,9 +470,16 @@ namespace CompositeBody.Experience
 
         /// <summary>
         /// Empties the box so the beat can be rehearsed again: the latch, and the object itself,
-        /// which goes back to the floor it started on. Leaving it in the box would re-report the
-        /// gate on the very next frame. The gate flag it reported belongs to the task, and the
-        /// gate's own row is where that is cleared.
+        /// which goes back to where it came in. Leaving it in the box would re-report the gate
+        /// on the very next frame. The gate flag it reported belongs to the task, and the gate's
+        /// own row is where that is cleared.
+        ///
+        /// AND THE FLOAT HAS TO COME BACK WITH IT, which is why the station does this when there
+        /// is one. 「浮在箱子正上方」: the object came in floating DIRECTLY ABOVE this box, and by
+        /// the time it has been deposited it is an ordinary object with gravity on -- so putting
+        /// it back at that spot and nothing else dropped it straight into the box again, where it
+        /// settled, deposited a second time and had the sequence count a fill nobody made. A
+        /// reset that re-fires the thing it just reset is the one way this row could lie.
         /// </summary>
         public bool DebugCanReset() => m_Deposited;
 
@@ -472,7 +494,13 @@ namespace CompositeBody.Experience
 
             if (m_Object == null) return;
 
-            if (m_Body != null)
+            if (m_Station != null)
+            {
+                m_Station.ReturnHome();
+                return;
+            }
+
+            if (m_Body != null && !m_Body.isKinematic)
             {
                 m_Body.linearVelocity = Vector3.zero;
                 m_Body.angularVelocity = Vector3.zero;
