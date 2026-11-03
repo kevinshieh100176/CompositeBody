@@ -566,6 +566,129 @@ def rotate_z_up_to_y_up(xyz):
     return [(p[0], p[2], -p[1]) for p in xyz]
 
 
+def measure_lean(xyz, bands=14, min_points=50):
+    """
+    The figure's own long axis, as (dx/dy, dz/dy), from the drift of horizontal slice centroids.
+
+    A STANDING PERSON IS A PLUMB LINE, which is the one thing about a figure that can be
+    measured without recognising any part of it: stack horizontal slices up the body and their
+    centroids sit almost on top of each other. The project's room scans read 0.2 degrees off
+    vertical this way, and the already-cleaned 真人 read 0.03.
+
+    Measured from the centroids rather than from a floor plane because a crop that arrives with
+    the floor already cut away -- which is what comes back from a hand clean in CloudCompare --
+    has no floor to fit, and RANSAC then latches onto a wall, a tabletop or the subject's own
+    back and reports a tilt that is not the figure's. On the capture this was written against
+    that fit came out at 18 degrees against a real lean of 5.4.
+
+    Returns (0, 0) when there is not enough to measure, so a caller can treat "no lean found"
+    and "no lean" the same way.
+    """
+    ys = [p[1] for p in xyz]
+    lo, hi = min(ys), max(ys)
+    if hi - lo <= 0:
+        return 0.0, 0.0
+
+    width = (hi - lo) / bands
+    rows = []
+    for k in range(bands):
+        a = lo + k * width
+        sl = [p for p in xyz if a <= p[1] < a + width]
+        if len(sl) < min_points:
+            continue
+        rows.append((a + width / 2.0,
+                     sum(p[0] for p in sl) / len(sl),
+                     sum(p[2] for p in sl) / len(sl)))
+
+    if len(rows) < 3:
+        return 0.0, 0.0
+
+    my = sum(r[0] for r in rows) / len(rows)
+    den = sum((r[0] - my) ** 2 for r in rows)
+    if den == 0:
+        return 0.0, 0.0
+
+    def slope(idx):
+        mc = sum(r[idx] for r in rows) / len(rows)
+        return sum((r[0] - my) * (r[idx] - mc) for r in rows) / den
+
+    return slope(1), slope(2)
+
+
+def stage_plumb(xyz, plane, lean):
+    """
+    Stand the figure up: rotate its measured long axis onto +Y, about the cloud's own centre.
+
+    WHY THE DATA AND NOT THE TRANSFORM. A lean can also be taken out in Unity by rotating the
+    object, and that is the wrong place for it twice over. The cloud shader's dissolve origin,
+    drift direction and reveal origin are all in the cloud's local space, so a figure carried
+    upright by its transform has its chest-height dissolve origin pointing off at an angle to
+    the body it is meant to start from. And the figure's transform rotation is the staging --
+    which way they face in the room -- so burying a capture correction in it means nobody can
+    later tell the two apart.
+
+    A rotation, never a shear. Re-datuming y against a tilted plane (which is what to_unity
+    does with a floor plane) leaves every height correct and every point still sitting where it
+    was in x and z, so the body arrives correct in height and bent. At the 0.2 degrees a room
+    scan is off that difference is nothing; at 5 degrees over a 1.8 m body it is 16 cm at the
+    head.
+
+    Returns (xyz, plane, degrees). The plane is carried through the same rotation so a caller
+    that measured a floor can still use it afterwards.
+    """
+    ax, az = lean
+    axis_len = math.sqrt(ax * ax + 1.0 + az * az)
+    v = (ax / axis_len, 1.0 / axis_len, az / axis_len)
+    angle = math.acos(max(-1.0, min(1.0, v[1])))
+    if abs(angle) < 1e-6:
+        return xyz, plane, 0.0
+
+    # Turn about the horizontal axis perpendicular to the lean: cross(v, up), normalised.
+    # Rotating v about v x up by +angle sweeps it through the plane the two share, onto up;
+    # the opposite sign doubles the lean instead, which is a satisfying way to find out that
+    # the measurement itself was right.
+    kx, ky, kz = -v[2], 0.0, v[0]
+    klen = math.hypot(kx, kz) or 1.0
+    kx, ky, kz = kx / klen, ky / klen, kz / klen
+
+    cos_a, sin_a = math.cos(angle), math.sin(angle)
+    one = 1.0 - cos_a
+    # Rodrigues, written out: this runs once per clean, so clarity beats a matrix library.
+    rot = (
+        (cos_a + kx * kx * one, kx * ky * one - kz * sin_a, kx * kz * one + ky * sin_a),
+        (ky * kx * one + kz * sin_a, cos_a + ky * ky * one, ky * kz * one - kx * sin_a),
+        (kz * kx * one - ky * sin_a, kz * ky * one + kx * sin_a, cos_a + kz * kz * one),
+    )
+
+    def apply(p, origin):
+        q = (p[0] - origin[0], p[1] - origin[1], p[2] - origin[2])
+        return (
+            rot[0][0] * q[0] + rot[0][1] * q[1] + rot[0][2] * q[2] + origin[0],
+            rot[1][0] * q[0] + rot[1][1] * q[1] + rot[1][2] * q[2] + origin[1],
+            rot[2][0] * q[0] + rot[2][1] * q[1] + rot[2][2] * q[2] + origin[2],
+        )
+
+    xs = [p[0] for p in xyz]
+    ys = [p[1] for p in xyz]
+    zs = [p[2] for p in xyz]
+    pivot = ((min(xs) + max(xs)) / 2.0, (min(ys) + max(ys)) / 2.0, (min(zs) + max(zs)) / 2.0)
+
+    turned = [apply(p, pivot) for p in xyz]
+    out = np.asarray(turned, dtype=np.float64) if np is not None else turned
+
+    if plane is not None:
+        a, b, c, d = plane
+        n2 = (rot[0][0] * a + rot[0][1] * b + rot[0][2] * c,
+              rot[1][0] * a + rot[1][1] * b + rot[1][2] * c,
+              rot[2][0] * a + rot[2][1] * b + rot[2][2] * c)
+        # n.x + d = 0 under x' = R(x - p) + p becomes n'.x' + (d + n.p - n'.p) = 0.
+        dot_old = a * pivot[0] + b * pivot[1] + c * pivot[2]
+        dot_new = n2[0] * pivot[0] + n2[1] * pivot[1] + n2[2] * pivot[2]
+        plane = (n2[0], n2[1], n2[2], d + dot_old - dot_new)
+
+    return out, plane, math.degrees(angle)
+
+
 def to_unity(xyz, plane):
     """
     Feet on y=0, centred in XZ, Z negated.
@@ -743,6 +866,17 @@ def main(argv=None):
                    help="also run radius outlier removal at this radius")
     g.add_argument("--radius-min-points", type=int, default=16)
 
+    g = ap.add_argument_group("plumb")
+    g.add_argument("--plumb", action="store_true",
+                   help="stand the figure up: measure its long axis from the drift of slice "
+                        "centroids and rotate that onto +Y. For a capture whose frame is not "
+                        "level, which a hand crop out of CloudCompare usually is not.")
+    g.add_argument("--plumb-tolerance", type=float, default=1.0, metavar="DEG",
+                   help="leave a lean smaller than this alone, default 1.0 deg. Below about a "
+                        "degree the measurement is reading the pose -- a shifted weight, a "
+                        "turned head -- rather than the capture, and correcting it tilts a "
+                        "figure that was standing straight.")
+
     g = ap.add_argument_group("output")
     g.add_argument("--sample-surface", type=int, default=0, metavar="N",
                    help="turn a mesh into N points spread evenly over its faces, instead of "
@@ -820,6 +954,28 @@ def main(argv=None):
     xyz, rgb = stage_outliers(xyz, rgb, args)
     print(f"  {len(xyz):,} points (-{before-len(xyz):,})")
 
+    # Always measured, corrected only when asked. A lean is the one fault here that survives
+    # every other stage looking perfectly healthy and then shows up in the headset, so the
+    # number is worth printing on every run even when nothing is going to act on it.
+    print("\nplumb")
+    upright = False
+    if len(xyz):
+        lean = measure_lean(xyz)
+        off = math.degrees(math.atan(math.hypot(lean[0], lean[1])))
+        print(f"  long axis dx/dy {lean[0]:+.4f}  dz/dy {lean[1]:+.4f}   {off:.2f} deg off vertical")
+        if not args.plumb:
+            print("  left as it is (--plumb to stand it up)")
+        elif off < args.plumb_tolerance:
+            print(f"  under the {args.plumb_tolerance:.2f} deg tolerance; left as it is")
+            upright = True
+        else:
+            xyz, plane, turned = stage_plumb(xyz, plane, lean)
+            after = measure_lean(xyz)
+            upright = True
+            print(f"  rotated {turned:.2f} deg upright   "
+                  f"now {math.degrees(math.atan(math.hypot(after[0], after[1]))):.2f} deg off   "
+                  f"{bounds_line(xyz)}")
+
     if args.voxel:
         print("\ndownsample")
         before = len(xyz)
@@ -829,11 +985,18 @@ def main(argv=None):
     figure_height = None
     if plane is not None and len(xyz):
         figure_height = max(height_above(xyz, plane))
+    elif upright and len(xyz):
+        # No floor to measure against, but the body has just been stood up, so its own
+        # extent IS its height. Only after --plumb: on a tilted cloud the extent is the
+        # height of the bounding box, which is shorter than the figure in it.
+        ys = [p[1] for p in xyz]
+        figure_height = max(ys) - min(ys)
 
     factor = args.scale
     if args.target_height:
         if not figure_height:
-            print("\ncannot use --target-height without a floor plane; use --scale instead.")
+            print("\ncannot use --target-height without a floor plane or --plumb; "
+                  "use --scale instead.")
             return 1
         factor = args.target_height / figure_height
         print(f"\nscale: {figure_height:.3f} m measured -> {args.target_height:.3f} m asked"
