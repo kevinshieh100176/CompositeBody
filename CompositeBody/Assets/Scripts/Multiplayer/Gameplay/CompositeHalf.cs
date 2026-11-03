@@ -17,9 +17,14 @@ namespace CompositeBody.Multiplayer
     /// both halves are held -- each by the player who owns it -- and brought within
     /// <see cref="m_SnapRadius"/>, the server welds them into a single assembled object.
     ///
-    /// Requiring both to be held is what makes this a two-person interaction rather than a fetch
+    /// Requiring both players is what makes this a two-person interaction rather than a fetch
     /// quest. Merging on proximity alone would let one player carry their half to a dropped one
-    /// and finish the whole thing with the other player absent.
+    /// and finish the whole thing with the other player absent. <see cref="SnapCondition"/>
+    /// decides how strictly that is read: both hands on it at the moment they meet, or both
+    /// players having picked their own half up at some point. Either way the pair cannot be
+    /// finished by one person, because a half's hold can only be claimed by the role that owns
+    /// it -- and the latched reading is also what the show's 「兩個人都抓過了」 lines wait on, which
+    /// <see cref="onFirstHeld"/> and <see cref="m_PickedUpTaskId"/> carry.
     ///
     /// The merge decision is server-only and validated against the sender's role, so a client
     /// cannot assemble a pair by claiming to hold a half it does not own. Everything downstream
@@ -30,6 +35,29 @@ namespace CompositeBody.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public class CompositeHalf : NetworkBehaviour
     {
+        /// <summary>What the server insists on before it will weld a pair.</summary>
+        public enum SnapCondition
+        {
+            /// <summary>
+            /// Both halves in both players' hands at the moment they meet. The strictest
+            /// reading, and the one the chair shipped with.
+            /// </summary>
+            BothHandsOnIt = 0,
+
+            /// <summary>
+            /// Both players have picked their own half up at least once; after that, proximity
+            /// alone welds it.
+            ///
+            /// STILL A TWO-PERSON INTERACTION -- the latch is per role and each player can only
+            /// ever set their own -- but it lets one of them put their half down on something
+            /// and the other bring theirs to it, which is what people do with two hands and an
+            /// object that needs lining up. Under <see cref="BothHandsOnIt"/> that reads as the
+            /// mechanic being broken: the halves touch, nothing happens, and the reason is
+            /// invisible from inside a headset.
+            /// </summary>
+            BothHavePickedItUp = 1,
+        }
+
         [Header("Pairing")]
         [SerializeField, Tooltip("Shared by exactly two halves. Anything unique per pair works, e.g. chair_01.")]
         string m_PairId;
@@ -50,6 +78,17 @@ namespace CompositeBody.Multiplayer
         [SerializeField, Tooltip("Reported to StoryProgressManager by both players once assembled. Leave empty for a pair that gates nothing.")]
         string m_CompletedTaskId;
 
+        [Header("Picking up (anchor only)")]
+        [SerializeField, Tooltip("What the pair waits for before it will weld. Both Hands On It " +
+                                 "is the strict reading; Both Have Picked It Up latches on the " +
+                                 "first grab, so a half can be set down and the other brought to it.")]
+        SnapCondition m_SnapNeeds = SnapCondition.BothHandsOnIt;
+
+        [SerializeField, Tooltip("Reported by each player the first time they pick their own half " +
+                                 "up, so the show can answer 「兩個人都抓過了」 -- a line, a cue, a " +
+                                 "gate. Leave empty for a pair nothing waits on.")]
+        string m_PickedUpTaskId;
+
         [Header("References")]
         [SerializeField, Tooltip("Found on this object if left empty.")]
         XRBaseInteractable m_Interactable;
@@ -69,18 +108,62 @@ namespace CompositeBody.Multiplayer
         readonly NetworkVariable<bool> m_Assembled =
             new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+        // LATCHED, AND REPLICATED SEPARATELY FROM m_Held, which is the whole reason it exists:
+        // 「都有抓過」 is a different question from 「現在拿著」, it is asked on both machines at once,
+        // and the half that answers it may have been put down since. A client that joins late
+        // gets it in the spawn payload, so a line waiting on both players does not wait forever
+        // on a headset that dropped out after its grab.
+        readonly NetworkVariable<bool> m_EverHeld =
+            new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
         bool m_Registered;
         bool m_PresentationApplied;
+
+        // Set the moment a hand closes on this machine, before the server has agreed. ON A DESK
+        // WITH NO SESSION that is the only answer there will ever be -- ReportHeldRpc needs a
+        // role to validate and there is nobody to give it one -- so a pair dialled in alone
+        // still latches, still speaks and still welds.
+        bool m_EverHeldLocally;
+
+        // So the first-held news raises its event and sends its report exactly once, whichever
+        // of the two paths above brought it.
+        bool m_FirstHeldRaised;
 
         public string pairId => m_PairId;
         public PlayerRole ownedBy => m_OwnedBy;
         public bool isAnchor => m_IsAnchor;
+
+        /// <summary>What this pair waits for before welding. Authored on the anchor.</summary>
+        public SnapCondition snapNeeds => m_SnapNeeds;
+
+        /// <summary>The task each player reports on first picking their half up, or empty.</summary>
+        public string pickedUpTaskId => m_PickedUpTaskId;
 
         /// <summary>True once this half has been welded to its partner.</summary>
         public bool isAssembled => m_PresentationApplied || m_Assembled.Value;
 
         /// <summary>True while the owning player is holding this half. Server-decided.</summary>
         public bool isHeld => m_Held.Value;
+
+        /// <summary>
+        /// True once the owning player has picked this half up at least once, and never false
+        /// again. Not the same as <see cref="isHeld"/>: this one is what 「都有抓過」 means.
+        /// </summary>
+        public bool wasEverHeld => m_EverHeldLocally || m_EverHeld.Value;
+
+        /// <summary>
+        /// Raised on EVERY machine the first time this half is picked up, off the replicated
+        /// latch -- so a pair-level listener counting 「兩個人都抓過了」 sees both players' grabs
+        /// wherever it is running, and not only the one that happened in front of it.
+        /// </summary>
+        public event System.Action<CompositeHalf> onFirstHeld;
+
+        /// <summary>
+        /// Raised on every machine once this half is part of an assembled object, after the
+        /// freeze and the un-ghosting. What the pair's own content hangs off: the line, the
+        /// cue, the journey the finished object makes.
+        /// </summary>
+        public event System.Action<CompositeHalf> onAssembled;
 
         void Reset()
         {
@@ -127,6 +210,7 @@ namespace CompositeBody.Multiplayer
         public override void OnNetworkSpawn()
         {
             m_Assembled.OnValueChanged += HandleAssembledChanged;
+            m_EverHeld.OnValueChanged += HandleEverHeldChanged;
 
             // The pair's gate gets a debug row as soon as a half exists. Declared from here
             // rather than from a list somewhere because the task id is authored on the prop:
@@ -135,14 +219,24 @@ namespace CompositeBody.Multiplayer
             InteractionDebug.RegisterTaskGate(m_CompletedTaskId,
                 $"Assemble '{(string.IsNullOrEmpty(m_PairId) ? "pair" : m_PairId)}' (both halves)");
 
+            // The same, for the gate that only says they have both HELD one. Named from the
+            // anchor so the two halves do not register it under two labels, and registered even
+            // on the follower -- whichever half spawns first brings the row in.
+            CompositeHalf namer = m_IsAnchor ? this : FindPartner();
+            string pickedUp = namer != null ? namer.m_PickedUpTaskId : m_PickedUpTaskId;
+            InteractionDebug.RegisterTaskGate(pickedUp,
+                $"Pick up both halves of '{(string.IsNullOrEmpty(m_PairId) ? "pair" : m_PairId)}'");
+
             // A client that joins or reconnects after the weld receives the flag in its spawn
             // payload rather than as a change, so the presentation has to be applied here too.
+            if (m_EverHeld.Value) HandleEverHeldChanged(false, true);
             if (m_Assembled.Value) ApplyAssembledPresentation();
         }
 
         public override void OnNetworkDespawn()
         {
             m_Assembled.OnValueChanged -= HandleAssembledChanged;
+            m_EverHeld.OnValueChanged -= HandleEverHeldChanged;
         }
 
         void Register()
@@ -189,6 +283,11 @@ namespace CompositeBody.Multiplayer
             // mean a pair could assemble itself out of two racks with nobody in the room.
             if (args.interactorObject is XRSocketInteractor) return;
             ReportHeld(true);
+
+            // Locally too, and not only through the server: this is the machine the hand is on,
+            // the latch is the thing a line waits for, and a desk test has no server to agree.
+            // The replicated flag arrives a trip later and finds the latch already down.
+            LatchEverHeld();
         }
 
         void HandleSelectExited(SelectExitEventArgs args)
@@ -221,6 +320,49 @@ namespace CompositeBody.Multiplayer
             if (role != m_OwnedBy) return;
 
             m_Held.Value = held;
+
+            // One way only. The pair's own content asks 「都有抓過嗎」 and a half put back down
+            // has still been picked up -- clearing this on release would retract a line that
+            // has already been spoken.
+            if (held) m_EverHeld.Value = true;
+        }
+
+        /// <summary>
+        /// Raises <see cref="onFirstHeld"/> once and reports this player's half of the pick-up
+        /// gate, however the news arrived -- the hand on this machine or the server's flag.
+        /// </summary>
+        void LatchEverHeld()
+        {
+            m_EverHeldLocally = true;
+            if (m_FirstHeldRaised) return;
+            m_FirstHeldRaised = true;
+
+            ReportPickedUpIfMine();
+
+            // Last, for the same reason Grab() raises its event last: a listener that throws
+            // must not leave the latch half down and send the report again on the next grab.
+            onFirstHeld?.Invoke(this);
+        }
+
+        void HandleEverHeldChanged(bool previous, bool current)
+        {
+            if (current) LatchEverHeld();
+        }
+
+        /// <summary>
+        /// 「我抓過我的那半了」, reported by the player who owns this half and nobody else, so the
+        /// server's gate is two separate claims from two machines exactly as it expects.
+        /// </summary>
+        void ReportPickedUpIfMine()
+        {
+            CompositeHalf anchor = m_IsAnchor ? this : FindPartner();
+            string taskId = anchor != null ? anchor.m_PickedUpTaskId : null;
+            if (string.IsNullOrEmpty(taskId)) return;
+
+            if (StoryProgressManager.Instance == null || GameSessionManager.Instance == null) return;
+            if (!GameSessionManager.Instance.TryGetLocalRole(out PlayerRole role) || role != m_OwnedBy) return;
+
+            StoryProgressManager.Instance.ReportTaskCompleteRpc(taskId);
         }
 
         void Update()
@@ -232,7 +374,7 @@ namespace CompositeBody.Multiplayer
 
             var partner = FindPartner();
             if (partner == null || !partner.IsSpawned) return;
-            if (!m_Held.Value || !partner.m_Held.Value) return;
+            if (!BothPlayersHaveDoneTheirPart(partner)) return;
 
             // A player who drops out mid-grab leaves their half still flagged as held. Without
             // this the pair could assemble with only one player in the room -- the exact shortcut
@@ -244,6 +386,26 @@ namespace CompositeBody.Multiplayer
             if ((partner.transform.position - target).sqrMagnitude > m_SnapRadius * m_SnapRadius) return;
 
             ServerAssemble(partner);
+        }
+
+        /// <summary>
+        /// Whether both players have done whatever this pair asks of them, which is the only
+        /// part of the merge decision the two conditions disagree about.
+        /// </summary>
+        bool BothPlayersHaveDoneTheirPart(CompositeHalf partner)
+        {
+            if (m_SnapNeeds == SnapCondition.BothHandsOnIt)
+                return m_Held.Value && partner.m_Held.Value;
+
+            if (m_EverHeld.Value && partner.m_EverHeld.Value) return true;
+
+            // AND WHAT STAFF HAVE FORCED, because the latch is exactly what a stuck pair is
+            // stuck on: a grab that never reported leaves two halves that touch and do nothing,
+            // and the panel's gate row is the rescue. Reading the gate here means forcing it
+            // releases the weld as well as the line, rather than only half the beat.
+            return !string.IsNullOrEmpty(m_PickedUpTaskId) &&
+                   StoryProgressManager.Instance != null &&
+                   StoryProgressManager.Instance.IsTaskComplete(m_PickedUpTaskId);
         }
 
         static bool IsRoleConnected(PlayerRole role)
@@ -337,6 +499,11 @@ namespace CompositeBody.Multiplayer
             if (m_Interactable != null) m_Interactable.enabled = false;
 
             ReportTaskCompleteIfMine();
+
+            // Last, after the object is frozen, solid for everyone and out of both hands: a
+            // listener that moves the finished assembly is entitled to assume nothing is still
+            // holding on to it.
+            onAssembled?.Invoke(this);
         }
 
         /// <summary>
