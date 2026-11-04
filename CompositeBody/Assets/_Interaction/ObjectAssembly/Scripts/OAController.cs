@@ -102,7 +102,10 @@ namespace CompositeBody.Interaction.ObjectAssembly
         [SerializeField] AudioSource m_Phase1Source;
         [SerializeField, Min(0f), Tooltip("Seconds the gate waits when this role has no Phase 1 clip.")]
         float m_Phase1FallbackSeconds = 2f;
-        [SerializeField] string m_Phase1TaskId = DefaultPhase1TaskId;
+        [SerializeField, Tooltip("StoryProgressManager task each claimant reports when their line ends. Unique per variant, ASCII.")]
+        string m_Phase1TaskId = DefaultPhase1TaskId;
+        [SerializeField, Tooltip("Debug row heading for that task. ASCII.")]
+        string m_Phase1GateLabel = "OA phase1 -- each player heard their line";
 
         [Header("Linking")]
         [SerializeField, Min(0.05f)] float m_TrailFadeIn = 1.5f;
@@ -140,7 +143,7 @@ namespace CompositeBody.Interaction.ObjectAssembly
         [Header("Debug row")]
         [SerializeField, Tooltip("Unique across the show. ASCII.")] string m_DebugId = "oa.assembly";
         [SerializeField, Tooltip("ASCII -- the panel's font has no CJK glyphs.")]
-        string m_DebugLabel = "OA lamp -- claim, link, join, float";
+        string m_DebugLabel = "OA -- claim, link, join, float";
 
         // ---- replicated ------------------------------------------------------------------------
 
@@ -289,7 +292,7 @@ namespace CompositeBody.Interaction.ObjectAssembly
         {
             InteractionDebug.Register(this);
             if (!string.IsNullOrWhiteSpace(m_Phase1TaskId))
-                InteractionDebug.RegisterTaskGate(m_Phase1TaskId, "OA phase1 -- each player heard their line");
+                InteractionDebug.RegisterTaskGate(m_Phase1TaskId, m_Phase1GateLabel);
         }
 
         void OnDisable() => InteractionDebug.Unregister(this);

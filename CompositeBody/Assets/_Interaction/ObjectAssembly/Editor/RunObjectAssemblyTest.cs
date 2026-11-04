@@ -9,17 +9,19 @@ using CompositeBody.Interaction.ObjectAssembly.Diagnostics;
 namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
 {
     /// <summary>
-    /// Opens ObjectAssembly_Demo.unity, drops an <see cref="OATestRunner"/> into it (unsaved) and
-    /// enters play mode. The runner logs "[OATest] RESULT: PASS/FAIL".
+    /// Opens a variant's demo scene (OA_Lamp_Demo / OA_Camera_Demo), drops an
+    /// <see cref="OATestRunner"/> into it (unsaved) and enters play mode. The runner logs
+    /// "[OATest] RESULT: PASS/FAIL".
     ///
     /// SAFE IN A LIVE EDITOR: the runner leaves play mode instead of exiting unless the editor is
-    /// in batch mode, and when play mode ends this reopens whatever scenes were open before
-    /// (the demo scene is discarded, never saved -- the runner object only lived in memory).
-    /// Refuses while any loaded scene has unsaved changes.
+    /// in batch mode, and when play mode ends this reopens whatever scenes were open before (the
+    /// demo scene is discarded, never saved -- the runner object only lived in memory). Refuses
+    /// while any loaded scene has unsaved changes.
     ///
     /// Batch (editor closed; launch WITHOUT -quit, or the editor closes before play mode runs):
     ///   Unity.exe -batchmode -projectPath &lt;path&gt;
-    ///     -executeMethod CompositeBody.Interaction.ObjectAssembly.EditorTools.RunObjectAssemblyTest.Run
+    ///     -executeMethod CompositeBody.Interaction.ObjectAssembly.EditorTools.RunObjectAssemblyTest.RunLamp
+    ///   (or .RunCamera)
     /// </summary>
     [InitializeOnLoad]
     public static class RunObjectAssemblyTest
@@ -41,8 +43,10 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                 };
         }
 
-        [MenuItem("Tools/ObjectAssembly/Run Test")]
-        public static void Run()
+        [MenuItem("Tools/ObjectAssembly/Lamp/Run Test")] public static void RunLamp() => Run(BuildObjectAssembly.Lamp);
+        [MenuItem("Tools/ObjectAssembly/Camera/Run Test")] public static void RunCamera() => Run(BuildObjectAssembly.Camera);
+
+        public static void Run(OAVariant variant)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
@@ -64,17 +68,18 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             }
             if (!Application.isBatchMode) SessionState.SetString(RestoreKey, string.Join("|", restore));
 
-            Scene scene = EditorSceneManager.OpenScene(BuildObjectAssembly.ScenePath, OpenSceneMode.Single);
+            Scene scene = EditorSceneManager.OpenScene(variant.scenePath, OpenSceneMode.Single);
             if (!scene.IsValid())
             {
-                Debug.LogError($"[{Tag}] RESULT: FAIL - could not open {BuildObjectAssembly.ScenePath}; run Tools/ObjectAssembly/Build Demo.");
+                Debug.LogError($"[{Tag}] RESULT: FAIL - could not open {variant.scenePath}; run " +
+                               $"Tools/ObjectAssembly/{variant.key}/Build Demo.");
                 SessionState.EraseString(RestoreKey);
                 if (Application.isBatchMode) EditorApplication.Exit(1);
                 return;
             }
 
             new GameObject("OATestRunner").AddComponent<OATestRunner>();
-            Debug.Log($"[{Tag}] entering play mode...");
+            Debug.Log($"[{Tag}] {variant.key}: entering play mode in {variant.scenePath}...");
             EditorApplication.EnterPlaymode();
         }
 

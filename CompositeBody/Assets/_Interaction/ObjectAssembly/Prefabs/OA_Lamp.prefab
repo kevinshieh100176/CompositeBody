@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &25783321200923027
+--- !u!1 &112580110941037820
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,10 +8,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7717894751616013351}
-  - component: {fileID: 8585502807696539950}
-  - component: {fileID: 9130952585660155554}
-  - component: {fileID: 7522008090879926482}
+  - component: {fileID: 2334902531400464775}
+  - component: {fileID: 4575984061426481034}
+  - component: {fileID: 5096339685487908960}
+  - component: {fileID: 8522607220681870265}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -19,13 +19,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7717894751616013351
+--- !u!4 &2334902531400464775
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 25783321200923027}
+  m_GameObject: {fileID: 112580110941037820}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -34,21 +34,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1833852525547819479}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &8585502807696539950
+--- !u!33 &4575984061426481034
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 25783321200923027}
+  m_GameObject: {fileID: 112580110941037820}
   m_Mesh: {fileID: 4300000, guid: 7806fd5ccfede674f9f9f3eb80fdea86, type: 2}
---- !u!23 &9130952585660155554
+--- !u!23 &5096339685487908960
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 25783321200923027}
+  m_GameObject: {fileID: 112580110941037820}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -91,13 +91,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &7522008090879926482
+--- !u!114 &8522607220681870265
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 25783321200923027}
+  m_GameObject: {fileID: 112580110941037820}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 11137bdb4e4dee044933239e432d8552, type: 3}
@@ -129,7 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6182326458461521757}
   m_Layer: 0
-  m_Name: ObjectAssembly
+  m_Name: OA_Lamp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -287,37 +287,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!1 &998787373399868433
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 9108274354827612121}
-  m_Layer: 0
-  m_Name: JoinPoint
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &9108274354827612121
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 998787373399868433}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.000000059604645, y: -0.118706085, z: -0.000000008664273}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2978160290791273860}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1102184668599472966
 GameObject:
   m_ObjectHideFlags: 0
@@ -496,11 +465,11 @@ Transform:
   m_GameObject: {fileID: 2139363400405995247}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.000000059604645, y: -0.04045608, z: 0.000000009962179}
+  m_LocalPosition: {x: 0.000000059604645, y: -0.118706085, z: -0.000000008664273}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1833852525547819479}
+  m_Father: {fileID: 2978160290791273860}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2424925305275921226
 GameObject:
@@ -737,8 +706,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a62104fe11597924b9ab5fe7395667c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Interaction.ObjectAssembly.OATrail
-  m_EndA: {fileID: 9108274354827612121}
-  m_EndB: {fileID: 8279985810517409798}
+  m_EndA: {fileID: 8279985810517409798}
+  m_EndB: {fileID: 2127386098842242984}
   m_Visibility: 0
   m_FarDistance: 1.6
   m_NearDistance: 0.12
@@ -1066,7 +1035,8 @@ MonoBehaviour:
   m_Phase1ClipP2: {fileID: 0}
   m_Phase1Source: {fileID: 4760137655634620582}
   m_Phase1FallbackSeconds: 2
-  m_Phase1TaskId: oa.phase1
+  m_Phase1TaskId: oa.lamp.phase1
+  m_Phase1GateLabel: OA lamp phase1 -- each player heard their line
   m_TrailFadeIn: 1.5
   m_TrailFadeOut: 0.5
   m_LinkShakeFar: 0.2
@@ -1094,7 +1064,7 @@ MonoBehaviour:
   onCompleted:
     m_PersistentCalls:
       m_Calls: []
-  m_DebugId: oa.assembly
+  m_DebugId: oa.lamp
   m_DebugLabel: OA lamp -- claim, link, join, float
 --- !u!1 &4876684946911871735
 GameObject:
@@ -1344,6 +1314,37 @@ MonoBehaviour:
   m_WobbleScale: 0.06
   m_WobbleAngle: 5
   m_WobbleFrequency: 6
+--- !u!1 &4932102986199871998
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2127386098842242984}
+  m_Layer: 0
+  m_Name: JoinPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2127386098842242984
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4932102986199871998}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.000000059604645, y: -0.04045608, z: 0.000000009962179}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1833852525547819479}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7571834832996126696
 GameObject:
   m_ObjectHideFlags: 0
@@ -1380,7 +1381,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5167313371439412307}
-  - {fileID: 9108274354827612121}
+  - {fileID: 8279985810517409798}
   m_Father: {fileID: 6182326458461521757}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!64 &2696836985422306105
@@ -1653,7 +1654,7 @@ MonoBehaviour:
   m_GrantTimeout: 2
   m_LogRefusals: 1
   m_Controller: {fileID: 5230524975731814272}
-  m_JoinPoint: {fileID: 9108274354827612121}
+  m_JoinPoint: {fileID: 8279985810517409798}
   m_View: {fileID: 49384339711948511}
   m_LayoutPosition: {x: -0.000000059604645, y: 0.118706085, z: 0.000000008664273}
   m_LayoutRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -1698,8 +1699,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7717894751616013351}
-  - {fileID: 8279985810517409798}
+  - {fileID: 2334902531400464775}
+  - {fileID: 2127386098842242984}
   m_Father: {fileID: 6182326458461521757}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!64 &1694734436005848746
@@ -1972,8 +1973,8 @@ MonoBehaviour:
   m_GrantTimeout: 2
   m_LogRefusals: 1
   m_Controller: {fileID: 5230524975731814272}
-  m_JoinPoint: {fileID: 8279985810517409798}
-  m_View: {fileID: 7522008090879926482}
+  m_JoinPoint: {fileID: 2127386098842242984}
+  m_View: {fileID: 8522607220681870265}
   m_LayoutPosition: {x: -0.000000059604645, y: 0.04045608, z: -0.000000009962179}
   m_LayoutRotation: {x: 0, y: 0, z: 0, w: 1}
   m_FollowOffset: {x: 0.24, y: -0.3, z: 0.42}

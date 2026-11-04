@@ -161,7 +161,7 @@ namespace CompositeBody.Interaction.ObjectAssembly.Diagnostics
                 yield return new WaitForSeconds(1.2f);
                 readings[i] = trail.intensity;
                 Debug.Log($"[{Tag}] gap {controller.currentJoinGap:0.000} m → intensity {readings[i]:0.000}");
-                if (i == 2 && m_CaptureStills) yield return Capture(controller, "oa_linking.png", Mid(a, b), 0.95f);
+                if (i == 2 && m_CaptureStills) yield return Capture(controller, Still("linking"), Mid(a, b), 0.95f);
             }
             bool rising = true;
             for (int i = 1; i < readings.Length; i++) rising &= readings[i] > readings[i - 1];
@@ -183,7 +183,7 @@ namespace CompositeBody.Interaction.ObjectAssembly.Diagnostics
                       $"halves in the assembled layout (seam {seam * 1000f:0.0} mm)");
             log.Check(trail.visibility <= 0.001f, "trail faded out at the join");
             yield return log.WaitFor(() => controller.phase2Started, controller.settleDuration + 2f, "Phase 2 started after the settle");
-            if (m_CaptureStills) yield return Capture(controller, "oa_joined.png", a.joinPoint.position, 0.8f);
+            if (m_CaptureStills) yield return Capture(controller, Still("joined"), a.joinPoint.position, FrameDistance(a, b));
 
             Vector3 floatStart = a.joinPoint.position;
             yield return new WaitForSeconds(Mathf.Min(1.5f, controller.floatDuration * 0.4f));
@@ -196,7 +196,7 @@ namespace CompositeBody.Interaction.ObjectAssembly.Diagnostics
             log.Check(Vector3.Distance(a.joinPoint.position, controller.destination.position) < 0.01f &&
                       Vector3.Distance(b.joinPoint.position, controller.destination.position) < 0.01f,
                       "the assembled object arrived at Destination");
-            if (m_CaptureStills) yield return Capture(controller, "oa_done.png", controller.destination.position, 0.9f);
+            if (m_CaptureStills) yield return Capture(controller, Still("done"), controller.destination.position, FrameDistance(a, b));
             yield return new WaitForSeconds(1f);
             log.Check(completed == 1 && controller.completedCount == 1, $"onCompleted fired exactly once ({completed})");
 
@@ -204,10 +204,10 @@ namespace CompositeBody.Interaction.ObjectAssembly.Diagnostics
             bool row = false, gate = false;
             foreach (IDebugInteraction e in InteractionDebug.entries)
             {
-                if (e.debugId == "oa.assembly" && ReferenceEquals(e, controller)) row = true;
+                if (e.debugId == controller.debugId && ReferenceEquals(e, controller)) row = true;
                 if (e.debugId == controller.phase1TaskId) gate = true;
             }
-            log.Check(row, "debug row 'oa.assembly' registered");
+            log.Check(row, $"debug row '{controller.debugId}' registered");
             log.Check(gate, $"task gate row '{controller.phase1TaskId}' registered");
             log.Check(!string.IsNullOrEmpty(controller.DebugState().detail), $"debug row reads: {controller.DebugState().detail}");
 
@@ -216,6 +216,24 @@ namespace CompositeBody.Interaction.ObjectAssembly.Diagnostics
         }
 
         static Vector3 Mid(OAFragment a, OAFragment b) => (a.transform.position + b.transform.position) * 0.5f;
+
+        /// <summary>Still file name, per demo scene so the lamp and camera runs do not overwrite each other.</summary>
+        static string Still(string what) =>
+            $"{UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}_{what}.png";
+
+        /// <summary>Camera distance that frames the assembled object whatever its size (lamp 0.4 m, camera 0.16 m).</summary>
+        static float FrameDistance(OAFragment a, OAFragment b)
+        {
+            Bounds bounds = default;
+            bool any = false;
+            foreach (OAFragment f in new[] { a, b })
+            foreach (Renderer r in f.GetComponentsInChildren<Renderer>())
+            {
+                if (!any) { bounds = r.bounds; any = true; }
+                else bounds.Encapsulate(r.bounds);
+            }
+            return any ? Mathf.Clamp(bounds.size.magnitude * 2.4f, 0.45f, 1.0f) : 0.9f;
+        }
 
         static ushort FreeUdpPort()
         {

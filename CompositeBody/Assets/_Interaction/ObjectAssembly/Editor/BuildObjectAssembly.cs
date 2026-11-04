@@ -14,47 +14,119 @@ using Object = UnityEngine.Object;
 
 namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
 {
+    /// <summary>How a variant finds the point where its two parts meet.</summary>
+    public enum OAJointRule
+    {
+        /// <summary>
+        /// Centroid of part A's vertices within 4 mm of part B (the closest pair if none are).
+        /// For parts that interpenetrate or nest along a shared axis -- the lamp's frame and shade.
+        /// </summary>
+        ContactCentroid = 0,
+
+        /// <summary>
+        /// Centre of the face of B's bounds that looks toward A's centre. For a part mounted on
+        /// the face of the other -- the camera's lens on the body's front -- where the few
+        /// vertices that happen to touch cluster at one edge of the seam rather than around it.
+        /// </summary>
+        FaceOfBTowardA = 1,
+    }
+
+    /// <summary>One ObjectAssembly object: where it comes from, what it is called, what it writes.</summary>
+    public sealed class OAVariant
+    {
+        public string key;            // menu / log name: "Lamp", "Camera"
+        public string fbxPath;
+        public string rootName;       // scene root and prefab root: "OA_Lamp"
+        public string scenePath;
+        public string prefabPath;
+        public string timelinePath;
+        public string lightsClipPath;
+        public string meshPathA;
+        public string meshPathB;
+        public string materialPath;   // the object's reveal material (a second one gets _B if the parts differ)
+        public string debugId;
+        public string debugLabel;
+        public string phase1TaskId;
+        public string phase1Label;
+        public OAJointRule jointRule;
+
+        public string tag => "OABuild/" + key;
+    }
+
     /// <summary>
-    /// Builds Assets/_Interaction/ObjectAssembly/ObjectAssembly_Demo.unity and
-    /// Prefabs/ObjectAssembly.prefab from Lamp_2split.fbx, then verifies them.
+    /// Builds an ObjectAssembly variant: its demo scene and prefab from a two-part FBX, then
+    /// verifies them. One build path for every variant in <see cref="Variants"/>; a variant is a
+    /// row in that table, never a copy of this file.
     ///
-    ///   Tools/ObjectAssembly/Build Demo   (refuses while any loaded scene has unsaved changes;
-    ///                                      reopens what was open afterwards)
-    ///   Tools/ObjectAssembly/Verify Demo  (with the demo scene active)
+    ///   Tools/ObjectAssembly/&lt;Variant&gt;/Build Demo   (refuses while any loaded scene has unsaved
+    ///                                                 changes; reopens what was open afterwards)
+    ///   Tools/ObjectAssembly/&lt;Variant&gt;/Verify Demo  (with that demo scene active)
     ///
-    /// THE HALVES ARE BAKED, NOT INSTANCED. The FBX's parts are a 100x-scaled, 270-degree-rotated
-    /// root with the other part parented under it. BreathingView offsets its Visual child in the
-    /// root's local space, so a scaled or tipped root would turn a 2.5 cm bob into metres sideways.
-    /// Each part's mesh is therefore re-written into metres, upright, centred on its own bounds
-    /// (Meshes/OA_Lamp_A.asset, OA_Lamp_B.asset): the root is unscaled and unrotated, the Visual
-    /// child is identity, and the convex collider uses the same mesh.
+    /// THE HALVES ARE BAKED, NOT INSTANCED. These FBXs are a scaled and/or 270-degree-rotated root
+    /// with the other part parented under it. BreathingView offsets its Visual child in the root's
+    /// local space, so a scaled or tipped root would turn a 2.5 cm bob into metres sideways. Each
+    /// part's mesh is re-written into metres, upright, centred on its own bounds: the fragment root
+    /// is unscaled and unrotated, the Visual child is identity, the convex collider uses that mesh.
     ///
-    /// THE JOIN POINT is where the two parts meet in the FBX's assembled layout: the centroid of
-    /// the vertex pairs closer than 4 mm (the closest pair if none are). Each half gets a JoinPoint
+    /// THE JOIN POINT follows the variant's <see cref="OAJointRule"/>. Each half gets a JoinPoint
     /// child there, so both coincide when assembled and OATrail runs between them.
     ///
-    /// OA_Phase0.playable is created once and then only topped up (a "Phase0 VO" AudioTrack, a
+    /// The Phase 0 timeline is created once and then only topped up (a "Phase0 VO" AudioTrack, a
     /// "Lights Up" AnimationTrack, an OAAppearMarker), so a voice-over dropped into it later
     /// survives a rebuild.
     /// </summary>
     public static class BuildObjectAssembly
     {
-        const string Tag = "OABuild";
-
         public const string Root = "Assets/_Interaction/ObjectAssembly";
-        public const string ScenePath = Root + "/ObjectAssembly_Demo.unity";
-        public const string PrefabPath = Root + "/Prefabs/ObjectAssembly.prefab";
-        public const string FbxPath = "Assets/_models/Lamp_2split/Lamp_2split.fbx";
         const string MeshFolder = Root + "/Meshes";
         const string MaterialFolder = Root + "/Materials";
         const string TimelineFolder = Root + "/Timeline";
-        public const string TimelinePath = TimelineFolder + "/OA_Phase0.playable";
-        const string LightsClipPath = TimelineFolder + "/OA_LightsUp.anim";
         const string FloorMaterialPath = MaterialFolder + "/OA_Floor.mat";
         const string TrailMaterialPath = MaterialFolder + "/OATrailFlow.mat";
 
         public const string AudioTrackName = "Phase0 VO";
         public const string LightsTrackName = "Lights Up";
+
+        public static readonly OAVariant Lamp = new()
+        {
+            key = "Lamp",
+            fbxPath = "Assets/_models/Lamp_2split/Lamp_2split.fbx",
+            rootName = "OA_Lamp",
+            scenePath = Root + "/OA_Lamp_Demo.unity",
+            prefabPath = Root + "/Prefabs/OA_Lamp.prefab",
+            timelinePath = TimelineFolder + "/OA_Lamp_Phase0.playable",
+            lightsClipPath = TimelineFolder + "/OA_Lamp_LightsUp.anim",
+            meshPathA = MeshFolder + "/OA_Lamp_A.asset",
+            meshPathB = MeshFolder + "/OA_Lamp_B.asset",
+            materialPath = MaterialFolder + "/OA_Lamp_URP.mat",
+            debugId = "oa.lamp",
+            debugLabel = "OA lamp -- claim, link, join, float",
+            phase1TaskId = "oa.lamp.phase1",
+            phase1Label = "OA lamp phase1 -- each player heard their line",
+            jointRule = OAJointRule.ContactCentroid,
+        };
+
+        public static readonly OAVariant Camera = new()
+        {
+            key = "Camera",
+            fbxPath = "Assets/_models/Camera_2split/Camera_2split.fbx",
+            rootName = "OA_Camera",
+            scenePath = Root + "/OA_Camera_Demo.unity",
+            prefabPath = Root + "/Prefabs/OA_Camera.prefab",
+            timelinePath = TimelineFolder + "/OA_Camera_Phase0.playable",
+            lightsClipPath = TimelineFolder + "/OA_Camera_LightsUp.anim",
+            meshPathA = MeshFolder + "/OA_Camera_A.asset",
+            meshPathB = MeshFolder + "/OA_Camera_B.asset",
+            materialPath = MaterialFolder + "/OA_Camera_URP.mat",
+            debugId = "oa.camera",
+            debugLabel = "OA camera -- claim, link, join, float",
+            phase1TaskId = "oa.camera.phase1",
+            phase1Label = "OA camera phase1 -- each player heard their line",
+            jointRule = OAJointRule.FaceOfBTowardA,
+        };
+
+        public static readonly OAVariant[] Variants = { Lamp, Camera };
+
         const float AppearMarkerTime = 3.5f;
         const float LightsStart = 0.5f;
         const float LightsDuration = 3.5f;
@@ -77,14 +149,24 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             public Material material;
         }
 
-        // ---- menu ------------------------------------------------------------------------------
+        // ---- menus -----------------------------------------------------------------------------
 
-        [MenuItem("Tools/ObjectAssembly/Build Demo")]
-        public static void BuildDemo()
+        [MenuItem("Tools/ObjectAssembly/Lamp/Build Demo")] public static void BuildLamp() => BuildDemo(Lamp);
+        [MenuItem("Tools/ObjectAssembly/Lamp/Verify Demo")] public static void VerifyLamp() => VerifyDemo(Lamp);
+        [MenuItem("Tools/ObjectAssembly/Camera/Build Demo")] public static void BuildCamera() => BuildDemo(Camera);
+        [MenuItem("Tools/ObjectAssembly/Camera/Verify Demo")] public static void VerifyCamera() => VerifyDemo(Camera);
+
+        public static OAVariant VariantForScene(string scenePath)
         {
-            if (InteractionBuildUtil.AnySceneDirty(Tag))
+            foreach (OAVariant v in Variants) if (v.scenePath == scenePath) return v;
+            return null;
+        }
+
+        public static void BuildDemo(OAVariant variant)
+        {
+            if (InteractionBuildUtil.AnySceneDirty(variant.tag))
             {
-                Debug.LogError($"[{Tag}] RESULT: FAIL - a loaded scene has unsaved changes; this builder " +
+                Debug.LogError($"[{variant.tag}] RESULT: FAIL - a loaded scene has unsaved changes; this builder " +
                                "replaces the open scene and never saves somebody else's work.");
                 return;
             }
@@ -93,76 +175,76 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 Scene s = SceneManager.GetSceneAt(i);
-                if (s.isLoaded && !string.IsNullOrEmpty(s.path) && s.path != ScenePath) reopen.Add(s.path);
+                if (s.isLoaded && !string.IsNullOrEmpty(s.path) && s.path != variant.scenePath) reopen.Add(s.path);
             }
 
             try
             {
-                Build();
+                Build(variant);
             }
             catch (System.Exception e)
             {
                 Debug.LogException(e);
-                Debug.LogError($"[{Tag}] RESULT: FAIL - exception: {e.Message}");
+                Debug.LogError($"[{variant.tag}] RESULT: FAIL - exception: {e.Message}");
             }
             finally
             {
-                Reopen(reopen);
+                Reopen(reopen, variant.tag);
             }
         }
 
-        [MenuItem("Tools/ObjectAssembly/Verify Demo")]
-        public static void VerifyDemo()
+        public static void VerifyDemo(OAVariant variant)
         {
             Scene scene = SceneManager.GetActiveScene();
-            if (scene.path != ScenePath)
+            if (scene.path != variant.scenePath)
             {
-                Debug.LogError($"[{Tag}] RESULT: FAIL - open {ScenePath} first.");
+                Debug.LogError($"[{variant.tag}] RESULT: FAIL - open {variant.scenePath} first.");
                 return;
             }
             var failures = new List<string>();
-            Verify(scene, failures);
-            InteractionBuildUtil.Verdict(Tag, failures);
+            Verify(variant, scene, failures);
+            InteractionBuildUtil.Verdict(variant.tag, failures);
         }
 
-        static void Reopen(List<string> paths)
+        static void Reopen(List<string> paths, string tag)
         {
-            if (paths.Count == 0) return;
-            if (Application.isBatchMode) return;
+            if (paths.Count == 0 || Application.isBatchMode) return;
             EditorSceneManager.OpenScene(paths[0], OpenSceneMode.Single);
             for (int i = 1; i < paths.Count; i++) EditorSceneManager.OpenScene(paths[i], OpenSceneMode.Additive);
-            Debug.Log($"[{Tag}] reopened {string.Join(", ", paths)}.");
+            Debug.Log($"[{tag}] reopened {string.Join(", ", paths)}.");
         }
 
         // ---- build -----------------------------------------------------------------------------
 
-        static void Build()
+        static void Build(OAVariant v)
         {
+            string tag = v.tag;
             var failures = new List<string>();
 
             if (!InteractionBuildUtil.RevealShaderOk(out string shaderProblem))
             {
-                Debug.LogError($"[{Tag}] RESULT: FAIL - {InteractionBuildUtil.RevealShaderName} {shaderProblem}.");
+                Debug.LogError($"[{tag}] RESULT: FAIL - {InteractionBuildUtil.RevealShaderName} {shaderProblem}.");
                 return;
             }
 
             // 1. The two parts.
-            var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(FbxPath);
+            var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(v.fbxPath);
             List<Part> parts = fbx != null ? ReadParts(fbx) : new List<Part>();
-            if (!InteractionBuildUtil.Check(Tag, parts.Count == 2,
-                    $"{FbxPath} has exactly two mesh parts (found {parts.Count})", failures))
+            if (!InteractionBuildUtil.Check(tag, parts.Count == 2,
+                    $"{v.fbxPath} has exactly two mesh parts (found {parts.Count}: " +
+                    $"{string.Join(", ", parts.ConvertAll(p => p.name))})", failures))
             {
-                InteractionBuildUtil.Verdict(Tag, failures);
+                InteractionBuildUtil.Verdict(tag, failures);
                 return;
             }
 
             // 2. The join point, in the FBX's assembled layout (world space of a fresh instance).
-            Vector3 joint = FindJoint(parts[0], parts[1], out int contacts, out float closest);
-            Debug.Log($"[{Tag}] join point {joint:F4} from {contacts} contact pairs (closest {closest * 1000f:0.0} mm).");
+            Vector3 joint = FindJoint(v.jointRule, parts[0], parts[1], out string how);
+            Debug.Log($"[{tag}] parts {parts[0].name} + {parts[1].name}; join point {joint:F4} ({how}).");
 
             // 3. A fresh scene FIRST. Opening a scene in Single mode unloads every asset nothing
             // references, and an asset created a moment earlier is exactly that -- the director
-            // was handed a dead TimelineAsset and saved a null. Assets are made after this.
+            // was once handed a dead TimelineAsset and saved a null. Assets are made after this.
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Flat;
@@ -173,21 +255,24 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             Directory.CreateDirectory(MeshFolder);
             Directory.CreateDirectory(MaterialFolder);
             Directory.CreateDirectory(TimelineFolder);
-            Directory.CreateDirectory(Root + "/Prefabs");
+            Directory.CreateDirectory(Path.GetDirectoryName(v.prefabPath) ?? Root);
 
             var centres = new Vector3[2];
             var meshes = new Mesh[2];
             var materials = new Material[2];
+            string[] meshPaths = { v.meshPathA, v.meshPathB };
             for (int i = 0; i < 2; i++)
             {
                 centres[i] = WorldBoundsCentre(parts[i]);
-                meshes[i] = BakeMesh(parts[i], centres[i], $"{MeshFolder}/OA_Lamp_{(i == 0 ? "A" : "B")}.asset");
-                string matPath = $"{MaterialFolder}/OA_{Sanitize(parts[i].material != null ? parts[i].material.name : "Lamp")}.mat";
-                materials[i] = InteractionBuildUtil.MakeFragmentMaterial(parts[i].material, matPath);
+                meshes[i] = BakeMesh(parts[i], centres[i], meshPaths[i]);
             }
+            materials[0] = InteractionBuildUtil.MakeFragmentMaterial(parts[0].material, v.materialPath);
+            materials[1] = parts[1].material == parts[0].material
+                ? materials[0]
+                : InteractionBuildUtil.MakeFragmentMaterial(parts[1].material, v.materialPath.Replace(".mat", "_B.mat"));
             Material floorMat = MakeFloorMaterial();
-            AnimationClip lightsClip = MakeLightsClip();
-            TimelineAsset timeline = EnsureTimeline(lightsClip, out AudioTrack audioTrack, out AnimationTrack lightsTrack);
+            AnimationClip lightsClip = MakeLightsClip(v.lightsClipPath);
+            TimelineAsset timeline = EnsureTimeline(v, lightsClip, out AudioTrack audioTrack, out AnimationTrack lightsTrack);
             AssetDatabase.SaveAssets();
 
             var environment = new GameObject("Environment");
@@ -197,7 +282,7 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             floor.transform.localScale = new Vector3(0.8f, 1f, 0.8f);
             floor.GetComponent<MeshRenderer>().sharedMaterial = floorMat;
 
-            var root = new GameObject("ObjectAssembly");
+            var root = new GameObject(v.rootName);
             Transform cornerP1 = Child(root.transform, "Corner_P1", CornerP1).transform;
             Transform cornerP2 = Child(root.transform, "Corner_P2", CornerP2).transform;
             Transform destination = Child(root.transform, "Destination", DestinationPosition).transform;
@@ -224,8 +309,7 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                 GameObject visual = Child(go.transform, "Visual", Vector3.zero);
                 visual.transform.localPosition = Vector3.zero;
                 visual.AddComponent<MeshFilter>().sharedMesh = meshes[i];
-                var mr = visual.AddComponent<MeshRenderer>();
-                mr.sharedMaterial = materials[i];
+                visual.AddComponent<MeshRenderer>().sharedMaterial = materials[i];
                 views[i] = visual.AddComponent<BreathingView>();
 
                 InteractionBuildUtil.ConfigureGrabbable(go, meshes[i]);
@@ -269,31 +353,37 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                 EditorUtility.SetDirty(fragments[i]);
             }
             controller.Configure(fragments[0], fragments[1], trail, cornerP1, cornerP2, destination, director, phase1, phase2);
+            var cso = new SerializedObject(controller);
+            cso.FindProperty("m_DebugId").stringValue = v.debugId;
+            cso.FindProperty("m_DebugLabel").stringValue = v.debugLabel;
+            cso.FindProperty("m_Phase1TaskId").stringValue = v.phase1TaskId;
+            cso.FindProperty("m_Phase1GateLabel").stringValue = v.phase1Label;
+            cso.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(controller);
 
             // Bootstrap (network manager, session, rig, staff + debug panels...).
-            GameObject bootstrap = InteractionBuildUtil.BuildDemoBootstrap(scene, SpawnP1, SpawnP2, Tag);
-            InteractionBuildUtil.Check(Tag, bootstrap != null, "demo bootstrap built", failures);
+            GameObject bootstrap = InteractionBuildUtil.BuildDemoBootstrap(scene, SpawnP1, SpawnP2, tag);
+            InteractionBuildUtil.Check(tag, bootstrap != null, "demo bootstrap built", failures);
 
             // 5. Save: scene, prefab, hashes, scene again.
             EditorSceneManager.MarkSceneDirty(scene);
-            if (!EditorSceneManager.SaveScene(scene, ScenePath))
+            if (!EditorSceneManager.SaveScene(scene, v.scenePath))
             {
-                InteractionBuildUtil.Check(Tag, false, $"saved {ScenePath}", failures);
-                InteractionBuildUtil.Verdict(Tag, failures);
+                InteractionBuildUtil.Check(tag, false, $"saved {v.scenePath}", failures);
+                InteractionBuildUtil.Verdict(tag, failures);
                 return;
             }
 
-            PrefabUtility.SaveAsPrefabAssetAndConnect(root, PrefabPath, InteractionMode.AutomatedAction, out bool prefabOk);
-            InteractionBuildUtil.Check(Tag, prefabOk, $"saved {PrefabPath}", failures);
+            PrefabUtility.SaveAsPrefabAssetAndConnect(root, v.prefabPath, InteractionMode.AutomatedAction, out bool prefabOk);
+            InteractionBuildUtil.Check(tag, prefabOk, $"saved {v.prefabPath}", failures);
 
             InteractionBuildUtil.RegenerateNetworkObjectHashes(scene);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
 
             // 6. Verify.
-            Verify(scene, failures);
-            InteractionBuildUtil.Verdict(Tag, failures);
+            Verify(v, scene, failures);
+            InteractionBuildUtil.Verdict(tag, failures);
         }
 
         // ---- parts, joint, meshes --------------------------------------------------------------
@@ -317,6 +407,9 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                         material = mr != null ? mr.sharedMaterial : null,
                     });
                 }
+                // A skinned part would not bake this way; count it so the two-part check fails loudly.
+                foreach (SkinnedMeshRenderer smr in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    parts.Add(new Part { name = (smr.sharedMesh != null ? smr.sharedMesh.name : smr.name) + " (skinned)" });
             }
             finally
             {
@@ -332,16 +425,42 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             return v;
         }
 
-        static Vector3 WorldBoundsCentre(Part p)
+        static Bounds WorldBounds(Part p)
         {
             Vector3[] v = WorldVertices(p);
             var b = new Bounds(v[0], Vector3.zero);
             foreach (Vector3 x in v) b.Encapsulate(x);
-            return b.center;
+            return b;
+        }
+
+        static Vector3 WorldBoundsCentre(Part p) => WorldBounds(p).center;
+
+        static Vector3 FindJoint(OAJointRule rule, Part a, Part b, out string how)
+        {
+            if (rule == OAJointRule.FaceOfBTowardA)
+            {
+                Bounds ba = WorldBounds(a), bb = WorldBounds(b);
+                Vector3 toA = ba.center - bb.center;
+                int axis = 0;
+                float best = -1f;
+                for (int i = 0; i < 3; i++)
+                {
+                    float r = Mathf.Abs(toA[i]) / Mathf.Max(bb.extents[i], 1e-5f);
+                    if (r > best) { best = r; axis = i; }
+                }
+                Vector3 face = bb.center;
+                face[axis] = toA[axis] >= 0f ? bb.max[axis] : bb.min[axis];
+                how = $"face of {b.name}'s bounds toward {a.name}, axis {"xyz"[axis]}";
+                return face;
+            }
+
+            Vector3 centroid = ContactCentroid(a, b, out int contacts, out float closest);
+            how = $"contact centroid of {contacts} vertex pairs, closest {closest * 1000f:0.0} mm";
+            return centroid;
         }
 
         /// <summary>Centroid of the contact between two parts; the closest vertex pair if they never come within tolerance.</summary>
-        static Vector3 FindJoint(Part a, Part b, out int contacts, out float closest)
+        static Vector3 ContactCentroid(Part a, Part b, out int contacts, out float closest)
         {
             Vector3[] va = WorldVertices(a);
             Vector3[] vb = WorldVertices(b);
@@ -457,29 +576,29 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             return light;
         }
 
-        static AnimationClip MakeLightsClip()
+        static AnimationClip MakeLightsClip(string path)
         {
-            var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(LightsClipPath);
+            var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
             bool created = clip == null;
-            if (created) clip = new AnimationClip { name = "OA_LightsUp" };
+            if (created) clip = new AnimationClip { name = Path.GetFileNameWithoutExtension(path) };
             clip.ClearCurves();
             AnimationUtility.SetEditorCurve(clip, EditorCurveBinding.FloatCurve("Key", typeof(Light), "m_Intensity"),
                                             AnimationCurve.EaseInOut(0f, 0f, LightsDuration, KeyIntensity));
             AnimationUtility.SetEditorCurve(clip, EditorCurveBinding.FloatCurve("Fill", typeof(Light), "m_Intensity"),
                                             AnimationCurve.EaseInOut(0f, 0f, LightsDuration, FillIntensity));
-            if (created) AssetDatabase.CreateAsset(clip, LightsClipPath);
+            if (created) AssetDatabase.CreateAsset(clip, path);
             else EditorUtility.SetDirty(clip);
             return clip;
         }
 
-        static TimelineAsset EnsureTimeline(AnimationClip lightsClip, out AudioTrack audioTrack, out AnimationTrack lightsTrack)
+        static TimelineAsset EnsureTimeline(OAVariant v, AnimationClip lightsClip, out AudioTrack audioTrack, out AnimationTrack lightsTrack)
         {
-            var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(TimelinePath);
+            var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(v.timelinePath);
             if (timeline == null)
             {
                 timeline = ScriptableObject.CreateInstance<TimelineAsset>();
-                timeline.name = "OA_Phase0";
-                AssetDatabase.CreateAsset(timeline, TimelinePath);
+                timeline.name = Path.GetFileNameWithoutExtension(v.timelinePath);
+                AssetDatabase.CreateAsset(timeline, v.timelinePath);
             }
 
             audioTrack = null;
@@ -502,7 +621,7 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                 lightsTimelineClip.displayName = "Lights Up";
             }
             // Hold after the clip, or the lights fall back to dark the moment a longer VO outruns it.
-            SetPostExtrapolation(lightsTimelineClip, TimelineClip.ClipExtrapolation.Hold);
+            SetPostExtrapolation(lightsTimelineClip, TimelineClip.ClipExtrapolation.Hold, v.tag);
 
             bool hasMarker = false;
             if (timeline.markerTrack != null)
@@ -518,13 +637,13 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             return timeline;
         }
 
-        static void SetPostExtrapolation(TimelineClip clip, TimelineClip.ClipExtrapolation mode)
+        static void SetPostExtrapolation(TimelineClip clip, TimelineClip.ClipExtrapolation mode, string tag)
         {
             PropertyInfo prop = typeof(TimelineClip).GetProperty("postExtrapolationMode",
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             MethodInfo setter = prop?.GetSetMethod(true);
             if (setter != null) setter.Invoke(clip, new object[] { mode });
-            else Debug.LogWarning($"[{Tag}] could not set post-extrapolation on '{clip.displayName}'.");
+            else Debug.LogWarning($"[{tag}] could not set post-extrapolation on '{clip.displayName}'.");
         }
 
         static AudioSource MakeVoice(Transform parent, string name)
@@ -545,26 +664,22 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             return go;
         }
 
-        static string Sanitize(string s)
-        {
-            foreach (char c in Path.GetInvalidFileNameChars()) s = s.Replace(c, '_');
-            return s.Replace(' ', '_');
-        }
-
         // ---- verify ----------------------------------------------------------------------------
 
-        static void Verify(Scene scene, List<string> failures)
+        static void Verify(OAVariant v, Scene scene, List<string> failures)
         {
-            bool C(bool ok, string what) => InteractionBuildUtil.Check(Tag, ok, what, failures);
+            string tag = v.tag;
+            bool C(bool ok, string what) => InteractionBuildUtil.Check(tag, ok, what, failures);
 
             GameObject root = null;
             foreach (GameObject go in scene.GetRootGameObjects())
-                if (go.name == "ObjectAssembly") root = go;
-            if (!C(root != null, "scene has /ObjectAssembly")) return;
+                if (go.name == v.rootName) root = go;
+            if (!C(root != null, $"scene has /{v.rootName}")) return;
 
             C(root.GetComponent<NetworkObject>() == null, "root has no NetworkObject");
-            C(PrefabUtility.IsPartOfPrefabInstance(root) && AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null,
-              "root is an instance of Prefabs/ObjectAssembly.prefab");
+            C(PrefabUtility.IsPartOfPrefabInstance(root) &&
+              PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(root) == v.prefabPath,
+              $"root is an instance of {v.prefabPath}");
 
             foreach (NetworkObject n in root.GetComponentsInChildren<NetworkObject>(true))
             {
@@ -583,7 +698,15 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             foreach (string field in new[] { "m_FragmentA", "m_FragmentB", "m_Trail", "m_CornerP1", "m_CornerP2",
                                              "m_Destination", "m_Director", "m_Phase1Source", "m_Phase2Source" })
                 C(so.FindProperty(field).objectReferenceValue != null, $"OAController.{field} wired");
-            C(so.FindProperty("m_DebugId").stringValue == "oa.assembly", "debug id is 'oa.assembly'");
+            C(controller.debugId == v.debugId, $"debug id is '{v.debugId}' (is '{controller.debugId}')");
+            C(controller.phase1TaskId == v.phase1TaskId, $"Phase 1 task id is '{v.phase1TaskId}' (is '{controller.phase1TaskId}')");
+            C(controller.debugLabel == v.debugLabel, "debug label set");
+            foreach (OAVariant other in Variants)
+            {
+                if (other == v) continue;
+                C(other.debugId != v.debugId && other.phase1TaskId != v.phase1TaskId,
+                  $"ids differ from the {other.key} variant's");
+            }
             C(Mathf.Approximately(so.FindProperty("m_JoinDistance").floatValue, 0.12f), "join distance 0.12 m");
 
             OAFragment a = controller.fragmentA, b = controller.fragmentB;
@@ -591,7 +714,7 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
 
             foreach (OAFragment f in new[] { a, b })
             {
-                InteractionBuildUtil.VerifyGrabbable(Tag, f.gameObject, failures);
+                InteractionBuildUtil.VerifyGrabbable(tag, f.gameObject, failures);
                 C(f.controller == controller, $"{f.name}: controller wired");
                 C(f.joinPoint != null && f.joinPoint.IsChildOf(f.transform), $"{f.name}: JoinPoint child");
                 C(f.view != null && f.view.transform.parent == f.transform, $"{f.name}: BreathingView on the Visual child");
@@ -599,13 +722,19 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                   $"{f.name}: root unscaled and upright (BreathingView offsets are in root space)");
                 if (f.view != null)
                 {
-                    Transform v = f.view.transform;
-                    C(v.localPosition == Vector3.zero && v.localRotation == Quaternion.identity && v.localScale == Vector3.one,
+                    Transform vt = f.view.transform;
+                    C(vt.localPosition == Vector3.zero && vt.localRotation == Quaternion.identity && vt.localScale == Vector3.one,
                       $"{f.name}: Visual is identity");
-                    var mr = v.GetComponent<MeshRenderer>();
+                    var mf = vt.GetComponent<MeshFilter>();
+                    string expectMesh = f == a ? v.meshPathA : v.meshPathB;
+                    C(mf != null && mf.sharedMesh != null && AssetDatabase.GetAssetPath(mf.sharedMesh) == expectMesh,
+                      $"{f.name}: mesh is {Path.GetFileName(expectMesh)}");
+                    var mr = vt.GetComponent<MeshRenderer>();
                     Material m = mr != null ? mr.sharedMaterial : null;
                     C(InteractionBuildUtil.IsRevealMaterialOk(m) && m.IsKeywordEnabled("_EMISSION"),
                       $"{f.name}: reveal material with _ALPHATEST_ON and _EMISSION");
+                    C(m != null && AssetDatabase.GetAssetPath(m).StartsWith(v.materialPath.Replace(".mat", "")),
+                      $"{f.name}: material is {Path.GetFileName(v.materialPath)}");
                 }
             }
 
@@ -633,7 +762,8 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             // Timeline.
             var director = controller.GetComponent<PlayableDirector>();
             var timeline = director != null ? director.playableAsset as TimelineAsset : null;
-            if (C(timeline != null && AssetDatabase.GetAssetPath(timeline) == TimelinePath, "director plays OA_Phase0.playable"))
+            if (C(timeline != null && AssetDatabase.GetAssetPath(timeline) == v.timelinePath,
+                  $"director plays {Path.GetFileName(v.timelinePath)}"))
             {
                 C(!director.playOnAwake, "director does not play on awake");
                 AudioTrack audio = null; AnimationTrack anim = null;
@@ -647,8 +777,14 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                 if (anim != null)
                 {
                     bool hold = false;
-                    foreach (TimelineClip c in anim.GetClips()) hold = c.postExtrapolationMode == TimelineClip.ClipExtrapolation.Hold;
+                    string clipPath = null;
+                    foreach (TimelineClip c in anim.GetClips())
+                    {
+                        hold = c.postExtrapolationMode == TimelineClip.ClipExtrapolation.Hold;
+                        if (c.asset is AnimationPlayableAsset apa && apa.clip != null) clipPath = AssetDatabase.GetAssetPath(apa.clip);
+                    }
                     C(hold, "lights clip holds after it ends");
+                    C(clipPath == v.lightsClipPath, $"lights clip is {Path.GetFileName(v.lightsClipPath)} (is {clipPath})");
                 }
                 bool marker = false;
                 if (timeline.markerTrack != null)
@@ -665,8 +801,8 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                 C(dark, "lights start dark");
             }
 
-            InteractionBuildUtil.VerifyHashes(Tag, scene, failures);
-            InteractionBuildUtil.VerifyDemoBootstrap(Tag, scene, failures);
+            InteractionBuildUtil.VerifyHashes(tag, scene, failures);
+            InteractionBuildUtil.VerifyDemoBootstrap(tag, scene, failures);
         }
     }
 }
