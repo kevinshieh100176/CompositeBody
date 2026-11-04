@@ -106,6 +106,11 @@ namespace CompositeBody.Interaction.Home.Diagnostics
             m_Log.Check(InteractionDebug.entries.Any(e => e.debugId == "home.assembly"), "debug row 'home.assembly' registered");
             m_Log.Check(RoomHidden(), "room hidden before the beat");
             m_Log.Check(f.All(x => x.state == HomeFragmentState.Dormant && !Visible(x)), "fragments dormant and invisible");
+            HomeZoneBeacon beacon = m_Assembly.beacon;
+            HomeSlotGhost[] ghost = f.Select(x => m_Assembly.ghosts.FirstOrDefault(gh => gh != null && gh.fragment == x)).ToArray();
+            if (!m_Log.Check(beacon != null && ghost.All(x => x != null), "beacon and five slot ghosts built")) yield break;
+            m_Log.Check(beacon.level <= 0f && !BeaconShown(beacon), "beacon hidden while dormant");
+            m_Log.Check(ghost.All(x => !x.shown), "slot ghosts off while dormant");
             Debug.Log($"[{Tag}] row: {m_Assembly.DebugState().detail}");
 
             // -- host + start ----------------------------------------------------------------
@@ -128,6 +133,9 @@ namespace CompositeBody.Interaction.Home.Diagnostics
             m_Log.Check(RoomHidden(), "room still hidden after arming");
             yield return Wait(m_Assembly.timings.appearDuration + 0.2f);
             m_Log.Check(f.All(Visible), "fragments appeared");
+            yield return m_Log.WaitFor(() => beacon.level > 0.95f && BeaconShown(beacon), 2f, "beacon up on zone B after the beat starts");
+            m_Log.Check(ghost.All(x => !x.shown), "ghosts off while nobody carries anything");
+            Capture("home_beacon_armed", ZonePose(2.6f, 1.7f));
 
             // -- breathing on the Visual child only ------------------------------------------
             Vector3 root0 = f[0].transform.position;
@@ -145,16 +153,25 @@ namespace CompositeBody.Interaction.Home.Diagnostics
             m_Log.Check(m_Hand.TryGrab(f[0].interactable), $"grab '{f[0].label}'");
             yield return m_Log.WaitFor(() => f[0].holder == nm.LocalClientId && f[0].OwnerClientId == nm.LocalClientId &&
                                              f[0].state == HomeFragmentState.Held, 2f, "holder and owner are the grabber; state Held");
+            yield return Wait(0.4f);
+            float farAlpha = ghost[0].alpha, farProximity = ghost[0].proximity01;
+            m_Log.Check(ghost[0].shown && farAlpha >= 0.3f && farProximity < 1f,
+                        $"ghost appears in the slot while carried (alpha {farAlpha:0.00}, proximity {farProximity:0.00})");
+            m_Log.Check(ghost.Skip(1).All(x => !x.shown), "the other ghosts stay off");
             CarryCentreTo(f[0], b.center);
             float enteredB = Time.time;
             yield return m_Log.WaitFor(() => f[0].view.shake01 > 0.05f, 1f, "trembles in the hand inside B");
             yield return m_Log.WaitFor(() => InteractionPhaseClock.IsSet(f[0].zoneEnteredAt), 1f, "server stamped the zone entry");
             yield return Wait(0.6f);
             m_Log.Check(f[0].view.shake01 > 0.3f && f[0].state == HomeFragmentState.Held, $"tremble ramps with the dwell ({f[0].view.shake01:0.00})");
+            m_Log.Check(ghost[0].proximity01 >= 0.999f && ghost[0].alpha > farAlpha + 0.02f,
+                        $"ghost brighter near the slot ({farAlpha:0.00} -> {ghost[0].alpha:0.00}, full inside B)");
+            Capture("home_ghost_held", ZonePose(1.3f, 1.55f));
             yield return m_Log.WaitFor(() => f[0].state == HomeFragmentState.Placed, m_Assembly.dwell + 1f, "auto-placed after the dwell");
             float dwelled = Time.time - enteredB;
             m_Log.Check(Mathf.Abs(dwelled - m_Assembly.dwell) < 0.4f, $"placed after {dwelled:0.00}s (dwell {m_Assembly.dwell:0.0}s)");
             yield return null;
+            m_Log.Check(!ghost[0].shown, "ghost off the moment it is placed");
             m_Log.Check(!m_Hand.hasSelection && !f[0].interactable.isSelected, "placing cancelled the hand's selection");
             m_Log.Check(!f[0].interactable.enabled && !f[0].grabCollider.enabled, "grab and collider off once placed");
             m_Log.Check(f[0].holder == NetGrabbable.NoHolder, "holder cleared");
@@ -163,6 +180,8 @@ namespace CompositeBody.Interaction.Home.Diagnostics
                         Quaternion.Angle(f[0].transform.rotation, f[0].slot.rotation) < 0.1f, "glided onto its slot");
             HomeRevealGroup g0 = m_Assembly.pairs[0].group;
             yield return m_Log.WaitFor(() => g0.started && AnyVisible(g0), 2f, $"its wall '{g0.groupName}' starts coming back");
+            yield return m_Log.WaitFor(() => beacon.level <= 0f && !BeaconShown(beacon), 2.5f,
+                                       "beacon fades out after the first fragment is home");
 
             // -- release inside B places at once ----------------------------------------------
             m_Log.Check(m_Hand.TryGrab(f[1].interactable), $"grab '{f[1].label}'");
@@ -191,18 +210,22 @@ namespace CompositeBody.Interaction.Home.Diagnostics
             yield return Wait(1.0f);
             m_Log.Check(Vector3.Distance(f[2].transform.position, releasePose) < 0.01f, "floats where it was let go");
             m_Log.Check(f[2].view.breathingNow > 0.5f, $"breathes again ({f[2].view.breathingNow:0.00})");
+            m_Log.Check(!ghost[2].shown, "ghost off after a let-go outside B");
 
             // -- refused grab while somebody else holds it ------------------------------------
             if (SetHolder(f[3], 77))
             {
-                yield return null;
+                yield return Wait(0.35f);
+                m_Log.Check(ghost[3].shown, "ghost shows while the other player (client 77) carries it");
                 bool grabbed = m_Hand.TryGrab(f[3].interactable);
                 m_Log.Check(!grabbed && !f[3].interactable.isSelected, "grab refused while client 77 holds it");
                 m_Log.Check(f[3].state == HomeFragmentState.Free, "refusal leaves it Free");
                 if (grabbed) m_Hand.Release();
                 SetHolder(f[3], NetGrabbable.NoHolder);
-                yield return null;
+                yield return Wait(0.4f);
+                m_Log.Check(!ghost[3].shown, "ghost off again once nobody holds it");
             }
+            m_Log.Check(beacon.level <= 0f, "beacon stays off for the rest of the beat");
 
             // -- timeout: the rest dissolve, every wall comes, ceiling last ------------------
             Debug.Log($"[{Tag}] row before timeout: {m_Assembly.DebugState().detail}");
@@ -241,7 +264,23 @@ namespace CompositeBody.Interaction.Home.Diagnostics
             m_Log.Check(RoomHidden(), "reset hides the room again");
             m_Log.Check(!m_Assembly.completed && !m_Assembly.allResolved, "reset clears the completion");
             CheckScatter(f, a, b, "re-scatter");
+            m_Log.Check(ghost.All(x => !x.shown), "reset: ghosts off");
+            yield return m_Log.WaitFor(() => beacon.level > 0.95f && BeaconShown(beacon), 2.5f, "reset: beacon back on");
             Debug.Log($"[{Tag}] row after reset: {m_Assembly.DebugState().detail}");
+        }
+
+        static bool BeaconShown(HomeZoneBeacon beacon)
+        {
+            var r = beacon != null ? beacon.GetComponent<Renderer>() : null;
+            return r != null && r.enabled;
+        }
+
+        /// <summary>Looking at zone B from <paramref name="distance"/> metres back (-Z), eye at <paramref name="eyeHeight"/>.</summary>
+        Pose ZonePose(float distance, float eyeHeight)
+        {
+            Vector3 c = m_Assembly.zoneB.center;
+            var eye = new Vector3(c.x + distance * 0.35f, eyeHeight, c.z - distance);
+            return new Pose(eye, Quaternion.LookRotation(c - eye));
         }
 
         // ---- helpers --------------------------------------------------------------------------

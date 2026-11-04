@@ -10,6 +10,7 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using CompositeBody.Diagnostics;
+using CompositeBody.Experience;
 using CompositeBody.Interaction.EditorTools;
 using Object = UnityEngine.Object;
 
@@ -38,7 +39,18 @@ namespace CompositeBody.Interaction.Home.EditorTools
         public const string FragmentMaterialPath = HomeFolder + "/Materials/HomeFragment.mat";
         public const string RevealFolder = HomeFolder + "/Materials/Reveal";
         public const string ColliderFolder = HomeFolder + "/Meshes";
+        public const string GhostMaterialPath = HomeFolder + "/Materials/HomeSlotGhost.mat";
+        public const string BeaconMaterialPath = HomeFolder + "/Materials/HomeBeacon.mat";
+        public const string GhostShaderName = "CompositeBody/HomeSlotGhost";
+        public const string BeaconShaderName = "CompositeBody/VolumetricColumn";
         public const string RootName = "HomeInteraction";
+
+        // The zone beacon: footprint from zone B, standing on the floor.
+        const float k_BeaconHeight = 2.6f;
+        static readonly Color k_GhostBlue = new(0.42f, 0.72f, 1.0f, 1f);
+        const float k_BeaconIntensity = 0.9f;
+        const float k_BeaconDensity = 0.6f;
+        const float k_GhostEdgeWidth = 0.008f; // metres, world
 
         const string k_EnvironmentPath = "Home/--- Environment ---";
         const string k_MiniHousePath = k_EnvironmentPath + "/LowPolyWall";
@@ -240,6 +252,19 @@ namespace CompositeBody.Interaction.Home.EditorTools
             Directory.CreateDirectory(HomeFolder + "/Prefabs");
 
             Material fragmentMat = InteractionBuildUtil.MakeFragmentMaterial(pieces[0].material, FragmentMaterialPath);
+            // The art material is double-sided (_Cull 0), and the reveal shader's forward pass does
+            // not flip the normal on back faces, so the back of the paper was lit with the front's
+            // normal and read black. The fragments draw a two-sided MESH instead, culled normally.
+            fragmentMat.SetFloat("_Cull", (float)CullMode.Back);
+            fragmentMat.doubleSidedGI = false;
+            EditorUtility.SetDirty(fragmentMat);
+            Material ghostMat = MakeMaterial(GhostMaterialPath, GhostShaderName, m => m.SetFloat("_Cull", (float)CullMode.Off));
+            Material beaconMat = MakeMaterial(BeaconMaterialPath, BeaconShaderName, null);
+            if (ghostMat == null || beaconMat == null)
+            {
+                Debug.LogError($"[{Tag}] RESULT: FAIL - shader '{GhostShaderName}' or '{BeaconShaderName}' not found.");
+                return;
+            }
             var twins = new Dictionary<Material, Material>();
             foreach (Renderer r in room.GetComponentsInChildren<Renderer>(true))
             {
@@ -252,6 +277,8 @@ namespace CompositeBody.Interaction.Home.EditorTools
             // Only what this builder made. A global AssetDatabase.SaveAssets() in a shared editor
             // writes every other dirty asset too -- somebody else's unsaved prefab edit included.
             SaveOwn(fragmentMat);
+            SaveOwn(ghostMat);
+            SaveOwn(beaconMat);
             foreach (Material twin in twins.Values) SaveOwn(twin);
             s_MadeMeshes.Clear();
             Debug.Log($"[{Tag}] materials: {Path.GetFileName(FragmentMaterialPath)} + {twins.Count} reveal twins in {RevealFolder}.");
@@ -306,18 +333,24 @@ namespace CompositeBody.Interaction.Home.EditorTools
             Transform fragmentsParent = Child(rootGO.transform, "Fragments");
             Transform groupsParent = Child(rootGO.transform, "Groups");
 
+            Transform ghostsParent = Child(rootGO.transform, "Ghosts");
+
             var pairs = new List<(HomeFragment fragment, HomeRevealGroup group)>();
+            var ghosts = new List<HomeSlotGhost>();
             foreach ((Piece p, Wall w) in mapping)
             {
                 Transform slot = Child(slots, p.label + "_Slot");
                 p.art.GetPositionAndRotation(out Vector3 artPos, out Quaternion artRot);
                 slot.SetPositionAndRotation(artPos, artRot);
 
-                HomeFragment fragment = MakeFragment(fragmentsParent, p, slot, fragmentMat, assembly);
+                Mesh twoSided = MakeTwoSidedMesh(p);
+                HomeFragment fragment = MakeFragment(fragmentsParent, p, slot, fragmentMat, twoSided, assembly);
+                ghosts.Add(MakeGhost(ghostsParent, p, slot, fragment, ghostMat));
                 HomeRevealGroup group = w != null ? MakeGroup(groupsParent, w, twins) : null;
                 pairs.Add((fragment, group));
             }
             HomeRevealGroup final = finalWall != null ? MakeGroup(groupsParent, finalWall, twins) : null;
+            HomeZoneBeacon beacon = MakeBeacon(rootGO.transform, zoneB, beaconMat, assembly);
 
             var aso = new SerializedObject(assembly);
             SerializedProperty pairsProp = aso.FindProperty("m_Pairs");
@@ -331,6 +364,10 @@ namespace CompositeBody.Interaction.Home.EditorTools
             aso.FindProperty("m_FinalGroup").objectReferenceValue = final;
             aso.FindProperty("m_ZoneA").objectReferenceValue = zoneA;
             aso.FindProperty("m_ZoneB").objectReferenceValue = zoneB;
+            aso.FindProperty("m_Beacon").objectReferenceValue = beacon;
+            SerializedProperty ghostsProp = aso.FindProperty("m_Ghosts");
+            ghostsProp.arraySize = ghosts.Count;
+            for (int i = 0; i < ghosts.Count; i++) ghostsProp.GetArrayElementAtIndex(i).objectReferenceValue = ghosts[i];
             aso.ApplyModifiedPropertiesWithoutUndo();
 
             // ---- the art: room movable, mini-house is the answer key ------------------------
@@ -415,7 +452,271 @@ namespace CompositeBody.Interaction.Home.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static HomeFragment MakeFragment(Transform parent, Piece p, Transform slot, Material material, HomeAssembly assembly)
+        static Material MakeMaterial(string path, string shaderName, Action<Material> configure)
+        {
+            Shader shader = Shader.Find(shaderName);
+            if (shader == null) return null;
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            bool created = mat == null;
+            if (created) mat = new Material(shader);
+            mat.shader = shader;
+            mat.name = Path.GetFileNameWithoutExtension(path);
+            configure?.Invoke(mat);
+            if (created) AssetDatabase.CreateAsset(mat, path);
+            else EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        static Mesh LoadOrNewMesh(string path, out bool created)
+        {
+            var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            created = mesh == null;
+            if (created) mesh = new Mesh();
+            mesh.Clear();
+            return mesh;
+        }
+
+        static void StoreMesh(Mesh mesh, string path, bool created)
+        {
+            if (created) AssetDatabase.CreateAsset(mesh, path);
+            else EditorUtility.SetDirty(mesh);
+            s_MadeMeshes.Add(mesh);
+        }
+
+        /// <summary>
+        /// The paper drawn from both sides with correct lighting: the source triangles, then a copy
+        /// with reversed winding, negated normals and tangent.w flipped (so the bitangent, and with
+        /// it the texture's v direction, stays the same). uv0..uv2 are copied for both halves.
+        /// </summary>
+        static Mesh MakeTwoSidedMesh(Piece p)
+        {
+            string path = $"{ColliderFolder}/{p.label}_TwoSided.asset";
+            Mesh mesh = LoadOrNewMesh(path, out bool created);
+            Mesh src = p.mesh;
+            mesh.name = $"{p.label}_TwoSided";
+
+            int n = src.vertexCount;
+            Vector3[] v = src.vertices;
+            Vector3[] normals = src.normals;
+            if (normals.Length != n)
+            {
+                var tmp = Object.Instantiate(src);
+                tmp.RecalculateNormals();
+                normals = tmp.normals;
+                Object.DestroyImmediate(tmp);
+            }
+            Vector4[] tangents = src.tangents;
+
+            var v2 = new Vector3[n * 2];
+            var n2 = new Vector3[n * 2];
+            for (int i = 0; i < n; i++)
+            {
+                v2[i] = v2[n + i] = v[i];
+                n2[i] = normals[i];
+                n2[n + i] = -normals[i];
+            }
+            mesh.indexFormat = n * 2 > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
+            mesh.vertices = v2;
+            mesh.normals = n2;
+            if (tangents.Length == n)
+            {
+                var t2 = new Vector4[n * 2];
+                for (int i = 0; i < n; i++)
+                {
+                    t2[i] = tangents[i];
+                    Vector4 t = tangents[i];
+                    t2[n + i] = new Vector4(t.x, t.y, t.z, -t.w);
+                }
+                mesh.tangents = t2;
+            }
+            for (int channel = 0; channel < 3; channel++)
+            {
+                var uv = new List<Vector2>();
+                src.GetUVs(channel, uv);
+                if (uv.Count != n) continue;
+                uv.AddRange(uv.ToArray());
+                mesh.SetUVs(channel, uv);
+            }
+
+            mesh.subMeshCount = src.subMeshCount;
+            for (int s = 0; s < src.subMeshCount; s++)
+            {
+                int[] tris = src.GetTriangles(s);
+                var both = new int[tris.Length * 2];
+                for (int i = 0; i < tris.Length; i += 3)
+                {
+                    both[i] = tris[i];
+                    both[i + 1] = tris[i + 1];
+                    both[i + 2] = tris[i + 2];
+                    int j = tris.Length + i;
+                    both[j] = n + tris[i];
+                    both[j + 1] = n + tris[i + 2];
+                    both[j + 2] = n + tris[i + 1];
+                }
+                mesh.SetTriangles(both, s);
+            }
+            mesh.RecalculateBounds();
+            StoreMesh(mesh, path, created);
+            return mesh;
+        }
+
+        /// <summary>
+        /// The slot ghost's mesh: the paper once (the ghost material does not cull), plus a thin
+        /// ribbon along every boundary edge, marked in vertex colour red (1 at the edge, 0 on its
+        /// inner side and on the paper) -- a flat sheet has no fresnel to make an outline from, and
+        /// its UVs are atlased, so the outline is baked. Boundary edges are those used by exactly
+        /// one triangle after welding by position, so the irregular Floor gets its own outline.
+        /// </summary>
+        static Mesh MakeGhostMesh(Piece p, float lossyScale)
+        {
+            string path = $"{ColliderFolder}/{p.label}_Ghost.asset";
+            Mesh mesh = LoadOrNewMesh(path, out bool created);
+            Mesh src = p.mesh;
+            mesh.name = $"{p.label}_Ghost";
+
+            Vector3[] v = src.vertices;
+            int[] tris = src.triangles;
+            var verts = new List<Vector3>(v);
+            var normals = new List<Vector3>();
+            var colours = new List<Color>();
+            var indices = new List<int>(tris);
+            Vector3[] srcNormals = src.normals;
+            for (int i = 0; i < v.Length; i++)
+            {
+                normals.Add(srcNormals.Length == v.Length ? srcNormals[i] : Vector3.up);
+                colours.Add(new Color(0f, 0f, 0f, 0f));
+            }
+
+            // Weld by position, count undirected edges.
+            var weld = new int[v.Length];
+            var byKey = new Dictionary<Vector3Int, int>();
+            for (int i = 0; i < v.Length; i++)
+            {
+                var key = new Vector3Int(Mathf.RoundToInt(v[i].x * 1e5f), Mathf.RoundToInt(v[i].y * 1e5f), Mathf.RoundToInt(v[i].z * 1e5f));
+                if (!byKey.TryGetValue(key, out int w)) { w = i; byKey[key] = i; }
+                weld[i] = w;
+            }
+            var edgeCount = new Dictionary<(int, int), int>();
+            for (int t = 0; t < tris.Length; t += 3)
+            {
+                for (int e = 0; e < 3; e++)
+                {
+                    int a = weld[tris[t + e]], b = weld[tris[t + (e + 1) % 3]];
+                    var k = a < b ? (a, b) : (b, a);
+                    edgeCount[k] = edgeCount.TryGetValue(k, out int c) ? c + 1 : 1;
+                }
+            }
+
+            float width = k_GhostEdgeWidth / Mathf.Max(1e-4f, lossyScale);
+            int ribbons = 0;
+            for (int t = 0; t < tris.Length; t += 3)
+            {
+                Vector3 pa0 = v[tris[t]], pb0 = v[tris[t + 1]], pc0 = v[tris[t + 2]];
+                Vector3 normal = Vector3.Cross(pb0 - pa0, pc0 - pa0);
+                if (normal.sqrMagnitude < 1e-14f) continue;
+                normal.Normalize();
+                for (int e = 0; e < 3; e++)
+                {
+                    int ia = tris[t + e], ib = tris[t + (e + 1) % 3], ic = tris[t + (e + 2) % 3];
+                    int a = weld[ia], b = weld[ib];
+                    if (edgeCount[a < b ? (a, b) : (b, a)] != 1) continue;
+
+                    Vector3 pa = v[ia], pb = v[ib], pc = v[ic];
+                    Vector3 inward = Vector3.Cross(normal, pb - pa).normalized;
+                    if (Vector3.Dot(inward, pc - pa) < 0f) inward = -inward;
+
+                    int start = verts.Count;
+                    verts.Add(pa); verts.Add(pb); verts.Add(pa + inward * width); verts.Add(pb + inward * width);
+                    for (int k = 0; k < 4; k++) normals.Add(normal);
+                    colours.Add(new Color(1f, 0f, 0f, 1f)); colours.Add(new Color(1f, 0f, 0f, 1f));
+                    colours.Add(new Color(0f, 0f, 0f, 1f)); colours.Add(new Color(0f, 0f, 0f, 1f));
+                    indices.AddRange(new[] { start, start + 1, start + 2, start + 1, start + 3, start + 2 });
+                    ribbons++;
+                }
+            }
+
+            mesh.indexFormat = verts.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
+            mesh.SetVertices(verts);
+            mesh.SetNormals(normals);
+            mesh.SetColors(colours);
+            mesh.SetTriangles(indices, 0);
+            mesh.RecalculateBounds();
+            StoreMesh(mesh, path, created);
+            if (ribbons == 0) Debug.LogWarning($"[{Tag}] {p.label}: no boundary edges found for the ghost outline.");
+            return mesh;
+        }
+
+        static HomeSlotGhost MakeGhost(Transform parent, Piece p, Transform slot, HomeFragment fragment, Material material)
+        {
+            var go = new GameObject(p.label + "_Ghost");
+            go.transform.SetParent(parent, false);
+            slot.GetPositionAndRotation(out Vector3 pos, out Quaternion rot);
+            go.transform.SetPositionAndRotation(pos, rot);
+            go.transform.localScale = p.art.lossyScale;
+            GameObjectUtility.SetStaticEditorFlags(go, 0);
+
+            Vector3 s = p.art.lossyScale;
+            go.AddComponent<MeshFilter>().sharedMesh = MakeGhostMesh(p, Mathf.Min(Mathf.Abs(s.x), Mathf.Abs(s.y), Mathf.Abs(s.z)));
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = material;
+            mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            mr.lightProbeUsage = LightProbeUsage.Off;
+            mr.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            mr.enabled = false; // shown only while the fragment is carried
+
+            var ghost = go.AddComponent<HomeSlotGhost>();
+            var so = new SerializedObject(ghost);
+            so.FindProperty("m_Fragment").objectReferenceValue = fragment;
+            so.FindProperty("m_Renderer").objectReferenceValue = mr;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return ghost;
+        }
+
+        /// <summary>
+        /// O-0's light column on zone B: a unit Cube proxy (the shader needs a cube) scaled by
+        /// VolumetricColumn from metres, centred at half its height so it stands on the floor.
+        /// Authored at reveal 0 with the renderer off, so the scene view is unchanged until play.
+        /// </summary>
+        static HomeZoneBeacon MakeBeacon(Transform parent, HomeZone zoneB, Material material, HomeAssembly assembly)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = "ZoneBeacon";
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.SetParent(parent, false);
+            go.transform.SetPositionAndRotation(new Vector3(zoneB.center.x, k_BeaconHeight * 0.5f, zoneB.center.z), Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(go, 0);
+
+            var mr = go.GetComponent<MeshRenderer>();
+            mr.sharedMaterial = material;
+            mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            mr.lightProbeUsage = LightProbeUsage.Off;
+            mr.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            mr.enabled = false;
+
+            var column = go.AddComponent<VolumetricColumn>();
+            var cso = new SerializedObject(column);
+            cso.FindProperty("m_Radius").floatValue = 0.5f * Mathf.Max(zoneB.size.x, zoneB.size.z);
+            cso.FindProperty("m_Height").floatValue = k_BeaconHeight;
+            cso.FindProperty("m_UseRoleColor").boolValue = false;
+            cso.FindProperty("m_Color").colorValue = k_GhostBlue;
+            cso.FindProperty("m_Intensity").floatValue = k_BeaconIntensity;
+            cso.FindProperty("m_Density").floatValue = k_BeaconDensity;
+            cso.FindProperty("m_SceneDepthOcclusion").boolValue = false;
+            cso.FindProperty("m_Reveal").floatValue = 0f;
+            cso.ApplyModifiedPropertiesWithoutUndo();
+
+            var beacon = go.AddComponent<HomeZoneBeacon>();
+            var bso = new SerializedObject(beacon);
+            bso.FindProperty("m_Assembly").objectReferenceValue = assembly;
+            bso.FindProperty("m_Column").objectReferenceValue = column;
+            bso.ApplyModifiedPropertiesWithoutUndo();
+            return beacon;
+        }
+
+        static HomeFragment MakeFragment(Transform parent, Piece p, Transform slot, Material material, Mesh twoSided,
+                                         HomeAssembly assembly)
         {
             var root = new GameObject(p.label);
             root.transform.SetParent(parent, false);
@@ -425,7 +726,7 @@ namespace CompositeBody.Interaction.Home.EditorTools
 
             var visual = new GameObject("Visual");
             visual.transform.SetParent(root.transform, false);
-            visual.AddComponent<MeshFilter>().sharedMesh = p.mesh;
+            visual.AddComponent<MeshFilter>().sharedMesh = twoSided;
             var mr = visual.AddComponent<MeshRenderer>();
             mr.sharedMaterial = material;
             mr.shadowCastingMode = ShadowCastingMode.On;
@@ -570,6 +871,9 @@ namespace CompositeBody.Interaction.Home.EditorTools
             var fragmentMat = AssetDatabase.LoadAssetAtPath<Material>(FragmentMaterialPath);
             Check(InteractionBuildUtil.IsRevealMaterialOk(fragmentMat) && fragmentMat.IsKeywordEnabled("_EMISSION"),
                   "HomeFragment.mat: reveal shader, _ALPHATEST_ON, _EMISSION");
+            Check(fragmentMat != null && fragmentMat.HasProperty("_Cull") &&
+                  Mathf.Approximately(fragmentMat.GetFloat("_Cull"), (float)CullMode.Back),
+                  "HomeFragment.mat culls Back (the two-sided mesh supplies the back)");
 
             var seenFragments = new HashSet<HomeFragment>();
             var seenGroups = new HashSet<HomeRevealGroup>();
@@ -593,6 +897,8 @@ namespace CompositeBody.Interaction.Home.EditorTools
                 Check(mr != null && mr.sharedMaterial == fragmentMat, $"{f.label}: renders with HomeFragment.mat");
 
                 Transform art = FindPath(scene, k_MiniHousePath + "/" + ArtNameFor(scene, f.label));
+                VerifyTwoSided(f, visual, art, Check);
+                VerifyGhost(assembly, f, art, Check);
                 if (f.slot != null && art != null)
                 {
                     float err = Vector3.Distance(f.slot.position, art.position);
@@ -610,6 +916,11 @@ namespace CompositeBody.Interaction.Home.EditorTools
                           $"float {Fmt(g.floatDirection)}");
             }
             Check(pairsOk == 5, $"5 fragment/group pairs (found {pairsOk})");
+            Check(assembly.ghosts.Count == 5 && assembly.ghosts.All(x => x != null) &&
+                  assembly.ghosts.Select(x => x.fragment).Distinct().Count() == 5, "5 slot ghosts, one per fragment");
+            Shader ghostShader = Shader.Find(GhostShaderName);
+            Check(ghostShader != null && !ShaderUtil.ShaderHasError(ghostShader), $"{GhostShaderName} compiles");
+            VerifyBeacon(assembly, Check);
 
             // Groups.
             var groups = assembly.pairs.Where(p => p?.group != null).Select(p => p.group).ToList();
@@ -665,6 +976,75 @@ namespace CompositeBody.Interaction.Home.EditorTools
 
             InteractionBuildUtil.Verdict(Tag, failures);
             return failures.Count == 0;
+        }
+
+        static void VerifyTwoSided(HomeFragment f, Transform visual, Transform art, Func<bool, string, bool> check)
+        {
+            Mesh mesh = visual != null ? visual.GetComponent<MeshFilter>()?.sharedMesh : null;
+            Mesh source = art != null ? art.GetComponent<MeshFilter>()?.sharedMesh : null;
+            string expected = $"{ColliderFolder}/{f.label}_TwoSided.asset";
+            check(mesh != null && AssetDatabase.GetAssetPath(mesh) == expected, $"{f.label}: Visual draws {Path.GetFileName(expected)}");
+            if (mesh == null || source == null) return;
+
+            int n = source.vertexCount;
+            check(mesh.vertexCount == 2 * n, $"{f.label}: two-sided mesh has 2x the source vertices ({mesh.vertexCount} = 2 x {n})");
+            Vector3[] normals = mesh.normals;
+            Vector4[] tangents = mesh.tangents;
+            bool mirrored = normals.Length == 2 * n;
+            for (int i = 0; mirrored && i < n; i++)
+                if ((normals[n + i] + normals[i]).sqrMagnitude > 1e-6f) mirrored = false;
+            check(mirrored, $"{f.label}: back-half normals are the negated front");
+            bool flipped = tangents.Length != 2 * n || Enumerable.Range(0, n).All(i => Mathf.Approximately(tangents[n + i].w, -tangents[i].w));
+            check(flipped, $"{f.label}: back-half tangent.w flipped");
+            check(mesh.triangles.Length == 2 * source.triangles.Length, $"{f.label}: two-sided mesh has 2x the triangles");
+        }
+
+        static void VerifyGhost(HomeAssembly assembly, HomeFragment f, Transform art, Func<bool, string, bool> check)
+        {
+            HomeSlotGhost ghost = assembly.ghosts.FirstOrDefault(g => g != null && g.fragment == f);
+            if (!check(ghost != null, $"{f.label}: has a slot ghost")) return;
+            var mr = ghost.GetComponent<MeshRenderer>();
+            Mesh mesh = ghost.GetComponent<MeshFilter>()?.sharedMesh;
+            Mesh source = art != null ? art.GetComponent<MeshFilter>()?.sharedMesh : null;
+            check(mr != null && mr.sharedMaterial != null && mr.sharedMaterial.shader.name == GhostShaderName && !mr.enabled,
+                  $"{f.label}: ghost on {GhostShaderName}, renderer off until carried");
+            check(mr != null && mr.sharedMaterial != null && Mathf.Approximately(mr.sharedMaterial.GetFloat("_Cull"), (float)CullMode.Off),
+                  $"{f.label}: ghost material culls Off");
+            int ribbonVerts = mesh != null && source != null ? mesh.vertexCount - source.vertexCount : 0;
+            check(mesh != null && source != null && ribbonVerts >= 12 && ribbonVerts % 4 == 0 &&
+                  mesh.colors.Skip(source.vertexCount).Any(c => c.r > 0.99f),
+                  $"{f.label}: ghost mesh carries an outline ribbon ({ribbonVerts / 4} edges)");
+            if (f.slot != null)
+            {
+                float err = Vector3.Distance(ghost.transform.position, f.slot.position);
+                float ang = Quaternion.Angle(ghost.transform.rotation, f.slot.rotation);
+                check(err < 0.0005f && ang < 0.05f && (ghost.transform.lossyScale - f.transform.lossyScale).sqrMagnitude < 1e-8f,
+                      $"{f.label}: ghost at the slot pose and the fragment's scale ({err * 1000f:0.000} mm)");
+            }
+        }
+
+        static void VerifyBeacon(HomeAssembly assembly, Func<bool, string, bool> check)
+        {
+            HomeZoneBeacon beacon = assembly.beacon;
+            if (!check(beacon != null && beacon.column != null, "zone beacon with a VolumetricColumn")) return;
+            var mr = beacon.GetComponent<MeshRenderer>();
+            Mesh proxy = beacon.GetComponent<MeshFilter>()?.sharedMesh;
+            check(mr != null && mr.sharedMaterial != null && mr.sharedMaterial.shader.name == BeaconShaderName &&
+                  AssetDatabase.GetAssetPath(mr.sharedMaterial) == BeaconMaterialPath,
+                  $"beacon draws {Path.GetFileName(BeaconMaterialPath)} on {BeaconShaderName}");
+            check(proxy != null && proxy.name == "Cube", "beacon proxy is a Cube (what the column shader expects)");
+            check(mr != null && !mr.enabled && Mathf.Approximately(beacon.column.reveal, 0f), "beacon authored off (reveal 0, renderer off)");
+            HomeZone b = assembly.zoneB;
+            if (b != null)
+            {
+                Vector3 p = beacon.transform.position;
+                float expectRadius = 0.5f * Mathf.Max(b.size.x, b.size.z);
+                check(Mathf.Abs(p.x - b.center.x) < 1e-3f && Mathf.Abs(p.z - b.center.z) < 1e-3f &&
+                      Mathf.Abs(beacon.column.radius - expectRadius) < 1e-3f,
+                      $"beacon stands on zone B, radius {beacon.column.radius:0.00} m from its footprint");
+            }
+            var so = new SerializedObject(beacon);
+            check(so.FindProperty("m_Assembly").objectReferenceValue == assembly, "beacon wired to the assembly");
         }
 
         static string ArtNameFor(Scene scene, string label)

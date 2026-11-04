@@ -80,6 +80,12 @@ namespace CompositeBody.Interaction.Home
         [SerializeField, Tooltip("The assembly zone around the mini-house.")]
         HomeZone m_ZoneB;
 
+        [SerializeField, Tooltip("The light column on zone B, until the first fragment is home.")]
+        HomeZoneBeacon m_Beacon;
+
+        [SerializeField, Tooltip("One outline per fragment in its slot, shown while it is carried.")]
+        HomeSlotGhost[] m_Ghosts = Array.Empty<HomeSlotGhost>();
+
         [Header("Arming")]
         [SerializeField, Tooltip("MainScene: the beat's own object. Set, it alone starts the beat. " +
                                  "Empty (the demo): the session going InProgress starts it.")]
@@ -174,6 +180,26 @@ namespace CompositeBody.Interaction.Home
         public float exclusionMargin => m_ExclusionMargin;
         public IReadOnlyList<Pair> pairs => m_Pairs;
         public HomeRevealGroup finalGroup => m_FinalGroup;
+        public HomeZoneBeacon beacon => m_Beacon;
+        public IReadOnlyList<HomeSlotGhost> ghosts => m_Ghosts;
+
+        /// <summary>Shared-clock stamp of the first fragment resolved this epoch, or Unset.</summary>
+        public double firstResolvedAt
+        {
+            get
+            {
+                double best = double.PositiveInfinity;
+                foreach (Pair p in m_Pairs)
+                    if (p?.fragment != null && p.fragment.isResolved) best = Math.Min(best, p.fragment.resolvedAt);
+                return double.IsPositiveInfinity(best) ? InteractionPhaseClock.Unset : best;
+            }
+        }
+
+        HomeSlotGhost GhostOf(HomeFragment f)
+        {
+            foreach (HomeSlotGhost g in m_Ghosts) if (g != null && g.fragment == f) return g;
+            return null;
+        }
         public GameObject beatRoot { get => m_BeatRoot; set => m_BeatRoot = value; }
 
         /// <summary>Times the events have fired on this machine (tests).</summary>
@@ -572,13 +598,16 @@ namespace CompositeBody.Interaction.Home
             }
 
             var parts = new List<string> { $"{placedCount}/{fragmentCount} placed" };
+            if (m_Beacon != null && m_Beacon.level > 0.01f) parts.Add($"beacon {m_Beacon.level * 100f:0}%");
             foreach (Pair p in m_Pairs)
             {
                 HomeFragment f = p?.fragment;
                 if (f == null) continue;
                 if (f.state == HomeFragmentState.Held)
                 {
-                    parts.Add($"{f.label} held {RoleOf(f.holder)}");
+                    HomeSlotGhost ghost = GhostOf(f);
+                    parts.Add($"{f.label} held {RoleOf(f.holder)}" +
+                              (ghost != null && ghost.shown ? $" (ghost {ghost.alpha * 100f:0}%)" : ""));
                     if (InteractionPhaseClock.IsSet(f.zoneEnteredAt))
                         parts.Add($"{f.label} in B {InteractionPhaseClock.Since(f.zoneEnteredAt):0.0}s");
                 }
