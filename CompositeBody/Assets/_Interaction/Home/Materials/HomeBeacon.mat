@@ -25,14 +25,14 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _BottomFade: 0.12
+    - _BottomFade: 0.35
     - _CoreBoost: 0.9
     - _Density: 1
     - _DepthSoftness: 0.35
     - _Drift: 0.25
     - _DriftSpeed: 0.35
     - _EdgeSoftness: 0.55
-    - _GroundPool: 1.1
+    - _GroundPool: 0
     - _Intensity: 1.6
     - _Phase: 0
     - _Reveal: 1

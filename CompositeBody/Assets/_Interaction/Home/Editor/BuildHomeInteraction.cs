@@ -45,8 +45,13 @@ namespace CompositeBody.Interaction.Home.EditorTools
         public const string BeaconShaderName = "CompositeBody/VolumetricColumn";
         public const string RootName = "HomeInteraction";
 
-        // The zone beacon: footprint from zone B, standing on the floor.
-        const float k_BeaconHeight = 2.6f;
+        // The zone beacon: footprint from zone B; its proxy runs from just above the water up to a
+        // fixed top. KWS water does not write the depth the column intersects against, so a column
+        // that pierces the water draws over it and shimmers with the waves -- it must stay clear.
+        const float k_BeaconProxyTop = 2.744f;        // world y of the proxy's top (the light ends ~2.63)
+        public const float BeaconWaterClearance = 0.25f; // metres between the water surface and the proxy
+        const float k_ColumnInset = 0.9f;             // VolumetricColumn: the light is 90% of the proxy
+        public const float BeaconBottomFade = 0.35f;
         static readonly Color k_GhostBlue = new(0.42f, 0.72f, 1.0f, 1f);
         const float k_BeaconIntensity = 0.9f;
         const float k_BeaconDensity = 0.6f;
@@ -259,7 +264,13 @@ namespace CompositeBody.Interaction.Home.EditorTools
             fragmentMat.doubleSidedGI = false;
             EditorUtility.SetDirty(fragmentMat);
             Material ghostMat = MakeMaterial(GhostMaterialPath, GhostShaderName, m => m.SetFloat("_Cull", (float)CullMode.Off));
-            Material beaconMat = MakeMaterial(BeaconMaterialPath, BeaconShaderName, null);
+            // No ground pool (the ground under the column is under water), and a long bottom fade so
+            // the light grows out of nothing above the water instead of starting on a hard line.
+            Material beaconMat = MakeMaterial(BeaconMaterialPath, BeaconShaderName, m =>
+            {
+                m.SetFloat("_GroundPool", 0f);
+                m.SetFloat("_BottomFade", BeaconBottomFade);
+            });
             if (ghostMat == null || beaconMat == null)
             {
                 Debug.LogError($"[{Tag}] RESULT: FAIL - shader '{GhostShaderName}' or '{BeaconShaderName}' not found.");
@@ -350,7 +361,11 @@ namespace CompositeBody.Interaction.Home.EditorTools
                 pairs.Add((fragment, group));
             }
             HomeRevealGroup final = finalWall != null ? MakeGroup(groupsParent, finalWall, twins) : null;
-            HomeZoneBeacon beacon = MakeBeacon(rootGO.transform, zoneB, beaconMat, assembly);
+            float surfaceTop = WaterTopOrFloor(scene, roomBounds.min.y, out string waterDetail);
+            float beaconBottom = surfaceTop + BeaconWaterClearance;
+            HomeZoneBeacon beacon = MakeBeacon(rootGO.transform, zoneB, beaconMat, assembly, beaconBottom);
+            Debug.Log($"[{Tag}] water: {waterDetail}. Beacon proxy y {beaconBottom:0.000} .. {k_BeaconProxyTop:0.000} " +
+                      $"({BeaconWaterClearance:0.00} m clear of the surface).");
 
             var aso = new SerializedObject(assembly);
             SerializedProperty pairsProp = aso.FindProperty("m_Pairs");
@@ -675,16 +690,21 @@ namespace CompositeBody.Interaction.Home.EditorTools
 
         /// <summary>
         /// O-0's light column on zone B: a unit Cube proxy (the shader needs a cube) scaled by
-        /// VolumetricColumn from metres, centred at half its height so it stands on the floor.
+        /// VolumetricColumn from metres. The proxy spans <paramref name="proxyBottom"/> (water surface
+        /// + clearance) to <see cref="k_BeaconProxyTop"/>; the light inside it is 90% of that, centred.
         /// Authored at reveal 0 with the renderer off, so the scene view is unchanged until play.
         /// </summary>
-        static HomeZoneBeacon MakeBeacon(Transform parent, HomeZone zoneB, Material material, HomeAssembly assembly)
+        static HomeZoneBeacon MakeBeacon(Transform parent, HomeZone zoneB, Material material, HomeAssembly assembly,
+                                         float proxyBottom)
         {
+            float proxyHeight = Mathf.Max(0.5f, k_BeaconProxyTop - proxyBottom);
+            float centreY = k_BeaconProxyTop - proxyHeight * 0.5f;
+
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             go.name = "ZoneBeacon";
             Object.DestroyImmediate(go.GetComponent<Collider>());
             go.transform.SetParent(parent, false);
-            go.transform.SetPositionAndRotation(new Vector3(zoneB.center.x, k_BeaconHeight * 0.5f, zoneB.center.z), Quaternion.identity);
+            go.transform.SetPositionAndRotation(new Vector3(zoneB.center.x, centreY, zoneB.center.z), Quaternion.identity);
             GameObjectUtility.SetStaticEditorFlags(go, 0);
 
             var mr = go.GetComponent<MeshRenderer>();
@@ -698,7 +718,7 @@ namespace CompositeBody.Interaction.Home.EditorTools
             var column = go.AddComponent<VolumetricColumn>();
             var cso = new SerializedObject(column);
             cso.FindProperty("m_Radius").floatValue = 0.5f * Mathf.Max(zoneB.size.x, zoneB.size.z);
-            cso.FindProperty("m_Height").floatValue = k_BeaconHeight;
+            cso.FindProperty("m_Height").floatValue = proxyHeight * k_ColumnInset;
             cso.FindProperty("m_UseRoleColor").boolValue = false;
             cso.FindProperty("m_Color").colorValue = k_GhostBlue;
             cso.FindProperty("m_Intensity").floatValue = k_BeaconIntensity;
@@ -920,7 +940,7 @@ namespace CompositeBody.Interaction.Home.EditorTools
                   assembly.ghosts.Select(x => x.fragment).Distinct().Count() == 5, "5 slot ghosts, one per fragment");
             Shader ghostShader = Shader.Find(GhostShaderName);
             Check(ghostShader != null && !ShaderUtil.ShaderHasError(ghostShader), $"{GhostShaderName} compiles");
-            VerifyBeacon(assembly, Check);
+            VerifyBeacon(assembly, scene, Check);
 
             // Groups.
             var groups = assembly.pairs.Where(p => p?.group != null).Select(p => p.group).ToList();
@@ -1023,7 +1043,7 @@ namespace CompositeBody.Interaction.Home.EditorTools
             }
         }
 
-        static void VerifyBeacon(HomeAssembly assembly, Func<bool, string, bool> check)
+        static void VerifyBeacon(HomeAssembly assembly, Scene scene, Func<bool, string, bool> check)
         {
             HomeZoneBeacon beacon = assembly.beacon;
             if (!check(beacon != null && beacon.column != null, "zone beacon with a VolumetricColumn")) return;
@@ -1045,6 +1065,31 @@ namespace CompositeBody.Interaction.Home.EditorTools
             }
             var so = new SerializedObject(beacon);
             check(so.FindProperty("m_Assembly").objectReferenceValue == assembly, "beacon wired to the assembly");
+
+            // Clear of the water: the proxy (what rasterises) starts above the surface.
+            Transform room = FindPath(scene, k_RoomPath);
+            float floor = 0f;
+            if (room != null) { ReadWalls(room, out Bounds rb); floor = rb.min.y; }
+            float surface = WaterTopOrFloor(scene, floor, out string waterDetail);
+            if (proxy != null)
+            {
+                Bounds wb = WorldBounds(beacon.transform, proxy);
+                Debug.Log($"[{Tag}] beacon proxy bounds y {wb.min.y:0.000} .. {wb.max.y:0.000}; water: {waterDetail}");
+                check(wb.min.y >= surface + 0.1f,
+                      $"beacon clear of the water (bottom {wb.min.y:0.000} >= surface {surface:0.000} + 0.10)");
+            }
+            Material m = mr != null ? mr.sharedMaterial : null;
+            check(m != null && m.HasProperty("_GroundPool") && Mathf.Approximately(m.GetFloat("_GroundPool"), 0f) &&
+                  Mathf.Abs(m.GetFloat("_BottomFade") - BeaconBottomFade) < 1e-3f,
+                  $"beacon material: no ground pool, bottom fade {BeaconBottomFade:0.00}");
+        }
+
+        /// <summary>Top of the KWS water in the scene, or the floor if there is none.</summary>
+        static float WaterTopOrFloor(Scene scene, float floor, out string detail)
+        {
+            if (HomeWaterProbe.TryGetSurfaceTop(scene, out float top, out detail)) return top;
+            detail = $"no KWS water found; using the floor y {floor:0.000}";
+            return floor;
         }
 
         static string ArtNameFor(Scene scene, string label)

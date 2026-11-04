@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using CompositeBody.Diagnostics;
 using CompositeBody.Interaction.Diagnostics;
 using CompositeBody.Multiplayer;
@@ -136,6 +137,23 @@ namespace CompositeBody.Interaction.Home.Diagnostics
             yield return m_Log.WaitFor(() => beacon.level > 0.95f && BeaconShown(beacon), 2f, "beacon up on zone B after the beat starts");
             m_Log.Check(ghost.All(x => !x.shown), "ghosts off while nobody carries anything");
             Capture("home_beacon_armed", ZonePose(2.6f, 1.7f));
+
+            // Clear of the KWS water (it does not write the depth the column intersects against).
+            Renderer beaconRenderer = beacon.GetComponent<Renderer>();
+            bool hasWater = HomeWaterProbe.TryGetSurfaceTop(SceneManager.GetActiveScene(), out float surface, out string waterDetail);
+            float beaconBottom = beaconRenderer.bounds.min.y;
+            m_Log.Check(!hasWater || beaconBottom >= surface + 0.1f,
+                        $"beacon clear of the water at runtime (bottom {beaconBottom:0.000}, " +
+                        $"{(hasWater ? $"surface {surface:0.000}: {waterDetail}" : "no water in the scene")})");
+            Material beaconMaterial = beaconRenderer.sharedMaterial;
+            m_Log.Check(beaconMaterial != null && Mathf.Approximately(beaconMaterial.GetFloat("_GroundPool"), 0f),
+                        "beacon has no ground pool");
+            if (hasWater)
+            {
+                Vector3 c = b.center;
+                var eye = new Vector3(c.x + 0.7f, surface + 0.15f, c.z - 2.2f);
+                Capture("home_beacon_water", new Pose(eye, Quaternion.LookRotation(new Vector3(c.x, beaconBottom + 0.15f, c.z) - eye)));
+            }
 
             // -- breathing on the Visual child only ------------------------------------------
             Vector3 root0 = f[0].transform.position;
