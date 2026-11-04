@@ -526,6 +526,106 @@ namespace CompositeBody.Interaction.EditorTools
             return instance;
         }
 
+        // ---- manual-test kit -------------------------------------------------------------------
+
+        /// <summary>XRI 3.3 sample prefab: Samples/XR Interaction Toolkit/3.3.0/XR Interaction Simulator.</summary>
+        public const string InteractionSimulatorPrefabGuid = "58d0a4ac86f2348deb02f3880c71378e";
+        public const string ManualTestRootName = "--- Desktop Test ---";
+
+        /// <summary>
+        /// Turns a demo scene (one that already has <see cref="BuildDemoBootstrap"/>) into a
+        /// mouse-and-keyboard test scene:
+        ///   * the XR Interaction Simulator drives the rig's HMD and controllers;
+        ///   * DesktopXrFallback keeps its no-headset clean-up but no longer stands the camera up
+        ///     (eye height 0) -- otherwise it disables the camera's TrackedPoseDriver and the
+        ///     simulated head cannot move;
+        ///   * DesktopGrabProbe moves from G (the simulator's grip key) to F2;
+        ///   * a <see cref="CompositeBody.Interaction.Diagnostics.DesktopTestHud"/> for host / join /
+        ///     start / interaction buttons that stays clickable while the simulator has the mouse.
+        /// Returns the kit root, or null if the simulator sample is missing.
+        /// </summary>
+        public static GameObject AddManualTestKit(Scene scene, string tag)
+        {
+            foreach (GameObject old in scene.GetRootGameObjects())
+            {
+                if (old.name == ManualTestRootName) { Object.DestroyImmediate(old); continue; }
+                GameObject src = PrefabUtility.GetCorrespondingObjectFromOriginalSource(old);
+                if (src != null && AssetDatabase.GetAssetPath(src) == AssetDatabase.GUIDToAssetPath(InteractionSimulatorPrefabGuid))
+                    Object.DestroyImmediate(old);
+            }
+
+            var missing = new List<string>();
+            GameObject simulator = InstantiatePrefab(InteractionSimulatorPrefabGuid, "XR Interaction Simulator", null, missing);
+            if (simulator == null)
+            {
+                Debug.LogError($"[{tag}] manual-test kit: the XR Interaction Simulator sample prefab is missing " +
+                               "(import it from the XR Interaction Toolkit package samples).");
+                return null;
+            }
+            SceneManager.MoveGameObjectToScene(simulator, scene);
+
+            foreach (GameObject go in scene.GetRootGameObjects())
+            {
+                foreach (DesktopXrFallback fallback in go.GetComponentsInChildren<DesktopXrFallback>(true))
+                {
+                    var so = new SerializedObject(fallback);
+                    SerializedProperty eye = so.FindProperty("m_DesktopEyeHeight");
+                    if (eye != null) eye.floatValue = 0f;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+                foreach (var probe in go.GetComponentsInChildren<CompositeBody.Interaction.Diagnostics.DesktopGrabProbe>(true))
+                {
+                    var so = new SerializedObject(probe);
+                    SerializedProperty key = so.FindProperty("m_Key");
+                    if (key != null) key.intValue = (int)UnityEngine.InputSystem.Key.F2;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
+
+            var root = new GameObject(ManualTestRootName);
+            SceneManager.MoveGameObjectToScene(root, scene);
+            root.AddComponent<CompositeBody.Interaction.Diagnostics.DesktopTestHud>();
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            return root;
+        }
+
+        public static void VerifyManualTestKit(string tag, Scene scene, List<string> failures)
+        {
+            int simulators = 0, huds = 0, fallbacksStandingUp = 0, probesOnG = 0;
+            string simPath = AssetDatabase.GUIDToAssetPath(InteractionSimulatorPrefabGuid);
+            foreach (GameObject go in scene.GetRootGameObjects())
+            {
+                GameObject src = PrefabUtility.GetCorrespondingObjectFromOriginalSource(go);
+                if (src != null && AssetDatabase.GetAssetPath(src) == simPath && go.activeSelf) simulators++;
+                huds += go.GetComponentsInChildren<CompositeBody.Interaction.Diagnostics.DesktopTestHud>(true).Length;
+                foreach (DesktopXrFallback f in go.GetComponentsInChildren<DesktopXrFallback>(true))
+                {
+                    SerializedProperty eye = new SerializedObject(f).FindProperty("m_DesktopEyeHeight");
+                    if (eye != null && eye.floatValue > 0f) fallbacksStandingUp++;
+                }
+                foreach (var p in go.GetComponentsInChildren<CompositeBody.Interaction.Diagnostics.DesktopGrabProbe>(true))
+                {
+                    SerializedProperty key = new SerializedObject(p).FindProperty("m_Key");
+                    if (key != null && key.intValue == (int)UnityEngine.InputSystem.Key.G) probesOnG++;
+                }
+            }
+            Check(tag, simulators == 1, $"manual test: exactly one active XR Interaction Simulator (found {simulators})", failures);
+            Check(tag, huds == 1, $"manual test: exactly one DesktopTestHud (found {huds})", failures);
+            Check(tag, fallbacksStandingUp == 0, "manual test: DesktopXrFallback leaves the camera to the simulator", failures);
+            Check(tag, probesOnG == 0, "manual test: DesktopGrabProbe is off the simulator's G key", failures);
+        }
+
+        /// <summary>Adds <paramref name="scenePath"/> to Build Settings (enabled) if it is not listed.</summary>
+        public static bool EnsureInBuildSettings(string scenePath)
+        {
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            if (scenes.Exists(s => s.path == scenePath)) return false;
+            scenes.Add(new EditorBuildSettingsScene(scenePath, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
+            return true;
+        }
+
         /// <summary>The bootstrap's must-haves are present, and exactly one AudioListener is live.</summary>
         public static void VerifyDemoBootstrap(string tag, Scene scene, List<string> failures)
         {

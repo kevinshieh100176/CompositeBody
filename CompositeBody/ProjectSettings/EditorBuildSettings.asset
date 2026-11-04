@@ -23,6 +23,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Interaction/ObjectAssembly/OA_Camera_Demo.unity
     guid: 4f12e19cd1bdead429a8a285c111ecdc
+  - enabled: 1
+    path: Assets/_Interaction/Home/Home_ManualTest.unity
+    guid: 744e727590ea6d441b24e339d5ed47fc
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: f6072b2e24b91164c80aeabeb896078a,
       type: 2}

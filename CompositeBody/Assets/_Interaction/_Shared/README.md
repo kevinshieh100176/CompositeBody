@@ -56,7 +56,17 @@ Use `NetworkVariable<double>` stamps written by the server.
   apply → false = refused), `ForceGrab(grab)`, `Release()`, `MoveTo(pos)`.
 - `InteractionTestLog` — `Check(ok, what)`, `WaitFor(cond, timeout, what)` (IEnumerator), `Finish()`
   logs `[Tag] RESULT: PASS/FAIL`; exits the editor ONLY in batch mode, otherwise leaves play mode.
-- `DesktopGrabProbe` — G grabs the NetGrabbable in view (for MPPM virtual players, no XR).
+- `DesktopGrabProbe` — G grabs the NetGrabbable in view (for MPPM virtual players, no XR). In
+  manual-test scenes the kit moves it to F2 (G is the simulator's grip).
+- `DesktopTestHud` — IMGUI HUD for manual testing next to XRI's XR Interaction Simulator:
+  `Host()` (F5), `Join()` (F6, address/port fields), `StartShow(solo)` (F7 refuses until both
+  roles are present; F8 = solo), `Leave()` (F9), F10 collapse; every `InteractionDebug.entries` row
+  with Fire / Both / Reset; one section per `IDesktopTestActions` in the scene. While the pointer
+  is over the HUD, or with F1 locked, the simulator's `<Mouse>`/`<Pointer>` actions are disabled so
+  clicks reach UI (the HUD and uGUI panels) instead of becoming a simulated select.
+  `alternateIdentity` (auto-on inside an MPPM clone) joins with a stable identity of its own.
+- `IDesktopTestActions` — `desktopTestTitle`, `OnDesktopTestGUI()` (GUILayout): module buttons for
+  the HUD (e.g. `Home/Scripts/Diagnostics/HomeManualTestActions`).
 
 ## Shader (`Shaders/InteractionReveal.shader`, `CompositeBody/InteractionReveal`)
 URP Lit clone (forward pass = URP's own `LitForwardPass.hlsl`) + reveal:
@@ -81,6 +91,12 @@ Verified: all 9 passes compile with `_ALPHATEST_ON _EMISSION _NORMALMAP`.
   `m_ExperienceSceneName=""` and solo allowed, StaffControlPanel + spawns, InteractionDebugPanel +
   Roster, Playspace + XRMPT rig, CalibrationPoint, DesktopGrabProbe); deactivates other scene cameras.
   `VerifyDemoBootstrap(tag, scene, failures)`.
+- `AddManualTestKit(scene, tag)` → `--- Desktop Test ---` root with `DesktopTestHud`, plus an XR
+  Interaction Simulator instance (sample prefab GUID `InteractionSimulatorPrefabGuid`),
+  DesktopXrFallback eye height 0 (it would otherwise disable the camera's TrackedPoseDriver and
+  the simulated head could not move), DesktopGrabProbe on F2. `VerifyManualTestKit(tag, scene, failures)`.
+  Add the module's `IDesktopTestActions` to the returned root.
+- `EnsureInBuildSettings(scenePath)` — adds an enabled entry if missing (NGO needs it to sync a client).
 
 Fragment stack set by `ConfigureGrabbable`: convex MeshCollider · NetworkObject
 (DontDestroyWithOwner, no AutoObjectParentSync) · kinematic Rigidbody, no gravity, no interpolation ·
