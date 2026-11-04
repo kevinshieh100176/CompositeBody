@@ -309,6 +309,21 @@ namespace CompositeBody.Experience
 
 #if UNITY_EDITOR
         /// <summary>
+        /// The same capture as the inspector's context menu, for tooling that has to run it
+        /// unattended.
+        ///
+        /// WHY THIS EXISTS. <see cref="Capture"/> is a [ContextMenu] method, which is to say it
+        /// is reached by a human with the right object selected in the right scene. But
+        /// re-capturing is not a one-off: it has to happen again after every re-bake, and
+        /// forgetting leaves a carrier pointing at lightmap textures the bake has deleted --
+        /// which does not fail, it just lights the room with nothing. So the chore is written
+        /// down as a tool instead (see CaptureS2Lighting), and a tool needs a door that is not
+        /// reflection on a private name. The capture itself stays in one place; this only opens
+        /// the door.
+        /// </summary>
+        public void CaptureFromOpenScene() => Capture();
+
+        /// <summary>
         /// Read the bake off the open scene and store it here.
         ///
         /// Run this with the baked scene open, on the object that is to become the prefab, and

@@ -592,7 +592,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1615841416344638284}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 751b103831f3a4246bdf84a7740a8407, type: 3}
   m_Name: 
@@ -600,100 +600,100 @@ MonoBehaviour:
   m_Entries:
   - renderer: {fileID: 3717528392649155921}
     index: 0
-    scaleOffset: {x: 0.4521012, y: 0.4510905, z: -0.0017558094, w: 0.6603728}
+    scaleOffset: {x: 0.4521012, y: 0.4510905, z: 0.17402545, w: 0.3654509}
   - renderer: {fileID: 238394519604343348}
     index: 1
-    scaleOffset: {x: 0.2145134, y: 0.21491227, z: 0.74095565, w: 0.17844428}
+    scaleOffset: {x: 0.2145134, y: 0.21491227, z: 0.7448619, w: 0.004616153}
   - renderer: {fileID: 8249634756821742335}
     index: 1
-    scaleOffset: {x: 0.2145134, y: 0.21491227, z: 0.28783065, w: 0.7507099}
+    scaleOffset: {x: 0.2145134, y: 0.21491227, z: 0.28978378, w: 0.73899114}
   - renderer: {fileID: 9018979728775040289}
-    index: 1
-    scaleOffset: {x: 0.18632632, y: 0.18744612, z: 0.8173621, w: 0.88958067}
+    index: 0
+    scaleOffset: {x: 0.18632632, y: 0.18744612, z: 0.6650184, w: 0.72356504}
   - renderer: {fileID: 6258456202356468383}
     index: 1
     scaleOffset: {x: 0.7537402, y: 0.7552624, z: -0.0058995644, w: -0.005913451}
   - renderer: {fileID: 1886755371673574234}
-    index: 0
-    scaleOffset: {x: 0.67171, y: 0.6710487, z: -0.004958499, w: -0.0049526556}
+    index: 2
+    scaleOffset: {x: 0.59906834, y: 0.5987715, z: -0.0049641654, w: -0.0049612215}
   - renderer: {fileID: 1320583231836805801}
     index: 2
-    scaleOffset: {x: 0.12911071, y: 0.12881948, z: 0.088418506, w: 0.008354613}
+    scaleOffset: {x: 0.12911071, y: 0.12881948, z: 0.8227935, w: 0.8130421}
   - renderer: {fileID: 3469103216410490107}
-    index: 0
-    scaleOffset: {x: 0.12911071, y: 0.12881948, z: 0.861856, w: 0.40874523}
+    index: 2
+    scaleOffset: {x: 0.12911071, y: 0.12881948, z: 0.8227935, w: 0.45562023}
   - renderer: {fileID: 1638282304917702042}
     index: 2
-    scaleOffset: {x: 0.12911071, y: 0.12881948, z: 0.65482473, w: 0.7993702}
+    scaleOffset: {x: 0.12911071, y: 0.12881948, z: 0.8227935, w: 0.58257335}
   - renderer: {fileID: 4728725934435004975}
-    index: 0
-    scaleOffset: {x: 0.12911071, y: 0.12881948, z: 0.87357473, w: 0.69976085}
+    index: 2
+    scaleOffset: {x: 0.12911071, y: 0.12881948, z: 0.8716216, w: 0.16460462}
   - renderer: {fileID: 5780575686204610008}
     index: 1
-    scaleOffset: {x: 0.24569404, y: 0.24585122, z: 0.0007538372, w: 0.2390312}
+    scaleOffset: {x: 0.24569404, y: 0.24585122, z: 0.0007538372, w: 0.20387495}
   - renderer: {fileID: 6066903587625247853}
     index: 2
-    scaleOffset: {x: 0.20602828, y: 0.20728809, z: 0.5859194, w: 0.30462745}
+    scaleOffset: {x: 0.20602828, y: 0.20728809, z: 0.023419373, w: 0.71869}
   - renderer: {fileID: 116023324558656514}
-    index: 1
-    scaleOffset: {x: 0.18903627, y: 0.19053753, z: 0.78765655, w: -0.0053621614}
-  - renderer: {fileID: 5782966047353622071}
     index: 0
-    scaleOffset: {x: 0.2413773, y: 0.24367996, z: 0.69786024, w: 0.8813572}
+    scaleOffset: {x: 0.18903627, y: 0.19053753, z: 0.36578155, w: 0.5981535}
+  - renderer: {fileID: 5782966047353622071}
+    index: 2
+    scaleOffset: {x: 0.2413773, y: 0.24367996, z: -0.003311621, w: 0.59815407}
   - renderer: {fileID: 2360974349007467277}
     index: 1
     scaleOffset: {x: 0.48410636, y: 0.48537123, z: 0.50280714, w: 0.4539634}
   - renderer: {fileID: 3914858484271474357}
-    index: 0
-    scaleOffset: {x: 0.102761835, y: 0.104607366, z: 0.89636874, w: 0.5720251}
-  - renderer: {fileID: 3722071705768148014}
-    index: 0
-    scaleOffset: {x: 0.3185504, y: 0.31658047, z: 0.59051925, w: 0.5729792}
-  - renderer: {fileID: 3529645674978255371}
-    index: 0
-    scaleOffset: {x: 0.24561198, y: 0.24836612, z: 0.4379166, w: 0.87725395}
-  - renderer: {fileID: 3930178743164256616}
-    index: 0
-    scaleOffset: {x: 0.22232118, y: 0.22493534, z: 0.15764575, w: 0.8899577}
-  - renderer: {fileID: 4758551008649270715}
     index: 1
-    scaleOffset: {x: 0.22232118, y: 0.22493534, z: 0.567802, w: 0.005192103}
-  - renderer: {fileID: 758543138779467947}
-    index: 0
-    scaleOffset: {x: 0.14596564, y: 0.1446147, z: 0.441781, w: 0.7426221}
-  - renderer: {fileID: 4924102776859544713}
+    scaleOffset: {x: 0.102761835, y: 0.104607366, z: 0.26160312, w: 0.45679078}
+  - renderer: {fileID: 3722071705768148014}
     index: 2
-    scaleOffset: {x: 0.46229693, y: 0.4643279, z: 0.004120068, w: 0.5451066}
+    scaleOffset: {x: 0.3185504, y: 0.31658047, z: 0.5885661, w: 0.11204174}
+  - renderer: {fileID: 3529645674978255371}
+    index: 1
+    scaleOffset: {x: 0.24561198, y: 0.24836612, z: 0.50627595, w: -0.009464808}
+  - renderer: {fileID: 3930178743164256616}
+    index: 2
+    scaleOffset: {x: 0.22232118, y: 0.22493534, z: 0.68108326, w: -0.00066727214}
+  - renderer: {fileID: 4758551008649270715}
+    index: 0
+    scaleOffset: {x: 0.22232118, y: 0.22493534, z: 0.5912395, w: 0.6165202}
+  - renderer: {fileID: 758543138779467947}
+    index: 1
+    scaleOffset: {x: 0.14596564, y: 0.1446147, z: 0.84217167, w: 0.8129346}
+  - renderer: {fileID: 4924102776859544713}
+    index: 0
+    scaleOffset: {x: 0.51772445, y: 0.5174939, z: -0.0049961735, w: -0.0049935137}
   - renderer: {fileID: 8031306839037423289}
     index: 0
-    scaleOffset: {x: 0.28023288, y: 0.2814455, z: 0.6922109, w: 0.26834825}
+    scaleOffset: {x: 0.28023288, y: 0.2814455, z: 0.61799216, w: 0.342567}
   - renderer: {fileID: 6180506072630490552}
-    index: 2
-    scaleOffset: {x: 0.20226872, y: 0.20297348, z: 0.44990665, w: 0.8072799}
+    index: 0
+    scaleOffset: {x: 0.20226872, y: 0.20297348, z: 0.4694379, w: 0.71157676}
   - renderer: {fileID: 7609055697701489118}
-    index: 2
-    scaleOffset: {x: 0.22416678, y: 0.22478035, z: 0.58422714, w: 0.068578765}
+    index: 1
+    scaleOffset: {x: 0.22416678, y: 0.22478035, z: 0.754149, w: 0.23459439}
   - renderer: {fileID: 1588879519349138984}
     index: 0
-    scaleOffset: {x: 0.33948055, y: 0.3387862, z: 0.65978533, w: 0.0074603185}
+    scaleOffset: {x: 0.33948055, y: 0.3387862, z: 0.5015822, w: 0.07777282}
   - renderer: {fileID: 6651733598527128060}
     index: 1
     scaleOffset: {x: 0.48202476, y: 0.4798266, z: 0.0063848067, w: 0.5005542}
   - renderer: {fileID: 2417180586057201633}
     index: 2
-    scaleOffset: {x: 0.5980962, y: 0.5999913, z: -0.005228938, w: -0.005248601}
+    scaleOffset: {x: 0.5980962, y: 0.5999913, z: 0.23109919, w: 0.4478764}
   - renderer: {fileID: 502463597191089998}
-    index: 2
-    scaleOffset: {x: 0.28115425, y: 0.28140113, z: 0.4534278, w: 0.60380924}
+    index: 0
+    scaleOffset: {x: 0.28115425, y: 0.28140113, z: 0.012021531, w: 0.58818424}
   m_Lightmaps:
-  - color: {fileID: 2800000, guid: ad43ae5699b7d7543b7cd37d7b0f4b64, type: 3}
-    direction: {fileID: 2800000, guid: 740e90a541c8cff4e8c17f14dbee9a9a, type: 3}
+  - color: {fileID: 2800000, guid: c2b4769f198a32c438d30a5530dbb444, type: 3}
+    direction: {fileID: 2800000, guid: 1053f0662badd624eb501938995d85b8, type: 3}
     shadowMask: {fileID: 0}
-  - color: {fileID: 2800000, guid: a919129faa2f09d4aad1bc9495608fe9, type: 3}
-    direction: {fileID: 2800000, guid: 0a8f571257c1fab4e8b9606add1bd732, type: 3}
+  - color: {fileID: 2800000, guid: 87773348e88839c4882844b7764771a2, type: 3}
+    direction: {fileID: 2800000, guid: 83b3ad935dfc9104caf79f600594614f, type: 3}
     shadowMask: {fileID: 0}
-  - color: {fileID: 2800000, guid: 2aee37338e223c54f86ee8c283664e37, type: 3}
-    direction: {fileID: 2800000, guid: a336f10a980428c498a7ef8dc1fe9378, type: 3}
+  - color: {fileID: 2800000, guid: 83334f28f5bb0ea4f93298a19bc911ec, type: 3}
+    direction: {fileID: 2800000, guid: aa925e623539e73439352d20775ae864, type: 3}
     shadowMask: {fileID: 0}
   m_CarryEnvironment: 1
   m_Environment:
@@ -704,12 +704,12 @@ MonoBehaviour:
     fogDensity: 0.01
     fogStart: 0
     fogEnd: 300
-    ambientMode: 0
+    ambientMode: 3
     ambientSky: {r: 0, g: 0, b: 0, a: 1}
     ambientEquator: {r: 0.114, g: 0.125, b: 0.133, a: 1}
     ambientGround: {r: 0.047, g: 0.043, b: 0.035, a: 1}
     ambientIntensity: 0
-    skybox: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+    skybox: {fileID: 0}
     reflectionIntensity: 0
     probe:
     - 0

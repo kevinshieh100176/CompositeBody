@@ -56,6 +56,12 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// of that disagreement is the body itself rather than a number; the note on the O-0 row
         /// says what it was and why the row cannot be shortened further.
         ///
+        /// THAT RULE HOLDS WHERE THERE IS A DOCUMENT TO FOLLOW, which from S1 down there is not.
+        /// S1 was rewritten into six beats and RetimeS1 owns it; S2 and S3 were retimed beat by
+        /// beat in the Timeline window and S3 lost five of its eight rows there. For those the
+        /// timeline is the statement and this table follows it -- see the note on the S3 rows,
+        /// which also says why a rebuild from this table no longer reproduces the show.
+        ///
         /// THE NEW ONBOARDING LINES HAVE LANDED, so O-1 and O-2 move to v4's durations. This
         /// note used to say they were held back: the sheet gives O-1 three sub-beats
         /// (燈 / T-shirt 35 / 封箱 50) and O-2 90s, and all four of the VO files it asks for
@@ -167,15 +173,37 @@ namespace CompositeBody.Multiplayer.EditorSetup
             ("Beat_S2-3",  "S2-3 碎片：杯子",       120d, null, 0d),
             ("Beat_S2-4",  "S2-4 隱藏的記憶",       180d, null, 0d),
 
-            ("Beat_S3A-1", "S3A-1 把家道別",        40d,  null, 0d),
-            ("Beat_S3A-2", "S3A-2 回到依附的人",     300d, null, 0d),
-            ("Beat_S3A-3", "S3A-3 物件化膜",        90d,  null, 0d),
-            ("Beat_S3A-4", "S3A-4 沒有說出口的話",   240d, null, 0d),
-
-            ("Beat_S3B-1", "S3B-1 真人消失",        60d,  null, 0d),
-            ("Beat_S3B-2", "S3B-2 一片片的記憶",     240d, null, 0d),
-            ("Beat_S3B-3", "S3B-3 最後一次旋轉",     180d, null, 0d),
-            ("Beat_S3B-4", "S3B-4 膜鬆開",          120d, null, 0d),
+            // S3 IS THREE BEATS NOW, AND THE SHOW ENDS ON THE THIRD. v4 gave the section eight
+            // rows -- S3A-1..4 and S3B-1..4, 1210s of them -- and five of those are gone: the
+            // running order on the timeline runs S3A-1, S3A-2, S3A-3 and stops. The rows are
+            // deleted here rather than left in as a record, because this table is not a record:
+            // every row it holds is a Control track this builder creates, so a dead row is a
+            // dead beat that comes back on the next run, pointing at an empty holder, 1210s of
+            // nothing after the last thing the audience sees.
+            //
+            // THEIR HOLDERS ARE STILL IN MainScene -- Beat_S3A-4 and Beat_S3B-1..4, inactive and
+            // empty, which is what they always were. Nothing points at them now. They cost
+            // nothing and deleting them is a scene edit this builder has no reason to make.
+            //
+            // THE LENGTHS ARE THE ONES ON THE TIMELINE, not a sheet's. S3's script has not
+            // landed; these three were dragged to 45/90/40 in the Timeline window, which is the
+            // only statement of them there is, so the table follows the timeline here instead of
+            // the other way round.
+            //
+            // S3A-3 HAS NO TITLE ON PURPOSE. Its track was 物件化膜 and that name was cleared
+            // when the beat was retimed, so the row carries the id alone rather than a title the
+            // beat may have outgrown.
+            //
+            // AND A WARNING ABOUT RUNNING THIS AT ALL. These three sit at 1181-1356s on the
+            // timeline, and this table would put them at 1307 and later, because the S1 and S2
+            // rows above are no longer what is authored either: S1 is six beats that RetimeS1
+            // owns, and S2's three were retimed by hand (18/68/328s, with 隱藏的記憶 folded into
+            // S2-3). A rebuild from this table does not reproduce the running order any more --
+            // it authors the one written here. Keeping the S3 rows in step is what stops a
+            // rebuild resurrecting five dead beats; it does not make the table current.
+            ("Beat_S3A-1", "S3A-1 把家道別",        45d,  null, 0d),
+            ("Beat_S3A-2", "S3A-2 回到依附的人",     90d,  null, 0d),
+            ("Beat_S3A-3", "S3A-3",                40d,  null, 0d),
         };
 
         [MenuItem("Tools/Show/Build Main Timeline")]
