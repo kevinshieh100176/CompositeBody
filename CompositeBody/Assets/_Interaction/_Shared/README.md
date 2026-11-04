@@ -76,7 +76,8 @@ Verified: all 9 passes compile with `_ALPHATEST_ON _EMISSION _NORMALMAP`.
   `MakeFragmentMaterial(srcMat, path)` (emission on, black); `IsRevealMaterialOk(mat)`; `RevealShaderOk(out problem)`.
 - `ClearBatchingStatic(root)` (keeps ContributeGI), `AnyBatchingStatic(root)`.
 - `BuildDemoBootstrap(scene, p1SpawnPose, p2SpawnPose, tag)` → `--- Demo Bootstrap ---` root
-  (Network Manager, XRI Network Game Manager, notification UI, GameSessionManager with
+  (Network Manager + XRI Network Game Manager at the SCENE ROOT -- NGO refuses a nested
+  NetworkManager; no separate notification UI, the rig carries PlayerHudNotification; GameSessionManager with
   `m_ExperienceSceneName=""` and solo allowed, StaffControlPanel + spawns, InteractionDebugPanel +
   Roster, Playspace + XRMPT rig, CalibrationPoint, DesktopGrabProbe); deactivates other scene cameras.
   `VerifyDemoBootstrap(tag, scene, failures)`.

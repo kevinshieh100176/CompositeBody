@@ -383,10 +383,12 @@ namespace CompositeBody.Interaction.EditorTools
 
         /// <summary>
         /// Everything a standalone two-player demo scene needs to host, join and grab, mirroring
-        /// Assets/Editor/MultiplayerSetup/BuildBaseScene.cs (the project's own base scene), under
-        /// one root so a rebuild replaces it cleanly:
-        ///   Network Manager VR Multiplayer, XRI Network Game Manager, Player_Notification_UI
-        ///   (XRINetworkGameManager uses it with no null check on connect), GameSessionManager
+        /// Assets/Editor/MultiplayerSetup/BuildBaseScene.cs (the project's own base scene). The
+        /// Network Manager VR Multiplayer and XRI Network Game Manager prefabs go at the scene
+        /// root (NGO refuses a nested NetworkManager); everything else goes under one root so a
+        /// rebuild replaces it cleanly:
+        ///   (no Player_Notification_UI -- the XRMPT rig already carries the PlayerHudNotification
+        ///   XRINetworkGameManager needs on connect), GameSessionManager
         ///   (NetworkObject + StoryProgressManager + InteractionDebugRelay -- it installs the
         ///   connection-approval callback, without which a client hangs), StaffControlPanel (+ LAN
         ///   discovery, DesktopXrFallback, RoleSpawnPositioner), InteractionDebugPanel/Roster,
@@ -397,16 +399,37 @@ namespace CompositeBody.Interaction.EditorTools
         /// </summary>
         public static GameObject BuildDemoBootstrap(Scene scene, Pose player1Spawn, Pose player2Spawn, string tag)
         {
+            // The managers live at the SCENE ROOT, not under the bootstrap root: NGO refuses to
+            // start a NetworkManager that is nested ("NetworkManager cannot be nested"), and the
+            // template's game manager is a singleton written the same way. So a rebuild clears
+            // both the bootstrap root and any root-level instances of those two prefabs.
+            string[] rootPrefabGuids = { BuildBaseScene.NetworkManagerGuid, BuildBaseScene.GameManagerGuid };
+            var rootPrefabs = new List<GameObject>();
+            foreach (string guid in rootPrefabGuids)
+            {
+                string p = AssetDatabase.GUIDToAssetPath(guid);
+                var asset = string.IsNullOrEmpty(p) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(p);
+                if (asset != null) rootPrefabs.Add(asset);
+            }
+
             foreach (GameObject old in scene.GetRootGameObjects())
-                if (old.name == BootstrapRootName) Object.DestroyImmediate(old);
+            {
+                if (old.name == BootstrapRootName) { Object.DestroyImmediate(old); continue; }
+                GameObject source = PrefabUtility.GetCorrespondingObjectFromOriginalSource(old);
+                if (source != null && rootPrefabs.Contains(source)) Object.DestroyImmediate(old);
+            }
 
             var root = new GameObject(BootstrapRootName);
             SceneManager.MoveGameObjectToScene(root, scene);
 
             var missing = new List<string>();
-            GameObject networkManager = InstantiatePrefab(BuildBaseScene.NetworkManagerGuid, "Network Manager", root.transform, missing);
-            GameObject gameManager = InstantiatePrefab(BuildBaseScene.GameManagerGuid, "XRI Network Game Manager", root.transform, missing);
-            GameObject notification = InstantiatePrefab(BuildBaseScene.NotificationUiGuid, "Player Notification UI", root.transform, missing);
+            GameObject networkManager = InstantiatePrefab(BuildBaseScene.NetworkManagerGuid, "Network Manager", null, missing);
+            GameObject gameManager = InstantiatePrefab(BuildBaseScene.GameManagerGuid, "XRI Network Game Manager", null, missing);
+            if (networkManager != null) SceneManager.MoveGameObjectToScene(networkManager, scene);
+            if (gameManager != null) SceneManager.MoveGameObjectToScene(gameManager, scene);
+
+            // No separate Player_Notification_UI: the XRMPT rig already carries a
+            // PlayerHudNotification, and a second one logs "Instance is not null" on play.
 
             var playspace = new GameObject("Playspace");
             playspace.transform.SetParent(root.transform, false);
@@ -417,6 +440,8 @@ namespace CompositeBody.Interaction.EditorTools
             {
                 Debug.LogError($"[{tag}] demo bootstrap: missing template prefabs: {string.Join(", ", missing)}");
                 Object.DestroyImmediate(root);
+                if (networkManager != null) Object.DestroyImmediate(networkManager);
+                if (gameManager != null) Object.DestroyImmediate(gameManager);
                 return null;
             }
 
@@ -480,7 +505,7 @@ namespace CompositeBody.Interaction.EditorTools
                 }
             }
 
-            _ = networkManager; _ = gameManager; _ = notification; _ = rig; _ = sessionNet;
+            _ = rig; _ = sessionNet;
             EditorSceneManager.MarkSceneDirty(scene);
             return root;
         }
@@ -511,9 +536,28 @@ namespace CompositeBody.Interaction.EditorTools
                 return false;
             }
 
+            int RootLevel<T>() where T : Component
+            {
+                int n = 0;
+                foreach (GameObject go in scene.GetRootGameObjects())
+                    if (go.GetComponent<T>() != null) n++;
+                return n;
+            }
+
+            int CountAll<T>() where T : Component
+            {
+                int n = 0;
+                foreach (GameObject go in scene.GetRootGameObjects())
+                    n += go.GetComponentsInChildren<T>(true).Length;
+                return n;
+            }
+
             Check(tag, Has<NetworkManager>(), "bootstrap: NetworkManager", failures);
+            Check(tag, CountAll<NetworkManager>() == 1 && RootLevel<NetworkManager>() == 1,
+                  "bootstrap: exactly one NetworkManager, at the scene root (NGO refuses a nested one)", failures);
             Check(tag, Has<XRINetworkGameManager>(), "bootstrap: XRINetworkGameManager", failures);
-            Check(tag, Has<PlayerHudNotification>(), "bootstrap: PlayerHudNotification", failures);
+            Check(tag, CountAll<PlayerHudNotification>() == 1,
+                  $"bootstrap: exactly one PlayerHudNotification (found {CountAll<PlayerHudNotification>()})", failures);
             Check(tag, Has<GameSessionManager>(), "bootstrap: GameSessionManager", failures);
             Check(tag, Has<StaffControlPanel>(), "bootstrap: StaffControlPanel", failures);
             Check(tag, Has<Playspace>(), "bootstrap: Playspace", failures);
