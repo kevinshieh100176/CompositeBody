@@ -11,29 +11,29 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// <summary>
     /// S3's 旁白: one recording across the whole section, on a private deck per player.
     ///
-    /// 「timeline上s3整段要播S1B_20261101」, and then: 「這段分開來 a聽a的 b聽b的 但現在還沒有a的vo
-    /// 之後會補 現在先都聽同一段」.
+    /// 「timeline上s3整段要播S1B_20261101」, then 「這段分開來 a聽a的 b聽b的 但現在還沒有a的vo
+    /// 之後會補 現在先都聽同一段」, and on 2026-11-05 the two recordings landed: 「幫我把s3的音檔
+    /// 改成這兩個 分別是a跟b聽到到的」.
     ///
-    /// So the structure is the finished one -- two private decks, each behind its own role gate,
-    /// because S3 is a section where the two players are told different things -- while the
-    /// CONTENT is temporary: A's recording does not exist yet, so both decks are pointed at
-    /// S1B_20261101 for now. That is exactly the state <see cref="BuildS2Narration"/> is in with
-    /// S2_1_B, and it is handled the same way: the run ends with a warning naming the file both
-    /// players are hearing, because a placeholder nobody notices is a placeholder that ships.
-    /// When A's own recording lands, change <see cref="k_LineA"/> and re-run; nothing else in
-    /// here knows the difference.
+    /// So the structure and the content now agree -- two private decks, each behind its own
+    /// role gate, each with its own recording, because S3 is the section where the two players
+    /// are told different things. 玩家A hears S3A_20261105 and 玩家B hears S3B_20261105. The
+    /// guard that warned when both decks pointed at one file is still at the end of Run(),
+    /// silent now: it costs nothing and a placeholder nobody notices is a placeholder that
+    /// ships.
     ///
     /// ONE CLIP ACROSS THE SECTION, not one per beat. 「整段」 is the instruction: this is a
     /// continuous account running under all six S3 beats rather than a line cued to any one of
     /// them, so it is one clip on each deck, starting on S3's own first frame and ending on its
     /// last. The two numbers come off Main's S3-* control tracks, so a re-cut S3 re-times it.
     ///
-    /// AND IT IS TRIMMED, NOT FITTED. The recording is 357 seconds -- it was rendered for S1,
-    /// which is 357 seconds long -- and S3 is 255. The clip is cut to the section, so the last
-    /// 102 seconds of the file never play. Stretching it instead would mean a playback speed
-    /// other than 1 on a voice, and the drift trim already moves this show's clock
-    /// (ShowTimelineDriver): a nested voice re-seeks on a speed change, which at frame rate is
-    /// a stutter rather than a slow reading. The run reports how much is being left off.
+    /// AND IT IS TRIMMED TO THE SECTION, NOT FITTED. Both recordings are 256 seconds and S3 is
+    /// 255, so one second comes off the end of each -- these were rendered to the section, unlike
+    /// the S1 file they replaced, which was 357 and lost 102. Cut rather than stretched either
+    /// way: stretching means a playback speed other than 1 on a voice, and the drift trim
+    /// already moves this show's clock (ShowTimelineDriver), where a nested voice re-seeks on a
+    /// speed change -- at frame rate that is a stutter, not a slow reading. The run reports how
+    /// much is being left off.
     ///
     /// WHY THE TRACKS GO ON Main. Same reason S1's and S2's do -- see BuildS2Narration's
     /// remarks -- the running order is the one place a line's position is readable against every
@@ -70,12 +70,14 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_Label = "S3 整段";
 
         /// <summary>
-        /// 玩家A 的 VO 還沒有，所以兩個人都先用 S1B_20261101。THIS IS THE PLACEHOLDER -- change this
-        /// one line when A's own recording lands and re-run.
+        /// 玩家A 聽 A 的，玩家B 聽 B 的 -- 2026-11-05 收到的兩個音檔。Both are 256 s, 24-bit
+        /// 48 kHz stereo, imported Streaming/Vorbis like every other long line in here. Their
+        /// first 71 seconds are the same audio and they diverge after that, which is what the
+        /// section is: a shared opening and then two accounts of it.
         /// </summary>
-        const string k_LineA = "Assets/_Audio/S1B_20261101.wav";
+        const string k_LineA = "Assets/_Audio/S3A_20261105.wav";
 
-        const string k_LineB = "Assets/_Audio/S1B_20261101.wav";
+        const string k_LineB = "Assets/_Audio/S3B_20261105.wav";
 
         /// <summary>A player's deck: the track, the source under S3 VO, and who may hear it.</summary>
         struct Deck
@@ -166,10 +168,11 @@ namespace CompositeBody.Multiplayer.EditorSetup
             if (k_LineA == k_LineB)
             {
                 Debug.LogWarning(
-                    $"[S3VO] PLACEHOLDER: both players hear {System.IO.Path.GetFileName(k_LineA)}. " +
-                    "玩家A 的 VO 還沒有。The two decks and their role gates are the finished " +
-                    "structure, so when A's recording lands only BuildS3Narration.k_LineA has to " +
-                    "change. Until then 玩家A is listening to B's account of the section.");
+                    "[S3VO] ONE FILE ON BOTH DECKS: every player hears " +
+                    $"{System.IO.Path.GetFileName(k_LineA)}. S3 is a section where the two are " +
+                    "told different things, so this is either a placeholder or a mistake. The " +
+                    "decks and their role gates are right either way -- only k_LineA and " +
+                    "k_LineB say who hears what.");
             }
 
             Debug.Log("[S3VO] RESULT: PASS - and nothing is on disk yet: save MainScene " +

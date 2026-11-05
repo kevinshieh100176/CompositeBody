@@ -70,7 +70,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: 7322577580900257535}
     m_Duration: 6
@@ -152,23 +152,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fde0d25a170598d46a0b9dc16b4527a5, type: 3}
   m_Name: ActivationPlayableAsset
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ActivationPlayableAsset
---- !u!114 &-7932467393830574435
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
-  m_Name: AudioPlayableAsset
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
-  m_Clip: {fileID: 8300000, guid: 385d8533ea093254e811e1a66b5c5180, type: 3}
-  m_Loop: 0
-  m_bufferingTime: 0.1
-  m_ClipProperties:
-    volume: 1
 --- !u!114 &-7527383328705119175
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -191,7 +174,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 853
+    m_Start: 773
     m_ClipIn: 0
     m_Asset: {fileID: 5649414336597906001}
     m_Duration: 191.1439971923828
@@ -661,10 +644,10 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 785
+    m_Start: 772
     m_ClipIn: 0
     m_Asset: {fileID: -5278172391795272736}
-    m_Duration: 68
+    m_Duration: 1
     m_TimeScale: 1
     m_ParentTrack: {fileID: -6450930531290896546}
     m_EaseInDuration: 0
@@ -753,7 +736,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1236
+    m_Start: 1156
     m_ClipIn: 0
     m_Asset: {fileID: 4152707322635642140}
     m_Duration: 31
@@ -935,7 +918,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: -6740622717961474238}
     m_Duration: 169
@@ -1345,6 +1328,23 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+--- !u!114 &-4160868374187147434
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
+  m_Name: AudioPlayableAsset
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
+  m_Clip: {fileID: 8300000, guid: 05f67c7406b89123b77278c9a7f6f83d, type: 3}
+  m_Loop: 0
+  m_bufferingTime: 0.1
+  m_ClipProperties:
+    volume: 1
 --- !u!114 &-3571313428555710449
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1590,7 +1590,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: -6089396608919239938}
     m_Duration: 169
@@ -1779,7 +1779,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: 8048799052567920543}
     m_Duration: 169
@@ -1884,7 +1884,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1273
+    m_Start: 1193
     m_ClipIn: 0
     m_Asset: {fileID: 844076530853434927}
     m_Duration: 62
@@ -2299,23 +2299,6 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
---- !u!114 &-1729809791106916182
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
-  m_Name: AudioPlayableAsset
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
-  m_Clip: {fileID: 8300000, guid: e18ef56e64010674ab886c99ffdb5777, type: 3}
-  m_Loop: 0
-  m_bufferingTime: 0.1
-  m_ClipProperties:
-    volume: 1
 --- !u!114 &-1705492107693161823
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -2714,9 +2697,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1181
+    m_Start: 1101
     m_ClipIn: 0
-    m_Asset: {fileID: 5649333209918560764}
+    m_Asset: {fileID: 2868812381048412910}
     m_Duration: 255
     m_TimeScale: 1
     m_ParentTrack: {fileID: -746880111578437628}
@@ -2912,76 +2895,7 @@ MonoBehaviour:
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
   m_Children: []
-  m_Clips:
-  - m_Version: 1
-    m_Start: 768
-    m_ClipIn: 0
-    m_Asset: {fileID: -7932467393830574435}
-    m_Duration: 15.520000457763672
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: -199999413439609231}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: S2-1-B
+  m_Clips: []
   m_Markers:
     m_Objects: []
   m_TrackProperties:
@@ -3164,9 +3078,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1181
+    m_Start: 1101
     m_ClipIn: 0
-    m_Asset: {fileID: -1729809791106916182}
+    m_Asset: {fileID: -4160868374187147434}
     m_Duration: 255
     m_TimeScale: 1
     m_ParentTrack: {fileID: 586815031630475715}
@@ -3471,7 +3385,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u9ED1\u5834 S1 \u2192 S2"
   - m_Version: 1
-    m_Start: 1176
+    m_Start: 1096
     m_ClipIn: 0
     m_Asset: {fileID: -2589479226688002882}
     m_Duration: 10
@@ -3540,7 +3454,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u9ED1\u5834 S2 \u2192 S3"
   - m_Version: 1
-    m_Start: 1431
+    m_Start: 1351
     m_ClipIn: 0
     m_Asset: {fileID: 2225454284610332409}
     m_Duration: 5
@@ -3630,76 +3544,7 @@ MonoBehaviour:
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
   m_Children: []
-  m_Clips:
-  - m_Version: 1
-    m_Start: 768
-    m_ClipIn: 0
-    m_Asset: {fileID: 8017616785973163377}
-    m_Duration: 15.520000457763672
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 956489388402953232}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: S2-1-A
+  m_Clips: []
   m_Markers:
     m_Objects: []
   m_TrackProperties:
@@ -3838,7 +3683,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16347c11c513a2047a25aa16c8ed9d81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.ShowHoldMarker
-  m_Time: 785.5
+  m_Time: 772.5
   m_TaskId: s2.lamp.done
 --- !u!114 &1642224194734111048
 MonoBehaviour:
@@ -3862,7 +3707,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1335
+    m_Start: 1255
     m_ClipIn: 0
     m_Asset: {fileID: -1393174704354621721}
     m_Duration: 101
@@ -4091,7 +3936,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 6329442855393498510}
-    m_Duration: 1181
+    m_Duration: 1101
     m_TimeScale: 1
     m_ParentTrack: {fileID: 2358484649953334909}
     m_EaseInDuration: 0
@@ -4284,7 +4129,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 853
+    m_Start: 773
     m_ClipIn: 0
     m_Asset: {fileID: 7869474700881286198}
     m_Duration: 328
@@ -4368,6 +4213,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.ShowHoldMarker
   m_Time: 301
   m_TaskId: beat.O1_Control
+--- !u!114 &2868812381048412910
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
+  m_Name: AudioPlayableAsset
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
+  m_Clip: {fileID: 8300000, guid: 9dc925f3043daeb4b43eca4b5c3675c4, type: 3}
+  m_Loop: 0
+  m_bufferingTime: 0.1
+  m_ClipProperties:
+    volume: 1
 --- !u!114 &3195567137092519047
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -4515,7 +4377,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1181
+    m_Start: 1101
     m_ClipIn: 0
     m_Asset: {fileID: 1791000026561131388}
     m_Duration: 20
@@ -4662,7 +4524,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1201
+    m_Start: 1121
     m_ClipIn: 0
     m_Asset: {fileID: 2265100977778733762}
     m_Duration: 8
@@ -4731,7 +4593,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: 8331706145325690177}
     m_Duration: 6
@@ -4824,7 +4686,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1201
+    m_Start: 1121
     m_ClipIn: 0
     m_Asset: {fileID: -1780093697260001543}
     m_Duration: 8
@@ -4893,7 +4755,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: 8081640604407890727}
     m_Duration: 6
@@ -4986,7 +4848,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1236
+    m_Start: 1156
     m_ClipIn: 0
     m_Asset: {fileID: -5986679162743083647}
     m_Duration: 8
@@ -5055,7 +4917,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: 4736299010279236199}
     m_Duration: 6
@@ -5268,7 +5130,7 @@ MonoBehaviour:
     m_Start: 767
     m_ClipIn: 0
     m_Asset: {fileID: -282873185093249698}
-    m_Duration: 671
+    m_Duration: 591
     m_TimeScale: 1
     m_ParentTrack: {fileID: 4191782992433335374}
     m_EaseInDuration: 0
@@ -5358,7 +5220,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: 1777151858551677621}
     m_Duration: 169
@@ -5453,7 +5315,7 @@ MonoBehaviour:
     m_Start: 767
     m_ClipIn: 0
     m_Asset: {fileID: -2345961924197796187}
-    m_Duration: 414
+    m_Duration: 334
     m_TimeScale: 1
     m_ParentTrack: {fileID: 4283480072697081080}
     m_EaseInDuration: 0
@@ -5543,7 +5405,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1201
+    m_Start: 1121
     m_ClipIn: 0
     m_Asset: {fileID: -929805708667979883}
     m_Duration: 8
@@ -5612,7 +5474,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: 1245677117732646700}
     m_Duration: 6
@@ -5769,7 +5631,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 8588301764051655774}
-    m_Duration: 1181
+    m_Duration: 1101
     m_TimeScale: 1
     m_ParentTrack: {fileID: 4833490565440741851}
     m_EaseInDuration: 0
@@ -5861,23 +5723,6 @@ MonoBehaviour:
   active: 1
   postPlayback: 2
   directorOnClipEnd: 0
---- !u!114 &5649333209918560764
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
-  m_Name: AudioPlayableAsset
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
-  m_Clip: {fileID: 8300000, guid: e18ef56e64010674ab886c99ffdb5777, type: 3}
-  m_Loop: 0
-  m_bufferingTime: 0.1
-  m_ClipProperties:
-    volume: 1
 --- !u!114 &5649414336597906001
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -5917,7 +5762,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1066
+    m_Start: 986
     m_ClipIn: 0
     m_Asset: {fileID: -5326651597873573162}
     m_Duration: 120
@@ -6198,7 +6043,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1236
+    m_Start: 1156
     m_ClipIn: 0
     m_Asset: {fileID: -3401977169942653047}
     m_Duration: 8
@@ -6267,7 +6112,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: -6457207172199195095}
     m_Duration: 6
@@ -6372,7 +6217,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1236
+    m_Start: 1156
     m_ClipIn: 0
     m_Asset: {fileID: 857543901884173644}
     m_Duration: 8
@@ -6441,7 +6286,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1267
+    m_Start: 1187
     m_ClipIn: 0
     m_Asset: {fileID: 6648104663035970100}
     m_Duration: 6
@@ -6610,7 +6455,7 @@ MonoBehaviour:
     m_Start: 767
     m_ClipIn: 10
     m_Asset: {fileID: 2401097112443914222}
-    m_Duration: 18
+    m_Duration: 5
     m_TimeScale: 1
     m_ParentTrack: {fileID: 7477271849769172415}
     m_EaseInDuration: 0
@@ -6892,7 +6737,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16347c11c513a2047a25aa16c8ed9d81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.ShowHoldMarker
-  m_Time: 1066.5
+  m_Time: 986.5
   m_TaskId: s2.camera.done
 --- !u!114 &7869474700881286198
 MonoBehaviour:
@@ -6918,23 +6763,6 @@ MonoBehaviour:
   active: 1
   postPlayback: 2
   directorOnClipEnd: 0
---- !u!114 &8017616785973163377
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
-  m_Name: AudioPlayableAsset
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
-  m_Clip: {fileID: 8300000, guid: 385d8533ea093254e811e1a66b5c5180, type: 3}
-  m_Loop: 0
-  m_bufferingTime: 0.1
-  m_ClipProperties:
-    volume: 1
 --- !u!114 &8048799052567920543
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -7006,7 +6834,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1181
+    m_Start: 1101
     m_ClipIn: 0
     m_Asset: {fileID: 709330571634569102}
     m_Duration: 256.99999999999886
@@ -7102,7 +6930,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 3752122702127671634}
-    m_Duration: 1181
+    m_Duration: 1101
     m_TimeScale: 1
     m_ParentTrack: {fileID: 8235909957234793915}
     m_EaseInDuration: 0
@@ -7192,7 +7020,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1181
+    m_Start: 1101
     m_ClipIn: 0
     m_Asset: {fileID: -8029500179412681793}
     m_Duration: 256.99999999999886
@@ -7322,7 +7150,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1181
+    m_Start: 1101
     m_ClipIn: 0
     m_Asset: {fileID: -1064609046201598295}
     m_Duration: 718.9999999999994
@@ -7451,7 +7279,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1201
+    m_Start: 1121
     m_ClipIn: 0
     m_Asset: {fileID: 5040559050309306265}
     m_Duration: 35

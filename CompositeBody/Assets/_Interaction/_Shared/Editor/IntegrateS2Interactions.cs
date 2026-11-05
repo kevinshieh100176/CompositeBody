@@ -58,11 +58,11 @@ namespace CompositeBody.Interaction.EditorTools
         const string k_LampGateLabel = "S2-2 lamp -- assembled by both players";
         const string k_CameraGateLabel = "S2-3 camera -- assembled by both players";
 
-        /// <summary>17:46 on the show timeline: where the camera interaction is cued.</summary>
-        const double k_CameraCueAt = 1066.0;
+        /// <summary>16:26 on the show timeline: where the camera interaction is cued.</summary>
+        const double k_CameraCueAt = 986.0;
 
-        /// <summary>17:33 -- where Home is meant to be finished. Checked, not enforced.</summary>
-        const double k_HomeEndsBy = 1053.0;
+        /// <summary>16:13 -- where Home is meant to be finished. Checked, not enforced.</summary>
+        const double k_HomeEndsBy = 973.0;
 
         /// <summary>
         /// How long after its arming root comes up the show stops for an interaction.
