@@ -78,8 +78,21 @@ Key serialized fields:
   `m_Director`, `m_Phase1ClipP1`, `m_Phase1ClipP2`, `m_Phase1Source`, `m_Phase1FallbackSeconds`
   (2), `m_Phase1TaskId`, `m_Phase2Clip`, `m_Phase2Source`, `m_Phase2FallbackSeconds` (6),
   `m_JoinDistance` (0.12 m), `onCompleted`, `m_DebugId`.
-- All VO clips are currently EMPTY placeholders (fallback durations are used). The Phase 0 VO
-  goes on the AudioTrack of `ObjectAssembly/Timeline/OA_<Variant>_Phase0.playable`.
+- Phase 0 is PER ROLE, on two decks. `OA_<Variant>_Phase0.playable` carries two AudioTracks,
+  `Phase0 VO A` and `Phase0 VO B`, bound to two AudioSources under `Controller` that each hold a
+  `RoleAudible` gated to Player1 / Player2 — so 玩家A 跟玩家B 聽到不一樣的 VO from the beat's first
+  sentence. Do NOT put one line on both decks expecting "both hear it": that is Phase 2's job.
+  Author the decks through the `phase0ClipA` / `phase0ClipB` rows of `BuildObjectAssembly`'s variant
+  table, not by hand, and run `Tools/ObjectAssembly/<Variant>/Upgrade Phase 0 Voices` — never
+  `Build Demo` — on a prefab MainScene already instances, because the full build re-writes the
+  prefab's file ids and would drop every per-beat override in the scene.
+- Lamp phase 0 currently holds `S2_1_B.wav` on BOTH decks: a named placeholder, not the real pair.
+  Camera phase 0 is empty on both. Phase 1 and Phase 2 have their real clips (lamp: `S2_2_A` /
+  `S2_2_B` / `S2-2-AB`; camera: `S2-5-A` / `S2-5-B` / `S2-6-AB`), assigned as instance overrides
+  in MainScene.
+- The OAAppearMarker is on the shared clock, so the halves appear at ONE time for both players.
+  With two lines of different lengths it belongs at the end of the longer one; the builder's verify
+  warns when a deck outruns it.
 
 Test status: Home runner 72/72, Lamp and Camera runners 45/45 each (single machine); two-player
 Multiplayer Play Mode check passed for Home and Lamp (contested grab, client placement, ownership
@@ -155,7 +168,8 @@ beats are time-boxed. Read the real table with
 4. ObjectAssembly lights: keep the prefab's own 2 lights + Phase 0 animation, or rebind the Phase 0
    Animation track to S2's scene lights.
 5. Where in the S2 room the OA corners and `Destination` should be.
-6. Real VO clips (Phase 0/1/2 per variant) — or keep placeholders for now.
+6. Real VO clips. Phase 1 and 2 are assigned. Phase 0 is per role and still needs its pairs: the
+   lamp has `S2_1_B` standing in on both decks, the camera has nothing on either.
 
 ---
 
@@ -207,7 +221,9 @@ idempotent rebuild of its own root only, save → hashes → save, then a MainSc
    (`m_CornerP1/P2`) and `m_Destination` are children of the prefab — move them as the user decided.
 2. Lights: either keep the prefab's lights or rebind the Phase 0 timeline's Animation track to S2
    lights on the instance's PlayableDirector (decision §4.4).
-3. Assign VO: `m_Phase1ClipP1`, `m_Phase1ClipP2`, `m_Phase2Clip`, and the Phase 0 AudioTrack clip.
+3. Assign VO: `m_Phase1ClipP1`, `m_Phase1ClipP2`, `m_Phase2Clip` on the instance, and phase 0's two
+   role-gated decks through the variant table's `phase0ClipA` / `phase0ClipB` (they live in the
+   .playable, which is per variant, so they are NOT instance overrides).
 4. Camera needs its own beat root first (create `Beat_S2-4` and a Control clip on `Main.playable`
    only after the user agrees — that edits the show).
 

@@ -33,6 +33,22 @@ namespace CompositeBody.Experience
         [SerializeField, Tooltip("Whose ring this is. Decides the colour.")]
         PlayerRole m_Role = PlayerRole.Player1;
 
+        /// <summary>
+        /// WHICH SET OF RINGS THIS IS, and it is here only so that the debug id below is unique.
+        /// The id used to be the role alone, which was true while the only prints in the show
+        /// were O-2's -- a second pair anywhere else gives two rows the same id, and
+        /// InteractionDebug warns about exactly that because every lookup by id takes the first
+        /// match: the second pair could be watched and never fired from a key or from the other
+        /// machine.
+        ///
+        /// Empty on purpose for the onboarding pair, so their ids stay what the debug keys and
+        /// the payoff harness already name.
+        /// </summary>
+        [SerializeField, Tooltip("Which part of the show these prints belong to -- 'S3', say. " +
+                                 "Only the debug panel reads it, and only to keep two sets of " +
+                                 "rings off one row id. Leave it empty for the O-2 pair.")]
+        string m_Where = "";
+
         [SerializeField, Tooltip("The prints, in walking order. Found among the children if empty.")]
         Renderer[] m_Prints = new Renderer[0];
 
@@ -272,9 +288,13 @@ namespace CompositeBody.Experience
 
         #region Debug panel
 
-        public string debugId => $"footprints.{m_Role}";
+        public string debugId => string.IsNullOrEmpty(m_Where)
+            ? $"footprints.{m_Role}"
+            : $"footprints.{m_Where}.{m_Role}";
 
-        public string debugLabel => $"Footprints on the floor ({m_Role}) -- walk the circle";
+        public string debugLabel => string.IsNullOrEmpty(m_Where)
+            ? $"Footprints on the floor ({m_Role}) -- walk the circle"
+            : $"Footprints on the floor, {m_Where} ({m_Role}) -- walk the circle";
 
         public DebugInteractionScope debugScope => DebugInteractionScope.LocalMachine;
 

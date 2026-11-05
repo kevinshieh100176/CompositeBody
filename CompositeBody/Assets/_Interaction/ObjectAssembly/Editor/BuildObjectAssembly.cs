@@ -10,6 +10,7 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
 using CompositeBody.Interaction.EditorTools;
+using CompositeBody.Multiplayer;
 using Object = UnityEngine.Object;
 
 namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
@@ -50,6 +51,19 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
         public string phase1Label;
         public OAJointRule jointRule;
 
+        /// <summary>
+        /// Phase 0's line as each player hears it: 玩家A 跟玩家B 聽到不一樣的 VO. Two paths rather
+        /// than one, because the two people in the room are told different things from the first
+        /// sentence of the beat -- see the per-role dialogue note in the class remarks.
+        ///
+        /// Null means that recording does not exist yet. The deck, its speaker and its role gate
+        /// are still built; <see cref="BuildObjectAssembly"/> names the gap in the log rather than
+        /// leaving a silent beat to be discovered in the venue.
+        /// </summary>
+        public string phase0ClipA;
+
+        public string phase0ClipB;
+
         public string tag => "OABuild/" + key;
     }
 
@@ -71,9 +85,27 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
     /// THE JOIN POINT follows the variant's <see cref="OAJointRule"/>. Each half gets a JoinPoint
     /// child there, so both coincide when assembled and OATrail runs between them.
     ///
-    /// The Phase 0 timeline is created once and then only topped up (a "Phase0 VO" AudioTrack, a
+    /// The Phase 0 timeline is created once and then only topped up (two role-gated AudioTracks, a
     /// "Lights Up" AnimationTrack, an OAAppearMarker), so a voice-over dropped into it later
     /// survives a rebuild.
+    ///
+    /// PHASE 0 IS PER ROLE, ON TWO DECKS. 「玩家a 跟玩家b 要可以聽到不一樣的 vo」 from the beat's
+    /// first sentence, so there is no single shared Phase 0 line: "Phase0 VO A" and "Phase0 VO B"
+    /// are two AudioTracks bound to two AudioSources, each standing behind a <see cref="RoleAudible"/>
+    /// gate for one player. Timeline has no concept of a player, but every machine runs its own
+    /// copy of the prefab with its own director, so two tracks on two sources are already two
+    /// private decks on each headset and which one is heard is a purely local mute -- no network
+    /// traffic, and one asset that is identical on both machines. See RoleAudible's remarks for
+    /// why it mutes rather than stops, which matters here because the local role frequently
+    /// resolves after the beat has started.
+    ///
+    /// A line BOTH players hear does not belong on these decks as two copies to keep in step: that
+    /// is what Phase 2 is, and <see cref="OAController"/> plays it from the shared stamp through
+    /// one ungated source.
+    ///
+    /// The single "Phase0 VO" track that came before this is migrated, not discarded: it is renamed
+    /// to "Phase0 VO A" with whatever clip was on it, so nothing authored in the Timeline window
+    /// is lost and the only new thing is B's deck.
     /// </summary>
     public static class BuildObjectAssembly
     {
@@ -84,7 +116,17 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
         const string FloorMaterialPath = MaterialFolder + "/OA_Floor.mat";
         const string TrailMaterialPath = MaterialFolder + "/OATrailFlow.mat";
 
-        public const string AudioTrackName = "Phase0 VO";
+        /// <summary>Phase 0's two private decks, and the speakers they are bound to.</summary>
+        public const string AudioTrackNameA = "Phase0 VO A";
+
+        public const string AudioTrackNameB = "Phase0 VO B";
+
+        /// <summary>
+        /// What the one shared deck was called before phase 0 went per role. Still looked for, so
+        /// a rebuild migrates it into A instead of leaving an orphan track sounding over B.
+        /// </summary>
+        const string LegacyAudioTrackName = "Phase0 VO";
+
         public const string LightsTrackName = "Lights Up";
 
         public static readonly OAVariant Lamp = new()
@@ -104,6 +146,15 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             phase1TaskId = "oa.lamp.phase1",
             phase1Label = "OA lamp phase1 -- each player heard their line",
             jointRule = OAJointRule.ContactCentroid,
+
+            // S2-2's phase 0 has not been recorded per player yet, so both decks carry S2_1_B --
+            // the clip the single shared deck already held. The structure is real and the audio is
+            // a placeholder; swap these two lines when the pair lands and re-run. Keeping the
+            // placeholder rather than emptying the decks is deliberate: the lamp's "Lights Up" and
+            // its OAAppearMarker both sit at 15.52s because that is where this clip ends, and an
+            // empty deck would silently shorten the beat to the 3.5s fallback.
+            phase0ClipA = "Assets/_Audio/S2_1_B.wav",
+            phase0ClipB = "Assets/_Audio/S2_1_B.wav",
         };
 
         public static readonly OAVariant Camera = new()
@@ -123,6 +174,14 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             phase1TaskId = "oa.camera.phase1",
             phase1Label = "OA camera phase1 -- each player heard their line",
             jointRule = OAJointRule.FaceOfBTowardA,
+
+            // S2-3's phase 0 has no recording at all, per player or shared -- the shared deck was
+            // empty before this too. Both decks are built and gated and stay empty until the pair
+            // exists; the run reports it by name. S2-3-AB.wav is NOT a stand-in: it is 191s of the
+            // 隱藏的記憶 narration already playing on Main's 共同 deck at 853s, and putting it here
+            // would play it twice.
+            phase0ClipA = null,
+            phase0ClipB = null,
         };
 
         public static readonly OAVariant[] Variants = { Lamp, Camera };
@@ -153,8 +212,138 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
 
         [MenuItem("Tools/ObjectAssembly/Lamp/Build Demo")] public static void BuildLamp() => BuildDemo(Lamp);
         [MenuItem("Tools/ObjectAssembly/Lamp/Verify Demo")] public static void VerifyLamp() => VerifyDemo(Lamp);
+        [MenuItem("Tools/ObjectAssembly/Lamp/Upgrade Phase 0 Voices")] public static void UpgradeLamp() => UpgradePhase0Voices(Lamp);
         [MenuItem("Tools/ObjectAssembly/Camera/Build Demo")] public static void BuildCamera() => BuildDemo(Camera);
         [MenuItem("Tools/ObjectAssembly/Camera/Verify Demo")] public static void VerifyCamera() => VerifyDemo(Camera);
+        [MenuItem("Tools/ObjectAssembly/Camera/Upgrade Phase 0 Voices")] public static void UpgradeCamera() => UpgradePhase0Voices(Camera);
+
+        [MenuItem("Tools/ObjectAssembly/Upgrade Phase 0 Voices (all variants)")]
+        public static void UpgradeAllPhase0Voices()
+        {
+            foreach (OAVariant v in Variants) UpgradePhase0Voices(v);
+        }
+
+        /// <summary>
+        /// Gives an EXISTING prefab and timeline phase 0's two role-gated decks, in place.
+        ///
+        /// WHY THIS IS NOT JUST "Build Demo" AGAIN. The full build writes the prefab from a fresh
+        /// hierarchy through SaveAsPrefabAssetAndConnect, which hands every object in it a new
+        /// local file id. MainScene carries these two prefabs as instances with per-beat overrides
+        /// on their controllers -- m_BeatRoot, m_Phase1ClipP1/P2, m_Phase2Clip, the onCompleted
+        /// call -- and every one of those overrides is addressed BY that file id. Rebuilding the
+        /// prefab to add two speakers would therefore silently drop the whole S2 integration, and
+        /// the first sign of it would be a beat that never starts in the venue. This touches only
+        /// what it has to and leaves every id alone, so the instances inherit the two new speakers
+        /// and keep their overrides.
+        ///
+        /// Re-runnable: it finds the decks and speakers by name, migrates the single shared deck
+        /// if that is still what is there, and leaves any clip already authored on a deck as it is.
+        /// It does not open or touch any scene.
+        /// </summary>
+        public static void UpgradePhase0Voices(OAVariant v)
+        {
+            string tag = v.tag;
+            var failures = new List<string>();
+
+            var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(v.timelinePath);
+            if (timeline == null)
+            {
+                Debug.LogError($"[{tag}] RESULT: FAIL - no timeline at {v.timelinePath}. " +
+                               "Run Build Demo first; there is nothing to upgrade.");
+                return;
+            }
+
+            GameObject contents = PrefabUtility.LoadPrefabContents(v.prefabPath);
+            if (contents == null)
+            {
+                Debug.LogError($"[{tag}] RESULT: FAIL - no prefab at {v.prefabPath}.");
+                return;
+            }
+
+            try
+            {
+                EnsurePhase0Tracks(timeline, v, out AudioTrack voiceA, out AudioTrack voiceB);
+
+                var director = contents.GetComponentInChildren<PlayableDirector>(true);
+                if (!InteractionBuildUtil.Check(tag, director != null, "prefab has a PlayableDirector", failures))
+                {
+                    InteractionBuildUtil.Verdict(tag, failures);
+                    return;
+                }
+
+                Transform holder = director.transform;
+
+                // The old shared speaker becomes A, keeping its file id -- so the binding that
+                // already points at it survives and A's deck needs no rebinding at all.
+                Transform legacy = holder.Find(LegacyAudioTrackName);
+                if (legacy != null && holder.Find(AudioTrackNameA) == null)
+                {
+                    legacy.name = AudioTrackNameA;
+                    Debug.Log($"[{tag}] renamed the shared speaker '{LegacyAudioTrackName}' to " +
+                              $"'{AudioTrackNameA}'.");
+                }
+
+                AudioSource sourceA = EnsureSpeaker(holder, AudioTrackNameA, tag);
+                AudioSource sourceB = EnsureSpeaker(holder, AudioTrackNameB, tag);
+                GateVoice(sourceA, PlayerRole.Player1, tag);
+                GateVoice(sourceB, PlayerRole.Player2, tag);
+
+                director.SetGenericBinding(voiceA, sourceA);
+                director.SetGenericBinding(voiceB, sourceB);
+                EditorUtility.SetDirty(director);
+
+                InteractionBuildUtil.Check(tag, director.GetGenericBinding(voiceA) as AudioSource == sourceA,
+                                           $"{AudioTrackNameA} bound to '{sourceA.name}'", failures);
+                InteractionBuildUtil.Check(tag, director.GetGenericBinding(voiceB) as AudioSource == sourceB,
+                                           $"{AudioTrackNameB} bound to '{sourceB.name}'", failures);
+                InteractionBuildUtil.Check(tag, GatedRole(sourceA) == PlayerRole.Player1,
+                                           "deck A audible to Player1 only", failures);
+                InteractionBuildUtil.Check(tag, GatedRole(sourceB) == PlayerRole.Player2,
+                                           "deck B audible to Player2 only", failures);
+
+                PrefabUtility.SaveAsPrefabAsset(contents, v.prefabPath, out bool prefabOk);
+                InteractionBuildUtil.Check(tag, prefabOk, $"saved {v.prefabPath}", failures);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            AssetDatabase.SaveAssets();
+
+            float appear = AppearMarkerOf(timeline);
+            foreach (TrackAsset t in timeline.GetOutputTracks())
+            {
+                if (t is AudioTrack at && (at.name == AudioTrackNameA || at.name == AudioTrackNameB))
+                    WarnIfVoiceOutrunsAppear(tag, at.name, at, appear);
+            }
+
+            InteractionBuildUtil.Verdict(tag, failures);
+        }
+
+        /// <summary>
+        /// One phase-0 speaker, found by name or made. playOnAwake stays off: the inspector's
+        /// leftover clip would otherwise sound the moment the prefab wakes, long before the beat.
+        /// </summary>
+        static AudioSource EnsureSpeaker(Transform parent, string name, string tag)
+        {
+            Transform holder = parent.Find(name);
+            if (holder == null)
+            {
+                var made = new GameObject(name);
+                made.transform.SetParent(parent, false);
+                holder = made.transform;
+                Debug.Log($"[{tag}] created speaker '{name}'.");
+            }
+
+            holder.gameObject.SetActive(true);
+            var source = holder.GetComponent<AudioSource>();
+            if (source == null) source = holder.gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = false;
+            source.spatialBlend = 0f;
+            return source;
+        }
 
         public static OAVariant VariantForScene(string scenePath)
         {
@@ -272,7 +461,8 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                 : InteractionBuildUtil.MakeFragmentMaterial(parts[1].material, v.materialPath.Replace(".mat", "_B.mat"));
             Material floorMat = MakeFloorMaterial();
             AnimationClip lightsClip = MakeLightsClip(v.lightsClipPath);
-            TimelineAsset timeline = EnsureTimeline(v, lightsClip, out AudioTrack audioTrack, out AnimationTrack lightsTrack);
+            TimelineAsset timeline = EnsureTimeline(v, lightsClip, out AudioTrack voiceTrackA,
+                                                    out AudioTrack voiceTrackB, out AnimationTrack lightsTrack);
             AssetDatabase.SaveAssets();
 
             var environment = new GameObject("Environment");
@@ -340,10 +530,16 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             director.extrapolationMode = DirectorWrapMode.Hold;
             var controller = ctrlGo.AddComponent<OAController>();
 
-            AudioSource phase0 = MakeVoice(ctrlGo.transform, "Phase0 VO");
+            // Phase 0 is two private decks, one per player, each muted on the other headset.
+            AudioSource phase0A = MakeVoice(ctrlGo.transform, AudioTrackNameA);
+            AudioSource phase0B = MakeVoice(ctrlGo.transform, AudioTrackNameB);
+            GateVoice(phase0A, PlayerRole.Player1, tag);
+            GateVoice(phase0B, PlayerRole.Player2, tag);
+
             AudioSource phase1 = MakeVoice(ctrlGo.transform, "Phase1 VO");
             AudioSource phase2 = MakeVoice(ctrlGo.transform, "Phase2 VO");
-            director.SetGenericBinding(audioTrack, phase0);
+            director.SetGenericBinding(voiceTrackA, phase0A);
+            director.SetGenericBinding(voiceTrackB, phase0B);
             director.SetGenericBinding(lightsTrack, lightsAnimator);
 
             for (int i = 0; i < 2; i++)
@@ -591,7 +787,8 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             return clip;
         }
 
-        static TimelineAsset EnsureTimeline(OAVariant v, AnimationClip lightsClip, out AudioTrack audioTrack, out AnimationTrack lightsTrack)
+        static TimelineAsset EnsureTimeline(OAVariant v, AnimationClip lightsClip, out AudioTrack voiceA,
+                                            out AudioTrack voiceB, out AnimationTrack lightsTrack)
         {
             var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(v.timelinePath);
             if (timeline == null)
@@ -601,14 +798,11 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                 AssetDatabase.CreateAsset(timeline, v.timelinePath);
             }
 
-            audioTrack = null;
+            EnsurePhase0Tracks(timeline, v, out voiceA, out voiceB);
+
             lightsTrack = null;
             foreach (TrackAsset track in timeline.GetOutputTracks())
-            {
-                if (audioTrack == null && track is AudioTrack a && track.name == AudioTrackName) audioTrack = a;
                 if (lightsTrack == null && track is AnimationTrack l && track.name == LightsTrackName) lightsTrack = l;
-            }
-            if (audioTrack == null) audioTrack = timeline.CreateTrack<AudioTrack>(null, AudioTrackName);
             if (lightsTrack == null) lightsTrack = timeline.CreateTrack<AnimationTrack>(null, LightsTrackName);
 
             TimelineClip lightsTimelineClip = null;
@@ -637,6 +831,44 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             return timeline;
         }
 
+        /// <summary>
+        /// Phase 0's two decks on the asset, migrating the single shared one if that is what is
+        /// there. Shared by the full build and by the in-place upgrade, so there is exactly one
+        /// definition of what a phase-0 deck is.
+        /// </summary>
+        static void EnsurePhase0Tracks(TimelineAsset timeline, OAVariant v,
+                                       out AudioTrack voiceA, out AudioTrack voiceB)
+        {
+            voiceA = null;
+            voiceB = null;
+            AudioTrack legacy = null;
+            foreach (TrackAsset track in timeline.GetOutputTracks())
+            {
+                if (!(track is AudioTrack a)) continue;
+                if (voiceA == null && a.name == AudioTrackNameA) voiceA = a;
+                else if (voiceB == null && a.name == AudioTrackNameB) voiceB = a;
+                else if (legacy == null && a.name == LegacyAudioTrackName) legacy = a;
+            }
+
+            // Migrate the one shared deck into A rather than adding two beside it. A renamed track
+            // is the SAME object, so the director's existing binding to the old "Phase0 VO" speaker
+            // still points at it, and whatever clip was authored on it stays exactly where it was.
+            if (voiceA == null && legacy != null)
+            {
+                legacy.name = AudioTrackNameA;
+                voiceA = legacy;
+                Debug.Log($"[{v.tag}] migrated the shared '{LegacyAudioTrackName}' track to " +
+                          $"'{AudioTrackNameA}'; its clip and its binding are untouched.");
+            }
+
+            if (voiceA == null) voiceA = timeline.CreateTrack<AudioTrack>(null, AudioTrackNameA);
+            if (voiceB == null) voiceB = timeline.CreateTrack<AudioTrack>(null, AudioTrackNameB);
+
+            EnsureVoiceClip(voiceA, v.phase0ClipA, "A", v.tag);
+            EnsureVoiceClip(voiceB, v.phase0ClipB, "B", v.tag);
+            EditorUtility.SetDirty(timeline);
+        }
+
         static void SetPostExtrapolation(TimelineClip clip, TimelineClip.ClipExtrapolation mode, string tag)
         {
             PropertyInfo prop = typeof(TimelineClip).GetProperty("postExtrapolationMode",
@@ -644,6 +876,52 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             MethodInfo setter = prop?.GetSetMethod(true);
             if (setter != null) setter.Invoke(clip, new object[] { mode });
             else Debug.LogWarning($"[{tag}] could not set post-extrapolation on '{clip.displayName}'.");
+        }
+
+        /// <summary>
+        /// Tops one phase-0 deck up from the variant table, and says what it did.
+        ///
+        /// A deck that already holds a clip is left EXACTLY as it is -- not replaced, not resized.
+        /// The lamp's line was dragged to 0 and its lights were timed to where it ends; a builder
+        /// that rewrote the clip on every run would quietly undo that the first time somebody
+        /// nudged it in the Timeline window.
+        ///
+        /// A null path is a recording that does not exist yet, not an error: the deck, the speaker
+        /// and the role gate are built anyway so the pair can be dropped in later, and the gap is
+        /// logged by name. A placeholder nobody is told about is a placeholder that ships.
+        /// </summary>
+        static void EnsureVoiceClip(AudioTrack track, string clipPath, string label, string tag)
+        {
+            foreach (TimelineClip existing in track.GetClips())
+            {
+                Debug.Log($"[{tag}] phase 0 deck {label} already holds '{existing.displayName}' " +
+                          $"({existing.start:0.00}-{existing.end:0.00}s); left as authored.");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(clipPath))
+            {
+                Debug.LogWarning($"[{tag}] phase 0 deck {label} is EMPTY: no recording for this " +
+                                 "player yet. The track, its speaker and its role gate are built, " +
+                                 "so dropping the clip in is all that is left -- but until then " +
+                                 $"player {label} hears nothing in phase 0.");
+                return;
+            }
+
+            var audio = AssetDatabase.LoadAssetAtPath<AudioClip>(clipPath);
+            if (audio == null)
+            {
+                Debug.LogWarning($"[{tag}] phase 0 deck {label}: nothing at '{clipPath}', so the " +
+                                 "deck is empty. Check the path in the variant table.");
+                return;
+            }
+
+            TimelineClip clip = track.CreateClip<AudioPlayableAsset>();
+            ((AudioPlayableAsset)clip.asset).clip = audio;
+            clip.start = 0d;
+            clip.duration = audio.length;          // sized to the wav: never cut a line mid-word
+            clip.displayName = audio.name;
+            Debug.Log($"[{tag}] phase 0 deck {label}: '{audio.name}' 0.00-{audio.length:0.00}s.");
         }
 
         static AudioSource MakeVoice(Transform parent, string name)
@@ -654,6 +932,70 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
             source.loop = false;
             source.spatialBlend = 0f;
             return source;
+        }
+
+        /// <summary>
+        /// The role gate on one phase-0 deck: this speaker is heard by this player and muted on
+        /// the other headset. Written through a SerializedProperty because the field is private --
+        /// and read back the same way by <see cref="Verify"/>, since two decks gated to the SAME
+        /// player is the failure that sounds perfect on one headset.
+        /// </summary>
+        static void GateVoice(AudioSource source, PlayerRole role, string tag)
+        {
+            var gate = source.GetComponent<RoleAudible>();
+            if (gate == null) gate = source.gameObject.AddComponent<RoleAudible>();
+
+            var so = new SerializedObject(gate);
+            SerializedProperty roles = so.FindProperty("m_AudibleToRoles");
+            roles.arraySize = 1;
+            roles.GetArrayElementAtIndex(0).intValue = (int)role;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            Debug.Log($"[{tag}] '{source.name}' is audible to {role} only.");
+        }
+
+        /// <summary>The single role a phase-0 speaker is gated to, or null if it is not gated.</summary>
+        static PlayerRole? GatedRole(AudioSource source)
+        {
+            var gate = source != null ? source.GetComponent<RoleAudible>() : null;
+            if (gate == null) return null;
+
+            SerializedProperty roles = new SerializedObject(gate).FindProperty("m_AudibleToRoles");
+            if (roles == null || roles.arraySize != 1) return null;
+            return (PlayerRole)roles.GetArrayElementAtIndex(0).intValue;
+        }
+
+        static string Describe(PlayerRole? role) =>
+            role.HasValue ? role.Value.ToString() : "ungated or gated to more than one role";
+
+        /// <summary>When the halves appear, from the asset, or the controller's fallback.</summary>
+        static float AppearMarkerOf(TimelineAsset timeline)
+        {
+            if (timeline != null && timeline.markerTrack != null)
+                foreach (IMarker m in timeline.markerTrack.GetMarkers())
+                    if (m is OAAppearMarker) return (float)m.time;
+            return AppearMarkerTime;
+        }
+
+        /// <summary>
+        /// Says so when a deck is still talking as the halves appear.
+        ///
+        /// The two players' lines are DIFFERENT recordings and so different lengths, but there is
+        /// only one OAAppearMarker and it is on the shared clock -- it has to be, or the two
+        /// headsets would show the halves at different moments. So one player can be mid-sentence
+        /// when the beat moves on, and the only way to know is to be told.
+        /// </summary>
+        static void WarnIfVoiceOutrunsAppear(string tag, string deck, AudioTrack track, float appear)
+        {
+            if (track == null) return;
+            foreach (TimelineClip clip in track.GetClips())
+            {
+                if (clip.end <= appear + 0.01d) continue;
+                Debug.LogWarning($"[{tag}] {deck}: '{clip.displayName}' runs to {clip.end:0.00}s but " +
+                                 $"the halves appear at {appear:0.00}s, so that player is still " +
+                                 "being talked to when the beat moves on. Move the OAAppearMarker " +
+                                 "to the longer of the two lines, or trim the line.");
+            }
         }
 
         static GameObject Child(Transform parent, string name, Vector3 worldPosition)
@@ -766,13 +1108,39 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
                   $"director plays {Path.GetFileName(v.timelinePath)}"))
             {
                 C(!director.playOnAwake, "director does not play on awake");
-                AudioTrack audio = null; AnimationTrack anim = null;
+                AudioTrack audioA = null; AudioTrack audioB = null; AnimationTrack anim = null;
+                bool legacyAudio = false;
                 foreach (TrackAsset t in timeline.GetOutputTracks())
                 {
-                    if (t is AudioTrack at && t.name == AudioTrackName) audio = at;
+                    if (t is AudioTrack at && t.name == AudioTrackNameA) audioA = at;
+                    if (t is AudioTrack bt && t.name == AudioTrackNameB) audioB = bt;
+                    if (t is AudioTrack lt && lt.name == LegacyAudioTrackName) legacyAudio = true;
                     if (t is AnimationTrack an && t.name == LightsTrackName) anim = an;
                 }
-                C(audio != null && director.GetGenericBinding(audio) is AudioSource, "Phase0 VO track bound to an AudioSource");
+
+                var sourceA = audioA != null ? director.GetGenericBinding(audioA) as AudioSource : null;
+                var sourceB = audioB != null ? director.GetGenericBinding(audioB) as AudioSource : null;
+                C(sourceA != null, $"{AudioTrackNameA} bound to an AudioSource");
+                C(sourceB != null, $"{AudioTrackNameB} bound to an AudioSource");
+                C(!legacyAudio, $"no leftover shared '{LegacyAudioTrackName}' track sounding over the two decks");
+
+                // Both decks gated to the same player is the failure that sounds perfect on one
+                // headset: that player hears phase 0 twice and the other stands in silence, and
+                // nothing on the first headset shows it. So read the roles back, do not trust them.
+                PlayerRole? gateA = GatedRole(sourceA);
+                PlayerRole? gateB = GatedRole(sourceB);
+                C(gateA == PlayerRole.Player1, $"{AudioTrackNameA} is audible to Player1 only (is {Describe(gateA)})");
+                C(gateB == PlayerRole.Player2, $"{AudioTrackNameB} is audible to Player2 only (is {Describe(gateB)})");
+                C(sourceA != null && sourceB != null && sourceA != sourceB,
+                  "the two phase-0 decks are bound to DIFFERENT speakers");
+
+                // A deck longer than the beat's own opening talks over the halves appearing. Not a
+                // failure -- it is a cueing decision -- but it has to be said out loud, because the
+                // two lines are different lengths by design and only one appear time exists.
+                float appear = AppearMarkerOf(timeline);
+                WarnIfVoiceOutrunsAppear(v.tag, AudioTrackNameA, audioA, appear);
+                WarnIfVoiceOutrunsAppear(v.tag, AudioTrackNameB, audioB, appear);
+
                 C(anim != null && director.GetGenericBinding(anim) is Animator, "Lights Up track bound to the Lights animator");
                 if (anim != null)
                 {

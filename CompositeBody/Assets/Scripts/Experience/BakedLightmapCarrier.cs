@@ -6,11 +6,12 @@ namespace CompositeBody.Experience
     /// <summary>
     /// Lets a prefab keep the lighting it was baked with.
     ///
-    /// THE PROBLEM. A renderer stores two things about its lightmap -- an INDEX and a patch of
-    /// UV -- and both of them do travel into a prefab. What does not travel is the thing the
-    /// index points AT: LightmapSettings.lightmaps belongs to the scene, loaded from its
-    /// LightingData asset. Drop the prefab into a scene that was never baked and the renderer
-    /// still asks for "lightmap 37" of an array that is empty. The bake is not lost, it is
+    /// THE PROBLEM. A renderer's lightmap is two things -- an INDEX and a patch of UV -- and in
+    /// this version of Unity NEITHER of them is serialized: they live in the scene's
+    /// LightingData asset, which is why they appear nowhere in s1_v4.prefab or S1_v4.unity. Nor
+    /// does the thing the index points AT travel, since LightmapSettings.lightmaps belongs to
+    /// the scene as well. Drop the geometry into a scene that was never baked and it has no
+    /// index, no UV patch, and an empty array to look them up in. The bake is not lost, it is
     /// unaddressable.
     ///
     /// So this carries the array as well. Each carrier stores the lightmaps its own renderers
@@ -32,6 +33,21 @@ namespace CompositeBody.Experience
     /// 64 lightmaps. Disabling a carrier releases its claim and rebuilds without it, so
     /// unloading is possible -- but it has to be done, it does not happen by itself the way it
     /// would with an additively loaded scene.
+    ///
+    /// NOR DOES IT SURVIVE THE BUILD'S MESH PASSES. Because nothing in the scene data says
+    /// these renderers are lightmapped, the two build-time passes that rewrite mesh UVs both
+    /// treat them as fair game, and both must stay OFF for Standalone:
+    ///
+    ///   m_StaticBatching            -- folds the lightmap scale/offset into the UV2 stream of
+    ///                                  the mesh it combines, so the write in Apply() lands on
+    ///                                  UVs that already carry a transform. This is what broke
+    ///                                  S1 on 2026-11-04.
+    ///   StripUnusedMeshComponents   -- "Optimize Mesh Data", which removes the lightmap UV
+    ///                                  channel from meshes it believes nothing samples.
+    ///
+    /// Neither pass runs in the editor, so play mode will keep looking correct while the player
+    /// is wrong, which is why Report() below reads the state back off the renderers instead of
+    /// trusting what Apply() wrote.
     /// </summary>
     [DisallowMultipleComponent]
     public class BakedLightmapCarrier : MonoBehaviour
@@ -152,6 +168,8 @@ namespace CompositeBody.Experience
             foreach (BakedLightmapCarrier carrier in s_Active) carrier.Apply();
 
             ApplyEnvironment();
+
+            Report();
         }
 
         void Apply()
@@ -163,6 +181,73 @@ namespace CompositeBody.Experience
                 entry.renderer.lightmapIndex = entry.index + m_Offset;
                 entry.renderer.lightmapScaleOffset = entry.scaleOffset;
             }
+        }
+
+        // --- what the renderers actually got ------------------------------------------------
+
+        /// <summary>
+        /// Print, after every rebuild, what the renderers ended up with rather than what they
+        /// were handed.
+        ///
+        /// This is here because the way this breaks cannot be seen in the editor. Everything
+        /// that can relight a section wrongly does it only in a player: a lightmap array that
+        /// was still loading when the first carrier enabled, a build-time static batch that has
+        /// already folded the atlas transform into the mesh UVs and will not take a second one,
+        /// a lightmap UV channel that Optimize Mesh Data decided nothing was using. Each of
+        /// those leaves the bake addressable and plausible and simply pointed at the wrong part
+        /// of the atlas, which is why it reads as the model being wrong rather than the lighting
+        /// -- and why the editor, which performs none of those steps, is no witness.
+        ///
+        /// So the numbers are read back off the renderers and printed the same way from both,
+        /// and the comparison between a play-mode run and a player run is the diagnosis.
+        /// </summary>
+        static void Report()
+        {
+            int lightmaps = LightmapSettings.lightmaps?.Length ?? 0;
+
+            foreach (BakedLightmapCarrier carrier in s_Active)
+            {
+                int batched = 0, noUv2 = 0, outOfRange = 0, overwritten = 0, lost = 0;
+
+                foreach (Entry entry in carrier.m_Entries)
+                {
+                    Renderer r = entry.renderer;
+                    if (r == null) { lost++; continue; }
+
+                    if (r.isPartOfStaticBatch) batched++;
+                    if (r.lightmapIndex < 0 || r.lightmapIndex >= lightmaps) outOfRange++;
+
+                    // Read back rather than trust the write. A renderer that the build folded
+                    // into a static batch does not necessarily keep the scale/offset it is
+                    // given, and if it does keep it, it is applying it to UVs that already
+                    // carry one.
+                    if ((r.lightmapScaleOffset - entry.scaleOffset).sqrMagnitude > 1e-10f)
+                        overwritten++;
+
+                    Mesh mesh = MeshOf(r);
+                    if (mesh != null &&
+                        !mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.TexCoord1))
+                        noUv2++;
+                }
+
+                Debug.Log($"[Lightmaps] {carrier.name}: {carrier.m_Entries.Length} entr(ies), " +
+                          $"{carrier.m_Lightmaps.Length} map(s) at offset {carrier.m_Offset} of " +
+                          $"{lightmaps} loaded. in a static batch: {batched}. " +
+                          $"no TexCoord1 on the mesh: {noUv2}. " +
+                          $"index outside the array: {outOfRange}. " +
+                          $"scale/offset not what we wrote: {overwritten}. " +
+                          $"renderer gone: {lost}. " +
+                          $"(editor={Application.isEditor})", carrier);
+            }
+        }
+
+        /// <summary>The mesh a renderer draws, whichever kind of renderer it is.</summary>
+        static Mesh MeshOf(Renderer r)
+        {
+            if (r is SkinnedMeshRenderer skinned) return skinned.sharedMesh;
+
+            MeshFilter filter = r.GetComponent<MeshFilter>();
+            return filter != null ? filter.sharedMesh : null;
         }
 
         // --- the environment ----------------------------------------------------------------

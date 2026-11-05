@@ -49,7 +49,8 @@
    - 不然就只能把那一段的時間拉到夠長。
 4. **檯燈版、相機版的燈**：用 prefab 自帶的 2 盞燈（Phase0 時漸亮），還是改成控制 S2 場景原本的燈。
 5. **檯燈、相機在房間裡的位置**：兩個起始角落和最後的終點擺在哪。
-6. **旁白音檔**：目前 Phase0/1/2 都是空的，要放正式音檔。
+6. **旁白音檔**：Phase1 / Phase2 都已經放好了。Phase0 現在是「兩個玩家各聽自己的」，還缺正式音檔：
+   檯燈版兩邊都暫時用 `S2_1_B.wav`，相機版兩邊都還是空的。
 
 ---
 
@@ -81,7 +82,16 @@
 3. **放音檔**：
    - Phase1 每個角色各一段：`Phase1 Clip P1`、`Phase1 Clip P2`。
    - Phase2 一段：`Phase2 Clip`。
-   - Phase0 的旁白要放在 `OA_Lamp_Phase0.playable` / `OA_Camera_Phase0.playable` 的 Audio 軌上。
+   - Phase0 的旁白是**兩軌、每個玩家各聽一軌**：`OA_Lamp_Phase0.playable` /
+     `OA_Camera_Phase0.playable` 上有 `Phase0 VO A`、`Phase0 VO B` 兩條 Audio 軌，各自接到
+     `Controller` 底下掛了 `RoleAudible` 的音源（A 只有玩家1 聽到、B 只有玩家2 聽到）。
+     兩邊放同一段不等於「兩個人一起聽」——那是 Phase2 在做的事。
+   - 這兩軌不要手改：改 `BuildObjectAssembly` 變體表裡的 `phase0ClipA` / `phase0ClipB`，
+     然後跑 `Tools/ObjectAssembly/<變體>/Upgrade Phase 0 Voices`。
+     **不要**對已經放進 MainScene 的 prefab 跑 `Build Demo`：那會重寫 prefab 的 file id，
+     場景裡每個 beat 的覆寫設定會整批掉光。
+   - 兩個玩家的台詞長度不一樣，但 `OAAppearMarker` 只有一個、而且走共用時鐘，
+     所以它要對齊**比較長**的那一段；哪一軌超過了，verify 會自己警告。
 4. **相機版要先有自己的一段 Beat**，再放進去。
 
 ### 接上「完成之後」（建議）

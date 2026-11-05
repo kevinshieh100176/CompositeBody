@@ -61,6 +61,28 @@ namespace CompositeBody.Experience
     [TrackBindingType(typeof(PropPresence))]
     public class PropPresenceTrack : TrackAsset
     {
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Presence before the first clip on this track. 1 -- standing there to begin " +
+                 "with -- is the default and is right for the walls this track was written " +
+                 "for: they are part of the room until something dissolves them.\n\n" +
+                 "SET IT TO 0 FOR A PROP THAT ARRIVES. A group whose first clip is its arrival " +
+                 "is otherwise fully present for every second before that cue -- S3's cardboard " +
+                 "and t-shirt would stand in the room through the whole of S1 and S2 and then " +
+                 "dissolve in on top of themselves. Same field, same meaning and same reason as " +
+                 "<see cref=\"CompositeBody.PointClouds.FigurePresenceTrack.presenceBeforeFirstClip\"/>; " +
+                 "it defaults the other way round here only because the first thing on this " +
+                 "track was a wall.\n\n" +
+                 "The authored value on the component is left alone either way, so the prop " +
+                 "stays visible in the scene view while it is being placed.")]
+        float m_PresenceBeforeFirstClip = 1f;
+
+        /// <summary>Presence before the first clip on this track.</summary>
+        public float presenceBeforeFirstClip
+        {
+            get => m_PresenceBeforeFirstClip;
+            set => m_PresenceBeforeFirstClip = Mathf.Clamp01(value);
+        }
+
         public override Playable CreateTrackMixer(PlayableGraph graph, GameObject go, int inputCount)
         {
             var blocks = new System.Collections.Generic.List<PropPresenceMixer.Block>();
@@ -80,7 +102,9 @@ namespace CompositeBody.Experience
 
             ScriptPlayable<PropPresenceMixer> mixer =
                 ScriptPlayable<PropPresenceMixer>.Create(graph, inputCount);
-            mixer.GetBehaviour().blocks = blocks.ToArray();
+            PropPresenceMixer behaviour = mixer.GetBehaviour();
+            behaviour.blocks = blocks.ToArray();
+            behaviour.beforeFirst = m_PresenceBeforeFirstClip;
             return mixer;
         }
 

@@ -50,10 +50,24 @@ namespace CompositeBody.Interaction.ObjectAssembly
     /// When the halves appear is an <see cref="OAAppearMarker"/> on that asset, read from the asset
     /// and compared with the clock, never delivered as a signal.
     ///
-    /// LINES. Phase 0 is a timeline track (both hear it). Phase 1 is per role and played ONLY on
-    /// the claimant's machine, when the claim arrives; its end is judged by the clock, not
-    /// AudioSource.isPlaying, so a missing clip or a muted device still moves the gate on.
-    /// Phase 2 is heard by both, started from the shared stamp.
+    /// LINES, AND ALL THREE PHASES ARE ASYMMETRIC EXCEPT THE LAST. Phase 0 is TWO timeline tracks,
+    /// "Phase0 VO A" and "Phase0 VO B", bound to two AudioSources that each stand behind a
+    /// <see cref="CompositeBody.Multiplayer.RoleAudible"/> gate: the two players are told different
+    /// things from the beat's first sentence. Timeline knows nothing about players, but every
+    /// machine runs its own copy of this prefab with its own director, so two tracks on two sources
+    /// are already two private decks on each headset and which one is heard is a local mute --
+    /// nothing replicated, and one asset identical on both machines. An unresolved local role mutes
+    /// BOTH, which is why that gate mutes rather than stops: the role often resolves after the beat
+    /// has started, and the right deck has to be able to come back mid-clip.
+    /// Phase 1 is per role too, but played ONLY on the claimant's machine when the claim arrives;
+    /// its end is judged by the clock, not AudioSource.isPlaying, so a missing clip or a muted
+    /// device still moves the gate on. Phase 2 is the one line BOTH players hear, through one
+    /// ungated source, started from the shared stamp.
+    ///
+    /// THE HALVES STILL APPEAR AT ONE TIME for both players -- the OAAppearMarker is on the shared
+    /// clock and has to be, or the two headsets would disagree about the beat. The two phase-0
+    /// lines are different recordings and so different lengths, so the marker belongs at the end of
+    /// the LONGER one; the builder's verify says so when a deck outruns it.
     ///
     /// Lives on an always-active object with a NetworkObject: in-scene NetworkObjects are spawned
     /// once from what is active at synchronization, so a beat root switched on later would never
@@ -84,7 +98,8 @@ namespace CompositeBody.Interaction.ObjectAssembly
         GameObject m_BeatRoot;
 
         [Header("Phase 0")]
-        [SerializeField, Tooltip("Plays OA_Phase0.playable: the Phase 0 VO track and the lights.")]
+        [SerializeField, Tooltip("Plays OA_<Variant>_Phase0.playable: the two role-gated Phase 0 VO " +
+                                 "decks (A is heard by Player 1, B by Player 2) and the lights.")]
         PlayableDirector m_Director;
 
         [SerializeField, Min(0f), Tooltip("When the halves appear if the timeline has no OAAppearMarker.")]

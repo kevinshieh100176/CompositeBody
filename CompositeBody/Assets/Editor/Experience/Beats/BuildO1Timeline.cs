@@ -505,10 +505,20 @@ namespace CompositeBody.Multiplayer.EditorSetup
             Texture baseMap = material.HasProperty("_BaseMap") ? material.GetTexture("_BaseMap") : null;
             string source = baseMap != null ? AssetDatabase.GetAssetPath(baseMap) : null;
 
-            if (string.IsNullOrEmpty(source) || !source.EndsWith(".png"))
+            // PNG OR JPEG. Both, because BuildDissolveMap decodes the file off disk with
+            // Texture2D.LoadImage, which reads either -- the guard was never about what can be
+            // decoded, only about not being handed a .psd or a .tga. S3's Stone arrived as
+            // Rock_Albedo.jpg and was refused by a check that its own loader would have been
+            // perfectly happy with. The output is a PNG whatever went in, so a JPEG source
+            // costs nothing but the one generation of lossy colour it already had.
+            // System.IO.Path spelled out: this class has its own Path(Transform, Transform).
+            string extension = System.IO.Path.GetExtension(source).ToLowerInvariant();
+            bool decodable = extension is ".png" or ".jpg" or ".jpeg";
+
+            if (string.IsNullOrEmpty(source) || !decodable)
             {
                 Debug.LogError($"[O1Timeline] RESULT: FAIL - {material.name}'s base map is " +
-                               $"{(baseMap == null ? "missing" : "not a PNG (" + source + ")")}, " +
+                               $"{(baseMap == null ? "missing" : "not a PNG or JPEG (" + source + ")")}, " +
                                "so there is nothing to write dissolve noise into. The map is " +
                                "decoded from disk; see BuildDissolveMap.");
                 return false;
@@ -517,7 +527,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             // Next to the source, as the cartons' are. Shared by the two roles' materials --
             // same mesh, same base map, so the same pattern, and BuildDissolveMap leaves an
             // existing one alone rather than re-rolling it.
-            string dissolve = source.Substring(0, source.Length - 4) + "_Dissolve.png";
+            string dissolve = source.Substring(0, source.Length - extension.Length) + "_Dissolve.png";
 
             Texture2D map = BuildDissolveMap(source, dissolve);
             if (map == null) return false;
