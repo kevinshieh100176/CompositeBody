@@ -379,9 +379,18 @@ namespace CompositeBody.Interaction.EditorTools
         ///
         /// The held frame still has to be a frame of the beat with nothing fading over it, and
         /// <see cref="CheckGate"/> asserts both. At the top of a beat that comes free: this show's
-        /// fades straddle beat ENDS (S2 -> S3 runs 1176-1186s), never their first second.
+        /// fades straddle beat ENDS (S2 -> S3 runs 996-1006s), never their first second.
         /// </summary>
         static double HoldTimeAfterArm(double armedAt) => armedAt + k_HoldAfterArm;
+
+        /// <summary>
+        /// 986 as '16:26', for log lines that quote a clock time beside the seconds.
+        ///
+        /// Computed rather than written out: the two that were written out both went stale the
+        /// first time S2 was re-cut, and a label naming the wrong minute is worse than no label.
+        /// </summary>
+        static string Clock(double seconds) =>
+            string.Format("{0:0}:{1:00}", System.Math.Floor(seconds / 60.0), System.Math.Floor(seconds % 60.0));
 
         static Bounds WorldBounds(Transform t, Mesh mesh)
         {
@@ -491,7 +500,7 @@ namespace CompositeBody.Interaction.EditorTools
                 Check(dir.GetGenericBinding(cue) as GameObject == cameraBeat, $"'{k_CameraTrackName}' is bound to '{k_CameraBeatRoot}'");
                 TimelineClip clip = cue.GetClips().FirstOrDefault();
                 Check(clip != null && System.Math.Abs(clip.start - k_CameraCueAt) < 0.01,
-                      $"the camera cue starts at {k_CameraCueAt:0}s (17:46)" +
+                      $"the camera cue starts at {k_CameraCueAt:0}s ({Clock(k_CameraCueAt)})" +
                       (clip != null ? $" -- it starts at {clip.start:0.00}s" : ""));
                 Check(clip != null && clip.end >= s23End, $"the camera cue runs to at least the end of S2-3 ({s23End:0}s)");
             }
@@ -511,7 +520,7 @@ namespace CompositeBody.Interaction.EditorTools
             // Home is time-boxed, so its worst case has to fit inside its window.
             double homeWorstCase = HomeWorstCaseEnd(homeAsm, s23Start);
             Check(homeWorstCase <= k_HomeEndsBy,
-                  $"home finishes by {k_HomeEndsBy:0}s (17:33) -- worst case {homeWorstCase:0.0}s " +
+                  $"home finishes by {k_HomeEndsBy:0}s ({Clock(k_HomeEndsBy)}) -- worst case {homeWorstCase:0.0}s " +
                   $"(armed {s23Start:0}s + timeout {homeAsm.timings.timeout:0}s + reveal tail)");
             Check(homeWorstCase <= s23End, $"home finishes inside S2-3 (ends {s23End:0}s)");
 

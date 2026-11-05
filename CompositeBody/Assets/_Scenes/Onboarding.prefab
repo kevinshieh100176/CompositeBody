@@ -6963,8 +6963,9 @@ GameObject:
   m_Component:
   - component: {fileID: 105673057442449695}
   - component: {fileID: 8280200873027568861}
+  - component: {fileID: 6893565549250063174}
   m_Layer: 0
-  m_Name: Cue O-2
+  m_Name: Narration O-2 A
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7082,6 +7083,20 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &6893565549250063174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1707936966521316884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b85621cd838fd0c43a22bdf76319288e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Multiplayer.RoleAudible
+  m_AudibleToRoles: 01000000
+  m_LogChanges: 1
 --- !u!1 &1811098452561164995
 GameObject:
   m_ObjectHideFlags: 0
@@ -15210,6 +15225,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.FootprintRing
   m_Role: 1
+  m_Where: 
   m_Prints:
   - {fileID: 6363124030709510966}
   - {fileID: 907217115556743727}
@@ -21439,6 +21455,150 @@ MonoBehaviour:
   m_DissolveDrift: 0.6
   m_DissolveDir: {x: 0, y: 1, z: 0}
   m_DissolveSpread: 0.08
+--- !u!1 &4749864345124562693
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4015053598096521683}
+  - component: {fileID: 1877307775410871410}
+  - component: {fileID: 6526564649850148248}
+  m_Layer: 0
+  m_Name: Narration O-2 B
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4015053598096521683
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4749864345124562693}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6254438605877975494}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &1877307775410871410
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4749864345124562693}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &6526564649850148248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4749864345124562693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b85621cd838fd0c43a22bdf76319288e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Multiplayer.RoleAudible
+  m_AudibleToRoles: 02000000
+  m_LogChanges: 1
 --- !u!1 &4900509184002613292
 GameObject:
   m_ObjectHideFlags: 0
@@ -27951,6 +28111,7 @@ Transform:
   - {fileID: 1719202497536021629}
   - {fileID: 4721919438054565982}
   - {fileID: 105673057442449695}
+  - {fileID: 4015053598096521683}
   m_Father: {fileID: 2479247107541839382}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6188572966917795617
@@ -29418,140 +29579,22 @@ PlayableDirector:
   m_DirectorUpdateMode: 3
   m_InitialTime: 0
   m_SceneBindings:
-  - key: {fileID: 0}
+  - key: {fileID: -7143046552530788802, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
     value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
+  - key: {fileID: -4852670331365661447, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
     value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
+  - key: {fileID: 997632770734887128, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
     value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
+  - key: {fileID: 1539911561757447041, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
     value: {fileID: 3588635783290177004}
-  - key: {fileID: 0}
+  - key: {fileID: 3599030641509620809, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
     value: {fileID: 8788264943531324136}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 3588635783290177004}
-  - key: {fileID: 0}
-    value: {fileID: 8788264943531324136}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 3588635783290177004}
-  - key: {fileID: 0}
-    value: {fileID: 8788264943531324136}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 3588635783290177004}
-  - key: {fileID: 0}
-    value: {fileID: 8788264943531324136}
-  - key: {fileID: 0}
+  - key: {fileID: -8857418376552767059, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
     value: {fileID: 1468200359000144367}
-  - key: {fileID: 0}
+  - key: {fileID: 7082190241006793779, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
     value: {fileID: 8280200873027568861}
-  - key: {fileID: 0}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: 0}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: 0}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 0}
-    value: {fileID: 3588635783290177004}
-  - key: {fileID: 0}
-    value: {fileID: 8788264943531324136}
-  - key: {fileID: 0}
-    value: {fileID: 1468200359000144367}
-  - key: {fileID: 0}
-    value: {fileID: 8280200873027568861}
-  - key: {fileID: -2107636502980566171, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
-    value: {fileID: 603307582101040375}
-  - key: {fileID: -4067845231112817372, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
-    value: {fileID: 5893575513314128580}
-  - key: {fileID: -3049749479904457843, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
-    value: {fileID: 2095847631130574928}
-  - key: {fileID: 8305663801357927948, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
-    value: {fileID: 3588635783290177004}
-  - key: {fileID: -8921572507160033987, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
-    value: {fileID: 8788264943531324136}
-  - key: {fileID: -3260271420736721455, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
-    value: {fileID: 1468200359000144367}
-  - key: {fileID: -4101585340937321270, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
-    value: {fileID: 8280200873027568861}
+  - key: {fileID: -4349082803521725251, guid: 2990f46dc33ac3e43973a5f28c634195, type: 2}
+    value: {fileID: 1877307775410871410}
   m_ExposedReferences:
     m_References: []
 --- !u!1 &7162823940559604080
@@ -30188,6 +30231,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.FootprintRing
   m_Role: 2
+  m_Where: 
   m_Prints:
   - {fileID: 3083593577728213844}
   - {fileID: 3107115413076161134}
@@ -30354,7 +30398,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1df791b0fbb977c428b566fc1debc625, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.DistantSoundBed
-  m_Bed: {fileID: 2033340635039683857}
+  m_Bed: {fileID: 0}
   m_Clips:
   - {fileID: 8300000, guid: 6cef3ef936eb8c74e9234ddd626a400f, type: 3}
   - {fileID: 8300000, guid: 89cf543a433f31f45812e94fb53b270a, type: 3}
@@ -31836,8 +31880,12 @@ MonoBehaviour:
     - role: 2
       station: {fileID: 3394727634506931638}
       appears: {fileID: 0}
-    line: {fileID: 8300000, guid: 86617bd8d697ff14a8d4eb5c50dc5b0c, type: 3}
-    ownLines: []
+    line: {fileID: 0}
+    ownLines:
+    - role: 1
+      clip: {fileID: 8300000, guid: f62be60ccc4177b4186557f96931180a, type: 3}
+    - role: 2
+      clip: {fileID: 8300000, guid: b1fd06d91ee48c445a6f48b7ca57be6a, type: 3}
     unlocked: 0
     spoken: 0
   - name: T-shirt
@@ -31849,8 +31897,12 @@ MonoBehaviour:
     - role: 2
       station: {fileID: 7409400796521698545}
       appears: {fileID: 2792365377743456241}
-    line: {fileID: 8300000, guid: 3e8cf27975bb5a74c80c23176d69c0e4, type: 3}
-    ownLines: []
+    line: {fileID: 0}
+    ownLines:
+    - role: 1
+      clip: {fileID: 8300000, guid: 05cbe7c5495e4b74c9b4ea517fd3d062, type: 3}
+    - role: 2
+      clip: {fileID: 8300000, guid: fe1d1e33e28eafa4b9ea4ad93cd84bea, type: 3}
     unlocked: 0
     spoken: 0
   - name: Seal the box
@@ -31859,9 +31911,9 @@ MonoBehaviour:
     line: {fileID: 0}
     ownLines:
     - role: 1
-      clip: {fileID: 8300000, guid: 2762cdf43a595124686775e1c22358e1, type: 3}
+      clip: {fileID: 8300000, guid: 68c2d46b3f7a85b40a7e7122c03a88ba, type: 3}
     - role: 2
-      clip: {fileID: 8300000, guid: 12157bb95421ab743afa3d79c3f08b53, type: 3}
+      clip: {fileID: 8300000, guid: 5f1cb797ecc64f648a31609c2be85e62, type: 3}
     unlocked: 0
     spoken: 0
   m_Source: {fileID: 3588322212155150678}

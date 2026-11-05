@@ -8,6 +8,12 @@ namespace CompositeBody.Experience
     /// and too muffled to make out. The script is explicit that the content cannot yet be
     /// understood, so these are deliberately filtered rather than merely quiet.
     ///
+    /// THE BED ITSELF HAS MOVED. <see cref="m_Bed"/> is empty in the onboarding: the room's
+    /// continuous layer is the sea on <see cref="AmbientBed"/>, which is there because it has to
+    /// survive O-1's hold pausing the show and has to fade out into the blackout at 395s. This
+    /// slot stays because a beat may still want a plain bed with neither of those; what this
+    /// component is for now is the distant events.
+    ///
     /// Which clip plays, when, and from where is derived from <see cref="ExperienceClock"/>, so
     /// both headsets hear the same sound from the same direction at the same moment with nothing
     /// sent over the network. The alternative -- each machine rolling its own dice -- would have
@@ -16,7 +22,14 @@ namespace CompositeBody.Experience
     public class DistantSoundBed : MonoBehaviour
     {
         [Header("Bed")]
-        [SerializeField, Tooltip("Looping low ambience. Plays for as long as this object is active.")]
+        [SerializeField, Tooltip("Looping low ambience. Plays for as long as this object is " +
+                                 "active.\n\n" +
+                                 "EMPTY ON PURPOSE in the onboarding, and not something to fix " +
+                                 "by dragging the source back in: the room's bed is the sea on " +
+                                 "AmbientBed now, and the placeholder that used to be here was " +
+                                 "18 dB louder than it. What this component still owns is the " +
+                                 "distant events below. Fill it in for a beat that wants a bed " +
+                                 "of its own and no fades.")]
         AudioSource m_Bed;
 
         [Header("Distant events")]

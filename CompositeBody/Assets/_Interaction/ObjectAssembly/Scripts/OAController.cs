@@ -37,7 +37,10 @@ namespace CompositeBody.Interaction.ObjectAssembly
     ///   their own Phase 1 line and reports "oa.phase1" when it ends) → Linking (both reported:
     ///   tremble + trail) → Joined (join points within <see cref="m_JoinDistance"/>: glide into the
     ///   assembled layout, settle, Phase 2 VO while the object floats to Destination) → Done
-    ///   (<see cref="onCompleted"/>, once, on every machine).
+    ///   (<see cref="onCompleted"/>, once, on every machine). The assembled object is then
+    ///   left to be seen for <see cref="m_DissolveDelay"/> and dissolves away over
+    ///   <see cref="m_DissolveDuration"/>, so a finished beat leaves nothing hanging in the
+    ///   room and the show does not have to switch the prop off behind a blackout.
     ///
     /// EVERYTHING IS A FUNCTION OF SERVER STAMPS. The server decides the transitions and writes a
     /// double server-time stamp for each; every machine draws the beat from "seconds since the
@@ -151,6 +154,15 @@ namespace CompositeBody.Interaction.ObjectAssembly
         [SerializeField, Tooltip("Float easing. Empty = cubic ease-in-out.")]
         AnimationCurve m_FloatCurve = new();
 
+        [Header("End")]
+        [SerializeField, Min(0f), Tooltip("Seconds the assembled object is left to be seen at " +
+                                          "Destination after Phase 2 before it starts dissolving.")]
+        float m_DissolveDelay = 1.5f;
+
+        [SerializeField, Min(0f), Tooltip("Seconds the assembled object takes to dissolve away. " +
+                                          "0 leaves it in the room for the show to switch off.")]
+        float m_DissolveDuration = 2f;
+
         [Header("Events")]
         [Tooltip("Fired once per run on every machine, when Phase 2 has ended.")]
         public UnityEvent onCompleted = new();
@@ -244,6 +256,33 @@ namespace CompositeBody.Interaction.ObjectAssembly
 
         /// <summary>Server time the beat is done, or Unset.</summary>
         public double doneAt => InteractionPhaseClock.IsSet(phase2At) ? phase2At + phase2Length : InteractionPhaseClock.Unset;
+
+        public float dissolveDelay => m_DissolveDelay;
+        public float dissolveDuration => m_DissolveDuration;
+
+        /// <summary>Server time the end-of-beat dissolve starts, or Unset when there is none.</summary>
+        public double dissolveAt => InteractionPhaseClock.IsSet(doneAt) && m_DissolveDuration > 0f
+            ? doneAt + m_DissolveDelay
+            : InteractionPhaseClock.Unset;
+
+        /// <summary>
+        /// How far the end-of-beat dissolve has got, 0..1. Drawn from <see cref="dissolveAt"/>
+        /// rather than from the phase flip, like every other phase here: both headsets dissolve
+        /// on the same frame, and a machine that joins or hitches late lands part-way through it
+        /// instead of finding a whole lamp hanging in the room.
+        /// </summary>
+        public float dissolve01
+        {
+            get
+            {
+                if (!InteractionPhaseClock.IsSet(dissolveAt)) return 0f;
+                float since = InteractionPhaseClock.Since(dissolveAt);
+                return since <= 0f ? 0f : Mathf.Clamp01(since / m_DissolveDuration);
+            }
+        }
+
+        /// <summary>The dissolve is over: the assembled object is drawn no more.</summary>
+        public bool gone => dissolve01 >= 1f;
 
         /// <summary>Seconds from the Phase 0 stamp to the halves appearing (the marker on the timeline).</summary>
         public float appearTime
@@ -682,6 +721,10 @@ namespace CompositeBody.Interaction.ObjectAssembly
             if (IsSpawned && phase >= OAPhase.Phase0 && InteractionPhaseClock.IsSet(m_AppearAt.Value))
                 reveal = Mathf.Clamp01(InteractionPhaseClock.Since(m_AppearAt.Value) / m_RevealDuration);
 
+            // ...and out again once the beat is over, off its own stamp for the same reason.
+            // reveal 0 is BreathingView turning the renderers off, so the dissolve is the end of it.
+            if (reveal > 0f) reveal = Mathf.Min(reveal, 1f - dissolve01);
+
             float shake = 0f;
             if (phase == OAPhase.Linking)
                 shake = Mathf.Lerp(m_LinkShakeFar, m_LinkShakeNear, m_Trail != null ? m_Trail.intensity : 0f);
@@ -859,8 +902,15 @@ namespace CompositeBody.Interaction.ObjectAssembly
                         : $"joined -- phase2, {doneAt - now:0.0}s left";
                     break;
                 case OAPhase.Done:
-                    state.detail = "done -- onCompleted fired";
+                {
+                    float d = dissolve01;
+                    state.detail =
+                        !InteractionPhaseClock.IsSet(dissolveAt) ? "done -- onCompleted fired, no dissolve"
+                        : d <= 0f ? $"done -- dissolving in {dissolveAt - now:0.0}s"
+                        : d < 1f ? $"done -- dissolving, {d * 100f:0}%"
+                        : "done -- dissolved away";
                     break;
+                }
             }
             return state;
         }

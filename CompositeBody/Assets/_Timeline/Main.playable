@@ -24,6 +24,80 @@ MonoBehaviour:
   active: 1
   postPlayback: 2
   directorOnClipEnd: 0
+--- !u!114 &-9005046769336217219
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58f420e5c0de3304e875abb4c98541d9, type: 3}
+  m_Name: FigurePresenceClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceClip
+  template:
+    presence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+--- !u!114 &-8574592254669383016
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58f420e5c0de3304e875abb4c98541d9, type: 3}
+  m_Name: FigurePresenceClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceClip
+  template:
+    presence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!114 &-8414722756854247632
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -70,7 +144,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1187
+    m_Start: 1087
     m_ClipIn: 0
     m_Asset: {fileID: 7322577580900257535}
     m_Duration: 6
@@ -377,6 +451,167 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+--- !u!114 &-7264490797431865333
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82cd92ffc29383742932b27ca414c80f, type: 3}
+  m_Name: Credits
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.PlayableTrack
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips:
+  - m_Version: 1
+    m_Start: 1261
+    m_ClipIn: 0
+    m_Asset: {fileID: 7579522803865525032}
+    m_Duration: 10
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: -7264490797431865333}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: "\u7247\u5C3E \u6A19\u6E96\u5B57"
+  - m_Version: 1
+    m_Start: 1272
+    m_ClipIn: 0
+    m_Asset: {fileID: -3607943547469410701}
+    m_Duration: 28
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: -7264490797431865333}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: "\u7247\u5C3E \u540D\u55AE"
+  m_Markers:
+    m_Objects: []
 --- !u!114 &-7190313411451524504
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -469,26 +704,6 @@ MonoBehaviour:
     m_DisplayName: "S1-5 \u9727\u6C23\u4E4B\u623F\u5DE6"
   m_Markers:
     m_Objects: []
---- !u!114 &-6740622717961474238
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0214422733fcf2f43aecb5ef17275b3d, type: 3}
-  m_Name: FigureRoleDissolveClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigureRoleDissolveClip
-  template:
-    figure: 1
-    ownerAppearsAt: 0
-    ownerLeavesAt: 159
-    otherAppearsAt: 100000
-    otherLeavesAt: 100000
-    appearSeconds: 6
-    leaveSeconds: 10
 --- !u!114 &-6689701293656285256
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -585,43 +800,6 @@ MonoBehaviour:
     volume: 1
     stereoPan: 0
     spatialBlend: 0
---- !u!114 &-6457207172199195095
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
-  m_Name: PropPresenceClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
-  template:
-    presence:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
 --- !u!114 &-6450930531290896546
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -736,7 +914,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1156
+    m_Start: 1056
     m_ClipIn: 0
     m_Asset: {fileID: 4152707322635642140}
     m_Duration: 31
@@ -818,12 +996,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
   m_Name: AudioPlayableAsset
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
-  m_Clip: {fileID: 8300000, guid: 6908291e7bdde264b9d8082f2201b5ac, type: 3}
+  m_Clip: {fileID: 8300000, guid: 5231e631d57007b4b85618ddcef45a9f, type: 3}
   m_Loop: 0
   m_bufferingTime: 0.1
   m_ClipProperties:
     volume: 1
---- !u!114 &-6089396608919239938
+--- !u!114 &-6297636018501841268
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -832,10 +1010,184 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fde0d25a170598d46a0b9dc16b4527a5, type: 3}
-  m_Name: ActivationPlayableAsset
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ActivationPlayableAsset
---- !u!114 &-5986679162743083647
+  m_Script: {fileID: 11500000, guid: cde6917bed2e473ea87329780bdc8232, type: 3}
+  m_Name: "S3-2 A4 T\u6064"
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceTrack
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips:
+  - m_Version: 1
+    m_Start: 1023
+    m_ClipIn: 0
+    m_Asset: {fileID: 5586163213941620093}
+    m_Duration: 8
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: -6297636018501841268}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: 0
+    m_BlendOutDuration: 0
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: "\u805A\u5408"
+  - m_Version: 1
+    m_Start: 1087
+    m_ClipIn: 0
+    m_Asset: {fileID: -9005046769336217219}
+    m_Duration: 6
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: -6297636018501841268}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: 0
+    m_BlendOutDuration: 0
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: "\u6563\u53BB"
+  m_Markers:
+    m_Objects: []
+  m_PresenceBeforeFirstClip: 0
+--- !u!114 &-5761863048562182729
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48853ae485fa386428341ac1ea122570, type: 3}
+  m_Name: ControlPlayableAsset
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ControlPlayableAsset
+  sourceGameObject:
+    exposedName: ea090d3d-1019-4ead-9714-fe88bbed515b
+    defaultValue: {fileID: 0}
+  prefabGameObject: {fileID: 0}
+  updateParticle: 0
+  particleRandomSeed: 9714
+  updateDirector: 1
+  updateITimeControl: 1
+  searchHierarchy: 1
+  active: 1
+  postPlayback: 2
+  directorOnClipEnd: 0
+--- !u!114 &-5655660222861281177
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -872,30 +1224,6 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
---- !u!114 &-5761863048562182729
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 48853ae485fa386428341ac1ea122570, type: 3}
-  m_Name: ControlPlayableAsset
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ControlPlayableAsset
-  sourceGameObject:
-    exposedName: ea090d3d-1019-4ead-9714-fe88bbed515b
-    defaultValue: {fileID: 0}
-  prefabGameObject: {fileID: 0}
-  updateParticle: 0
-  particleRandomSeed: 9714
-  updateDirector: 1
-  updateITimeControl: 1
-  searchHierarchy: 1
-  active: 1
-  postPlayback: 2
-  directorOnClipEnd: 0
 --- !u!114 &-5520251394246962914
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -918,9 +1246,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1187
+    m_Start: 1087
     m_ClipIn: 0
-    m_Asset: {fileID: -6740622717961474238}
+    m_Asset: {fileID: 664205489352875902}
     m_Duration: 169
     m_TimeScale: 1
     m_ParentTrack: {fileID: -5520251394246962914}
@@ -1273,6 +1601,43 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+--- !u!114 &-4273813402178860460
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58f420e5c0de3304e875abb4c98541d9, type: 3}
+  m_Name: FigurePresenceClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceClip
+  template:
+    presence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!114 &-4180060438797719774
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1345,6 +1710,140 @@ MonoBehaviour:
   m_bufferingTime: 0.1
   m_ClipProperties:
     volume: 1
+--- !u!114 &-4031942260907095487
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58f420e5c0de3304e875abb4c98541d9, type: 3}
+  m_Name: FigurePresenceClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceClip
+  template:
+    presence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+--- !u!114 &-3987216052302452573
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c03708148658a5f4abd31d4b756a80a9, type: 3}
+  m_Name: "S3-6 \u8F49\u767D"
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.ScreenFadeClip
+  template:
+    color: {r: 1, g: 1, b: 1, a: 1}
+    alpha:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    lightingLook: 
+    lightingLookBefore: 
+    lightingSwitchAt: 0.5
+--- !u!114 &-3607943547469410701
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17bf4e4cc30dec147a46c89844f097d2, type: 3}
+  m_Name: "\u7247\u5C3E\u5361"
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.CreditsCardClip
+  template:
+    card: 1
+    alpha:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.071428575
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.85714287
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!114 &-3571313428555710449
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1438,6 +1937,18 @@ MonoBehaviour:
   m_Markers:
     m_Objects: []
   m_PostPlaybackState: 3
+--- !u!114 &-3571166771489560422
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fde0d25a170598d46a0b9dc16b4527a5, type: 3}
+  m_Name: ActivationPlayableAsset
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ActivationPlayableAsset
 --- !u!114 &-3516823392755728327
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1531,43 +2042,6 @@ MonoBehaviour:
   m_Markers:
     m_Objects: []
   m_PresenceBeforeFirstClip: 0
---- !u!114 &-3401977169942653047
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
-  m_Name: PropPresenceClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
-  template:
-    presence:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
 --- !u!114 &-3388841622763210484
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1590,9 +2064,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1187
+    m_Start: 1087
     m_ClipIn: 0
-    m_Asset: {fileID: -6089396608919239938}
+    m_Asset: {fileID: 3532306302886446881}
     m_Duration: 169
     m_TimeScale: 1
     m_ParentTrack: {fileID: -3388841622763210484}
@@ -1661,6 +2135,168 @@ MonoBehaviour:
   m_Markers:
     m_Objects: []
   m_PostPlaybackState: 0
+--- !u!114 &-3239843204700521294
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cde6917bed2e473ea87329780bdc8232, type: 3}
+  m_Name: "S3-3 B4 \u77F3\u982D"
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceTrack
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips:
+  - m_Version: 1
+    m_Start: 1058
+    m_ClipIn: 0
+    m_Asset: {fileID: -4031942260907095487}
+    m_Duration: 8
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: -3239843204700521294}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: 0
+    m_BlendOutDuration: 0
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: "\u805A\u5408"
+  - m_Version: 1
+    m_Start: 1087
+    m_ClipIn: 0
+    m_Asset: {fileID: 7247559054457269179}
+    m_Duration: 6
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: -3239843204700521294}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: 0
+    m_BlendOutDuration: 0
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: "\u6563\u53BB"
+  m_Markers:
+    m_Objects: []
+  m_PresenceBeforeFirstClip: 0
 --- !u!114 &-2858086913114569663
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1779,9 +2415,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1187
+    m_Start: 1087
     m_ClipIn: 0
-    m_Asset: {fileID: 8048799052567920543}
+    m_Asset: {fileID: -3571166771489560422}
     m_Duration: 169
     m_TimeScale: 1
     m_ParentTrack: {fileID: -2399468139605753224}
@@ -1884,7 +2520,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1193
+    m_Start: 1093
     m_ClipIn: 0
     m_Asset: {fileID: 844076530853434927}
     m_Duration: 62
@@ -2169,6 +2805,43 @@ MonoBehaviour:
   m_Markers:
     m_Objects: []
   m_PostPlaybackState: 3
+--- !u!114 &-1889672097095795831
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
+  m_Name: PropPresenceClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
+  template:
+    presence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!114 &-1848486626994261622
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -2262,43 +2935,6 @@ MonoBehaviour:
   m_Markers:
     m_Objects: []
   m_PresenceBeforeFirstClip: 0
---- !u!114 &-1780093697260001543
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
-  m_Name: PropPresenceClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
-  template:
-    presence:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
 --- !u!114 &-1705492107693161823
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -2347,10 +2983,10 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 140
+    m_Start: 154
     m_ClipIn: 0
     m_Asset: {fileID: -8414722756854247632}
-    m_Duration: 170
+    m_Duration: 156
     m_TimeScale: 1
     m_ParentTrack: {fileID: -1613485598953949703}
     m_EaseInDuration: 0
@@ -2638,43 +3274,6 @@ MonoBehaviour:
     m_DisplayName: "S1-1 \u7A97\u5167\u7684\u4E16\u754C"
   m_Markers:
     m_Objects: []
---- !u!114 &-929805708667979883
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
-  m_Name: PropPresenceClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
-  template:
-    presence:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
 --- !u!114 &-746880111578437628
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -2697,7 +3296,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1101
+    m_Start: 1001
     m_ClipIn: 0
     m_Asset: {fileID: 2868812381048412910}
     m_Duration: 255
@@ -2771,6 +3370,43 @@ MonoBehaviour:
     volume: 1
     stereoPan: 0
     spatialBlend: 0
+--- !u!114 &-732155866946471307
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
+  m_Name: PropPresenceClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
+  template:
+    presence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!114 &-378038946161934331
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -2957,16 +3593,17 @@ MonoBehaviour:
   - {fileID: 8103683511293952794}
   - {fileID: 3868616036172194424}
   - {fileID: 3920267577464573950}
-  - {fileID: 4587843735091937179}
   - {fileID: 6466681912164817870}
   - {fileID: 6259108196746684416}
-  - {fileID: 4113018485105593818}
   - {fileID: -5520251394246962914}
   - {fileID: -2399468139605753224}
   - {fileID: 4273885513979336892}
   - {fileID: -3388841622763210484}
   - {fileID: 586815031630475715}
   - {fileID: -746880111578437628}
+  - {fileID: -6297636018501841268}
+  - {fileID: -3239843204700521294}
+  - {fileID: -7264490797431865333}
   m_FixedDuration: 0
   m_EditorSettings:
     m_Framerate: 60
@@ -3078,7 +3715,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1101
+    m_Start: 1001
     m_ClipIn: 0
     m_Asset: {fileID: -4160868374187147434}
     m_Duration: 255
@@ -3152,6 +3789,26 @@ MonoBehaviour:
     volume: 1
     stereoPan: 0
     spatialBlend: 0
+--- !u!114 &664205489352875902
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0214422733fcf2f43aecb5ef17275b3d, type: 3}
+  m_Name: FigureRoleDissolveClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigureRoleDissolveClip
+  template:
+    figure: 1
+    ownerAppearsAt: 0
+    ownerLeavesAt: 159
+    otherAppearsAt: 100000
+    otherLeavesAt: 100000
+    appearSeconds: 6
+    leaveSeconds: 10
 --- !u!114 &709330571634569102
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -3188,43 +3845,6 @@ MonoBehaviour:
   active: 1
   postPlayback: 2
   directorOnClipEnd: 0
---- !u!114 &857543901884173644
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 58f420e5c0de3304e875abb4c98541d9, type: 3}
-  m_Name: FigurePresenceClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceClip
-  template:
-    presence:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
 --- !u!114 &924890496311439371
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -3385,7 +4005,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u9ED1\u5834 S1 \u2192 S2"
   - m_Version: 1
-    m_Start: 1096
+    m_Start: 996
     m_ClipIn: 0
     m_Asset: {fileID: -2589479226688002882}
     m_Duration: 10
@@ -3454,9 +4074,9 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u9ED1\u5834 S2 \u2192 S3"
   - m_Version: 1
-    m_Start: 1351
+    m_Start: 1251
     m_ClipIn: 0
-    m_Asset: {fileID: 2225454284610332409}
+    m_Asset: {fileID: -3987216052302452573}
     m_Duration: 5
     m_TimeScale: 1
     m_ParentTrack: {fileID: 924890496311439371}
@@ -3634,43 +4254,6 @@ MonoBehaviour:
   active: 1
   postPlayback: 2
   directorOnClipEnd: 0
---- !u!114 &1245677117732646700
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
-  m_Name: PropPresenceClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
-  template:
-    presence:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
 --- !u!114 &1332931737879284621
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -3707,7 +4290,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1255
+    m_Start: 1155
     m_ClipIn: 0
     m_Asset: {fileID: -1393174704354621721}
     m_Duration: 101
@@ -3777,7 +4360,7 @@ MonoBehaviour:
     m_DisplayName: S3-6
   m_Markers:
     m_Objects: []
---- !u!114 &1777151858551677621
+--- !u!114 &1738247911482640006
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3821,48 +4404,7 @@ MonoBehaviour:
   active: 1
   postPlayback: 2
   directorOnClipEnd: 0
---- !u!114 &2225454284610332409
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c03708148658a5f4abd31d4b756a80a9, type: 3}
-  m_Name: "S3-6 \u8F49\u767D"
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.ScreenFadeClip
-  template:
-    color: {r: 1, g: 1, b: 1, a: 1}
-    alpha:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    lightingLook: 
-    lightingLookBefore: 
-    lightingSwitchAt: 0.5
---- !u!114 &2265100977778733762
+--- !u!114 &2148139557711664931
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3880,7 +4422,7 @@ MonoBehaviour:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0
+        value: 1
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -3889,7 +4431,7 @@ MonoBehaviour:
         outWeight: 0
       - serializedVersion: 3
         time: 1
-        value: 1
+        value: 0
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -3936,7 +4478,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 6329442855393498510}
-    m_Duration: 1101
+    m_Duration: 1001
     m_TimeScale: 1
     m_ParentTrack: {fileID: 2358484649953334909}
     m_EaseInDuration: 0
@@ -4083,6 +4625,43 @@ MonoBehaviour:
   active: 1
   postPlayback: 2
   directorOnClipEnd: 0
+--- !u!114 &2412586767489937357
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
+  m_Name: PropPresenceClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
+  template:
+    presence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!114 &2436440318051954700
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -4132,7 +4711,7 @@ MonoBehaviour:
     m_Start: 773
     m_ClipIn: 0
     m_Asset: {fileID: 7869474700881286198}
-    m_Duration: 328
+    m_Duration: 228
     m_TimeScale: 1
     m_ParentTrack: {fileID: 2603752073804813004}
     m_EaseInDuration: 0
@@ -4242,11 +4821,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
   m_Name: AudioPlayableAsset
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
-  m_Clip: {fileID: 8300000, guid: 54a3404051ddca54180b8c58261d606e, type: 3}
+  m_Clip: {fileID: 8300000, guid: f416eb14929a9e848b6c81288e71541a, type: 3}
   m_Loop: 0
   m_bufferingTime: 0.1
   m_ClipProperties:
     volume: 1
+--- !u!114 &3532306302886446881
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fde0d25a170598d46a0b9dc16b4527a5, type: 3}
+  m_Name: ActivationPlayableAsset
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ActivationPlayableAsset
 --- !u!114 &3667059652299724559
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -4377,7 +4968,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1101
+    m_Start: 1001
     m_ClipIn: 0
     m_Asset: {fileID: 1791000026561131388}
     m_Duration: 20
@@ -4524,9 +5115,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1121
+    m_Start: 1021
     m_ClipIn: 0
-    m_Asset: {fileID: 2265100977778733762}
+    m_Asset: {fileID: -8574592254669383016}
     m_Duration: 8
     m_TimeScale: 1
     m_ParentTrack: {fileID: 3868616036172194424}
@@ -4593,9 +5184,9 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1187
+    m_Start: 1087
     m_ClipIn: 0
-    m_Asset: {fileID: 8331706145325690177}
+    m_Asset: {fileID: 2148139557711664931}
     m_Duration: 6
     m_TimeScale: 1
     m_ParentTrack: {fileID: 3868616036172194424}
@@ -4686,9 +5277,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1121
+    m_Start: 1023
     m_ClipIn: 0
-    m_Asset: {fileID: -1780093697260001543}
+    m_Asset: {fileID: -732155866946471307}
     m_Duration: 8
     m_TimeScale: 1
     m_ParentTrack: {fileID: 3920267577464573950}
@@ -4755,174 +5346,12 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1187
+    m_Start: 1087
     m_ClipIn: 0
-    m_Asset: {fileID: 8081640604407890727}
+    m_Asset: {fileID: 2412586767489937357}
     m_Duration: 6
     m_TimeScale: 1
     m_ParentTrack: {fileID: 3920267577464573950}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: 0
-    m_BlendOutDuration: 0
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: "\u6563\u53BB"
-  m_Markers:
-    m_Objects: []
-  m_PresenceBeforeFirstClip: 0
---- !u!114 &4113018485105593818
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fc5efab79c14e6ea077e12471418795, type: 3}
-  m_Name: "S3-3 B4 \u77F3\u982D"
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceTrack
-  m_Version: 3
-  m_AnimClip: {fileID: 0}
-  m_Locked: 0
-  m_Muted: 0
-  m_CustomPlayableFullTypename: 
-  m_Curves: {fileID: 0}
-  m_Parent: {fileID: 11400000}
-  m_Children: []
-  m_Clips:
-  - m_Version: 1
-    m_Start: 1156
-    m_ClipIn: 0
-    m_Asset: {fileID: -5986679162743083647}
-    m_Duration: 8
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 4113018485105593818}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: 0
-    m_BlendOutDuration: 0
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: "\u805A\u5408"
-  - m_Version: 1
-    m_Start: 1187
-    m_ClipIn: 0
-    m_Asset: {fileID: 4736299010279236199}
-    m_Duration: 6
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 4113018485105593818}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: 0
@@ -5130,7 +5559,7 @@ MonoBehaviour:
     m_Start: 767
     m_ClipIn: 0
     m_Asset: {fileID: -282873185093249698}
-    m_Duration: 591
+    m_Duration: 491
     m_TimeScale: 1
     m_ParentTrack: {fileID: 4191782992433335374}
     m_EaseInDuration: 0
@@ -5220,9 +5649,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1187
+    m_Start: 1087
     m_ClipIn: 0
-    m_Asset: {fileID: 1777151858551677621}
+    m_Asset: {fileID: 1738247911482640006}
     m_Duration: 169
     m_TimeScale: 1
     m_ParentTrack: {fileID: 4273885513979336892}
@@ -5315,7 +5744,7 @@ MonoBehaviour:
     m_Start: 767
     m_ClipIn: 0
     m_Asset: {fileID: -2345961924197796187}
-    m_Duration: 334
+    m_Duration: 234
     m_TimeScale: 1
     m_ParentTrack: {fileID: 4283480072697081080}
     m_EaseInDuration: 0
@@ -5383,7 +5812,7 @@ MonoBehaviour:
   m_Markers:
     m_Objects: []
   m_PostPlaybackState: 3
---- !u!114 &4587843735091937179
+--- !u!114 &4691766404311453087
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5392,195 +5821,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fc5efab79c14e6ea077e12471418795, type: 3}
-  m_Name: "S3-2 A4 T\u6064"
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceTrack
-  m_Version: 3
-  m_AnimClip: {fileID: 0}
-  m_Locked: 0
-  m_Muted: 0
-  m_CustomPlayableFullTypename: 
-  m_Curves: {fileID: 0}
-  m_Parent: {fileID: 11400000}
-  m_Children: []
-  m_Clips:
-  - m_Version: 1
-    m_Start: 1121
-    m_ClipIn: 0
-    m_Asset: {fileID: -929805708667979883}
-    m_Duration: 8
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 4587843735091937179}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: 0
-    m_BlendOutDuration: 0
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: "\u805A\u5408"
-  - m_Version: 1
-    m_Start: 1187
-    m_ClipIn: 0
-    m_Asset: {fileID: 1245677117732646700}
-    m_Duration: 6
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 4587843735091937179}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: 0
-    m_BlendOutDuration: 0
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: "\u6563\u53BB"
-  m_Markers:
-    m_Objects: []
-  m_PresenceBeforeFirstClip: 0
---- !u!114 &4718293256260438795
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 48853ae485fa386428341ac1ea122570, type: 3}
-  m_Name: ControlPlayableAsset
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ControlPlayableAsset
-  sourceGameObject:
-    exposedName: f296566d-9e34-4612-953e-a2793cd0b8e4
-    defaultValue: {fileID: 0}
-  prefabGameObject: {fileID: 0}
-  updateParticle: 0
-  particleRandomSeed: 4972
-  updateDirector: 1
-  updateITimeControl: 1
-  searchHierarchy: 1
-  active: 1
-  postPlayback: 2
-  directorOnClipEnd: 0
---- !u!114 &4736299010279236199
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
-  m_Name: PropPresenceClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
+  m_Script: {fileID: 11500000, guid: 58f420e5c0de3304e875abb4c98541d9, type: 3}
+  m_Name: FigurePresenceClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceClip
   template:
     presence:
       serializedVersion: 2
@@ -5606,6 +5849,30 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+--- !u!114 &4718293256260438795
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48853ae485fa386428341ac1ea122570, type: 3}
+  m_Name: ControlPlayableAsset
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ControlPlayableAsset
+  sourceGameObject:
+    exposedName: f296566d-9e34-4612-953e-a2793cd0b8e4
+    defaultValue: {fileID: 0}
+  prefabGameObject: {fileID: 0}
+  updateParticle: 0
+  particleRandomSeed: 4972
+  updateDirector: 1
+  updateITimeControl: 1
+  searchHierarchy: 1
+  active: 1
+  postPlayback: 2
+  directorOnClipEnd: 0
 --- !u!114 &4833490565440741851
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -5631,7 +5898,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 8588301764051655774}
-    m_Duration: 1101
+    m_Duration: 1001
     m_TimeScale: 1
     m_ParentTrack: {fileID: 4833490565440741851}
     m_EaseInDuration: 0
@@ -5723,6 +5990,43 @@ MonoBehaviour:
   active: 1
   postPlayback: 2
   directorOnClipEnd: 0
+--- !u!114 &5586163213941620093
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58f420e5c0de3304e875abb4c98541d9, type: 3}
+  m_Name: FigurePresenceClip
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceClip
+  template:
+    presence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!114 &5649414336597906001
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -5765,7 +6069,7 @@ MonoBehaviour:
     m_Start: 986
     m_ClipIn: 0
     m_Asset: {fileID: -5326651597873573162}
-    m_Duration: 120
+    m_Duration: 20
     m_TimeScale: 1
     m_ParentTrack: {fileID: 5921911920564317879}
     m_EaseInDuration: 0
@@ -6043,9 +6347,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1156
+    m_Start: 1058
     m_ClipIn: 0
-    m_Asset: {fileID: -3401977169942653047}
+    m_Asset: {fileID: -5655660222861281177}
     m_Duration: 8
     m_TimeScale: 1
     m_ParentTrack: {fileID: 6259108196746684416}
@@ -6112,9 +6416,9 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1187
+    m_Start: 1087
     m_ClipIn: 0
-    m_Asset: {fileID: -6457207172199195095}
+    m_Asset: {fileID: -1889672097095795831}
     m_Duration: 6
     m_TimeScale: 1
     m_ParentTrack: {fileID: 6259108196746684416}
@@ -6217,9 +6521,9 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1156
+    m_Start: 1056
     m_ClipIn: 0
-    m_Asset: {fileID: 857543901884173644}
+    m_Asset: {fileID: -4273813402178860460}
     m_Duration: 8
     m_TimeScale: 1
     m_ParentTrack: {fileID: 6466681912164817870}
@@ -6286,9 +6590,9 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: "\u805A\u5408"
   - m_Version: 1
-    m_Start: 1187
+    m_Start: 1087
     m_ClipIn: 0
-    m_Asset: {fileID: 6648104663035970100}
+    m_Asset: {fileID: 4691766404311453087}
     m_Duration: 6
     m_TimeScale: 1
     m_ParentTrack: {fileID: 6466681912164817870}
@@ -6357,7 +6661,7 @@ MonoBehaviour:
   m_Markers:
     m_Objects: []
   m_PresenceBeforeFirstClip: 0
---- !u!114 &6648104663035970100
+--- !u!114 &7247559054457269179
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -6522,6 +6826,62 @@ MonoBehaviour:
     m_DisplayName: "S2-1 \u9580\u95DC\u4E0A\u4E4B\u5F8C"
   m_Markers:
     m_Objects: []
+--- !u!114 &7579522803865525032
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17bf4e4cc30dec147a46c89844f097d2, type: 3}
+  m_Name: "\u7247\u5C3E\u5361"
+  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.CreditsCardClip
+  template:
+    card: 0
+    alpha:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.2
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.8
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
 --- !u!114 &7612700031675089314
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -6763,55 +7123,6 @@ MonoBehaviour:
   active: 1
   postPlayback: 2
   directorOnClipEnd: 0
---- !u!114 &8048799052567920543
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fde0d25a170598d46a0b9dc16b4527a5, type: 3}
-  m_Name: ActivationPlayableAsset
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.ActivationPlayableAsset
---- !u!114 &8081640604407890727
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66ce9fb66bdc0264fa2ce053c41c4d1f, type: 3}
-  m_Name: PropPresenceClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.Experience.PropPresenceClip
-  template:
-    presence:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
 --- !u!114 &8103683511293952794
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -6834,7 +7145,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1101
+    m_Start: 1001
     m_ClipIn: 0
     m_Asset: {fileID: 709330571634569102}
     m_Duration: 256.99999999999886
@@ -6930,7 +7241,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 3752122702127671634}
-    m_Duration: 1101
+    m_Duration: 1001
     m_TimeScale: 1
     m_ParentTrack: {fileID: 8235909957234793915}
     m_EaseInDuration: 0
@@ -7020,7 +7331,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1101
+    m_Start: 1001
     m_ClipIn: 0
     m_Asset: {fileID: -8029500179412681793}
     m_Duration: 256.99999999999886
@@ -7091,43 +7402,6 @@ MonoBehaviour:
   m_Markers:
     m_Objects: []
   m_PostPlaybackState: 3
---- !u!114 &8331706145325690177
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 58f420e5c0de3304e875abb4c98541d9, type: 3}
-  m_Name: FigurePresenceClip
-  m_EditorClassIdentifier: Assembly-CSharp::CompositeBody.PointClouds.FigurePresenceClip
-  template:
-    presence:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
 --- !u!114 &8502849508689402175
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -7150,10 +7424,10 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1101
+    m_Start: 1001
     m_ClipIn: 0
     m_Asset: {fileID: -1064609046201598295}
-    m_Duration: 718.9999999999994
+    m_Duration: 299
     m_TimeScale: 1
     m_ParentTrack: {fileID: 8502849508689402175}
     m_EaseInDuration: 0
@@ -7279,7 +7553,7 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 1121
+    m_Start: 1021
     m_ClipIn: 0
     m_Asset: {fileID: 5040559050309306265}
     m_Duration: 35
@@ -7374,7 +7648,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: -4625864738000784952}
-    m_Duration: 140
+    m_Duration: 154
     m_TimeScale: 1
     m_ParentTrack: {fileID: 9004559270430525790}
     m_EaseInDuration: 0

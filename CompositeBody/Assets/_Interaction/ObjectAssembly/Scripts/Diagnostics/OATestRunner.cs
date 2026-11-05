@@ -18,7 +18,8 @@ namespace CompositeBody.Interaction.ObjectAssembly.Diagnostics
     ///   → the same hand is refused half B → the Phase 1 line ends and is reported by the clock →
     ///   P2 forced (claim + line) → Linking, trail visible → trail intensity rises step by step as
     ///   the halves close → join: grab cancelled, halves in the assembled layout, Phase 2, the
-    ///   object at Destination → onCompleted exactly once → debug rows registered.
+    ///   object at Destination → onCompleted exactly once → the assembled object dissolves
+    ///   away → debug rows registered.
     ///
     /// Started by RunObjectAssemblyTest (Tools/ObjectAssembly/Run Test). Leaves play mode when done
     /// and exits the editor ONLY in batch mode (InteractionTestLog.Finish), so it is safe to run in
@@ -199,6 +200,21 @@ namespace CompositeBody.Interaction.ObjectAssembly.Diagnostics
             if (m_CaptureStills) yield return Capture(controller, Still("done"), controller.destination.position, FrameDistance(a, b));
             yield return new WaitForSeconds(1f);
             log.Check(completed == 1 && controller.completedCount == 1, $"onCompleted fired exactly once ({completed})");
+
+            // ---- the end-of-beat dissolve ----
+            // Waited on the DRAWN value, not on controller.gone: dissolve01 crosses 1 on the
+            // clock during Update, a frame before DriveViews writes that reveal into the view in
+            // LateUpdate -- so "gone" is true for one frame while the mesh is still drawn.
+            // Not asserted as "still whole" first either: the stills above cost frames, so by
+            // here the dissolve may legitimately have started. What matters is that it finishes.
+            if (InteractionPhaseClock.IsSet(controller.dissolveAt))
+            {
+                yield return log.WaitFor(() => a.view.reveal01 <= 0.0001f && b.view.reveal01 <= 0.0001f,
+                                         controller.dissolveDelay + controller.dissolveDuration + 3f,
+                                         "the assembled object dissolved away after the beat");
+                log.Check(controller.gone,
+                          $"the controller agrees the dissolve is over (dissolve01 {controller.dissolve01:0.000})");
+            }
 
             // ---- debug rows ----
             bool row = false, gate = false;

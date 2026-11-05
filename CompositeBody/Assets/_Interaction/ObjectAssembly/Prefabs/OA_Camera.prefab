@@ -1956,6 +1956,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  m_DissolveDelay: 1.5
+  m_DissolveDuration: 2
   onCompleted:
     m_PersistentCalls:
       m_Calls: []

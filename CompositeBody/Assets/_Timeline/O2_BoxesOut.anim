@@ -301,7 +301,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_Presence
-    path: Jacket (Player A)
+    path: T-shirt (Player A)
     classID: 114
     script: {fileID: 11500000, guid: 6db3eeff8b3ab314caec0bb96e3318f5, type: 3}
     flags: 0
@@ -349,7 +349,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_Presence
-    path: Jacket (Player B)
+    path: T-shirt (Player B)
     classID: 114
     script: {fileID: 11500000, guid: 6db3eeff8b3ab314caec0bb96e3318f5, type: 3}
     flags: 0

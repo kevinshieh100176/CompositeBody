@@ -43,17 +43,25 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// mixers cover all 38 minutes, which is why the show's other six figure cues are there too,
     /// under beat-named tracks exactly like these.
     ///
-    /// TWO MECHANISMS, BECAUSE TWO KINDS OF MATERIAL. The 真人 are point clouds and come apart
-    /// through <see cref="PointCloudFigure"/>'s _Dissolve; the carton, the t-shirt and the stone
-    /// are ordinary opaque meshes and come apart through <see cref="PropPresence"/>'s alpha
-    /// clip. Both are driven from a curve on a timeline, so they read as one event.
+    /// TWO MECHANISMS, BECAUSE TWO KINDS OF MATERIAL -- and the line between them moved on
+    /// 2026-11-05. 「幫我把這兩個物件換成點雲版本」: the t-shirt and the stone are point clouds now,
+    /// baked out of their own meshes by BakeScenePointCloud, so the only things
+    /// left on the mesh path are the two cartons. A 真人 and the thing it is carrying therefore
+    /// come apart through the same shader, which is the whole point of the change: a scanned
+    /// body breaking into points while the shirt beside it wipes out through an alpha clip read
+    /// as two different events happening at once.
     ///
-    /// AND THE PROPS NEED A MATERIAL OF THEIR OWN. Their three source materials are opaque with
-    /// alpha clipping off, so neither PropPresence mode would have moved them at all -- and
-    /// Clothes_hanging_clean is shared with four AtmosphericHouse prefabs and Rock with
-    /// SmallProps' own Stone, so they cannot simply be switched over. This builds a copy per
-    /// source material and hands it to <see cref="BuildO1Timeline.MakePropClippable"/>, the same
-    /// treatment, the same noise and the same clip setup O-1's cartons and lamp already get.
+    /// So: the 真人, the t-shirt and the stone dissolve through <see cref="PointCloudFigure"/>'s
+    /// _Dissolve on a <see cref="FigurePresenceTrack"/>; the two cartons dissolve through
+    /// <see cref="PropPresence"/>'s alpha clip on a <see cref="PropPresenceTrack"/>. Both kinds
+    /// are driven from a curve on a timeline against the same two cues, so they still read as
+    /// one event.
+    ///
+    /// AND THE CARTONS NEED A MATERIAL OF THEIR OWN. Their source material is opaque with alpha
+    /// clipping off, so neither PropPresence mode would have moved them at all -- and Cardbox_MAT
+    /// is shared, so it cannot simply be switched over. This builds a copy per source material
+    /// and hands it to <see cref="BuildO1Timeline.MakePropClippable"/>, the same treatment, the
+    /// same noise and the same clip setup O-1's cartons and lamp already get.
     ///
     /// Unity.exe -batchmode -projectPath &lt;path&gt;
     ///   -executeMethod CompositeBody.Multiplayer.EditorSetup.BuildS3Figures.Run
@@ -68,6 +76,23 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// <summary>Seconds for a figure or a prop to gather, and to come apart again.</summary>
         const float k_AppearSeconds = 8f;
         const float k_LeaveSeconds = 8f;
+
+        /// <summary>
+        /// How long after its 真人 a carried object starts to gather.
+        ///
+        /// 「物件晚 2 秒」. The body and the things it brought were cued on the same frame with the
+        /// same curve, so the group arrived as one shape and the carton read as part of the
+        /// figure rather than as something it was carrying. Holding the objects back makes the
+        /// 真人 the thing that arrives and the carton, the t-shirt and the stone the things it
+        /// arrives WITH.
+        ///
+        /// ONLY THE ARRIVAL. The departure at S3-4 is deliberately NOT delayed: that beat is six
+        /// seconds long and the dissolve out is already cut to fit it exactly -- see 'handover'
+        /// -- so two seconds added there would still be fading two seconds into S3-5, which is
+        /// the thing reading the handover off the clip exists to prevent. Both groups therefore
+        /// arrive staggered and leave together.
+        /// </summary>
+        const float k_PropDelaySeconds = 2f;
 
         /// <summary>
         /// How S3 ends. 「在S3-6結束前最後10秒 dissolve out 然後最後5秒screen fade to white」: the two
@@ -129,9 +154,6 @@ namespace CompositeBody.Multiplayer.EditorSetup
             new($"{k_Content}/Figure_A4/Cardboard",
                 "Assets/_models/3d-cardboard-lowpoly/source/Cardbox_MAT.mat",
                 "Assets/Materials/S3Cardboard.mat", "S3-2 A4 紙箱"),
-            new($"{k_Content}/Figure_A4/T-shirt",
-                "Assets/AtmosphericHouse/Materials/Clothes_hanging_clean.mat",
-                "Assets/Materials/S3Tshirt.mat", "S3-2 A4 T恤"),
         };
 
         static readonly Prop[] k_B4Props =
@@ -139,10 +161,92 @@ namespace CompositeBody.Multiplayer.EditorSetup
             new($"{k_Content}/Figure_B4/Cardboard (1)",
                 "Assets/_models/3d-cardboard-lowpoly/source/Cardbox_MAT.mat",
                 "Assets/Materials/S3Cardboard.mat", "S3-3 B4 紙箱"),
-            new($"{k_Content}/Figure_B4/Stone",
-                "Assets/_models/SmallProps/Rock.mat",
-                "Assets/Materials/S3Stone.mat", "S3-3 B4 石頭"),
         };
+
+        /// <summary>
+        /// A prop that is made of points: where it lives, the bake it wears, and the mesh that
+        /// bake was taken from.
+        /// </summary>
+        readonly struct CloudProp
+        {
+            public readonly string path;
+            public readonly string cloud;
+            public readonly string material;
+
+            /// <summary>
+            /// The model's own material, put back on the mesh this cloud replaces.
+            ///
+            /// That mesh is switched off rather than deleted, and while it was a prop this
+            /// builder had swapped it onto a clipped copy whose _BaseMap is a generated dissolve
+            /// map. Nothing drives that copy now, so a renderer left wearing it is a t-shirt
+            /// that comes back wrong the day somebody switches the geometry on to re-bake it.
+            /// </summary>
+            public readonly string sourceMaterial;
+
+            public readonly string trackName;
+
+            public CloudProp(string path, string cloud, string material, string sourceMaterial,
+                             string trackName)
+            {
+                this.path = path;
+                this.cloud = cloud;
+                this.material = material;
+                this.sourceMaterial = sourceMaterial;
+                this.trackName = trackName;
+            }
+        }
+
+        /// <summary>
+        /// THE BAKES ARE ASSETS, NOT SOMETHING THIS BUILDER MAKES. BakeScenePointCloud walks the
+        /// prop's triangles and writes a .ply, and it needs Read/Write on the source FBX to do
+        /// it -- which is off again now, because the show does not need it and it doubles both
+        /// models in memory. Re-baking either cloud therefore takes three things, in this order:
+        /// switch Read/Write back on for the model, switch the hidden source renderer back on
+        /// (the bake skips anything disabled, so it would otherwise report "no readable mesh"),
+        /// and delete the _Points.mat first if the point size is what is being fixed -- the bake
+        /// reuses an existing material and will not repair one.
+        ///
+        /// The spacing is in the PROP'S OWN LOCAL SPACE, which is why the two numbers differ:
+        /// the t-shirt sits at 0.8 and the stone at 3, and both were asked for about 3 mm in the
+        /// room -- the density the two 真人 beside them were captured at.
+        ///
+        ///   T-shirt  -spacing 0.00375  ->  61,687 points
+        ///   Stone    -spacing 0.001    ->   7,310 points
+        /// </summary>
+        static readonly CloudProp[] k_A4Clouds =
+        {
+            new($"{k_Content}/Figure_A4/T-shirt",
+                "Assets/_models/Pointcloud/S3/T-shirt.ply",
+                "Assets/_models/Pointcloud/S3/T-shirt_Points.mat",
+                "Assets/AtmosphericHouse/Materials/Clothes_hanging_clean.mat",
+                "S3-2 A4 T恤"),
+        };
+
+        static readonly CloudProp[] k_B4Clouds =
+        {
+            new($"{k_Content}/Figure_B4/Stone",
+                "Assets/_models/Pointcloud/S3/Stone.ply",
+                "Assets/_models/Pointcloud/S3/Stone_Points.mat",
+                "Assets/_models/SmallProps/Rock.mat",
+                "S3-3 B4 石頭"),
+        };
+
+        /// <summary>
+        /// What a prop cloud looks like standing still and coming apart, IN ROOM METRES.
+        ///
+        /// Everything the point shader does happens in the cloud's own object space, so an
+        /// authored 6 mm of shimmer is 4.8 mm on the t-shirt and 18 mm on the stone unless it is
+        /// divided by the object's scale -- which is what <see cref="TuneCloudProp"/> does with
+        /// these. They are a step down from the 真人's own 12 mm and 0.6 m: a shirt and a stone
+        /// are small things close to the eye, and the figure's amplitude on a 18 cm stone reads
+        /// as the stone boiling.
+        /// </summary>
+        const float k_CloudTurbulence = 0.006f;
+        const float k_CloudDrift = 0.3f;
+        const float k_CloudSpread = 0.04f;
+
+        /// <summary>Shimmer lobes per metre of room, the same grain the 真人 carry.</summary>
+        const float k_CloudGrain = 6f;
 
         [MenuItem("Tools/S-3/Build S3 Figures and Props")]
         public static void Run()
@@ -206,8 +310,22 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
             Debug.Log($"[S3Figures] S3-2 at {s32:F0}s, S3-3 at {s33:F0}s, S3-4 at {s34:F0}s " +
                       $"({s34End - s34:F0}s long); the S3 beats run out at {s3End:F0}s. Read off " +
-                      $"Main's control tracks. Arrivals take {k_AppearSeconds:F0}s, S3-4's " +
+                      $"Main's control tracks. Arrivals take {k_AppearSeconds:F0}s, the carried " +
+                      $"objects starting {k_PropDelaySeconds:F0}s behind their 真人; S3-4's " +
                       $"handover {handover:F0}s.");
+
+            // THE DELAYED ARRIVAL STILL HAS TO FINISH BEFORE THE HANDOVER. A re-cut that brought
+            // S3-4 up close behind S3-3 would otherwise leave an object's arrival clip running
+            // into its own departure clip, and the mixer's "last clip that has started wins"
+            // would resolve that as a prop that half arrives and then snaps.
+            double lastPropIn = System.Math.Max(s32, s33) + k_PropDelaySeconds + k_AppearSeconds;
+            if (lastPropIn > s34)
+            {
+                Debug.LogError($"[S3Figures] RESULT: FAIL - an object cued {k_PropDelaySeconds:F0}s " +
+                               $"behind its 真人 is still gathering at {lastPropIn:F0}s, after " +
+                               $"S3-4 opens at {s34:F0}s. Shorten the delay or the arrival.");
+                return;
+            }
 
             // --- the two 真人 that arrive with things ---------------------------------------
             PointCloudFigure a4 = EnsureFigure($"{k_Content}/Figure_A4");
@@ -219,21 +337,34 @@ namespace CompositeBody.Multiplayer.EditorSetup
             PointCloudFigure b5 = EnsureFigure($"{k_Content}/Figure_B5", startHidden: true);
             if (a5 == null || b5 == null) return;
 
-            // --- their props ----------------------------------------------------------------
+            // --- their props, in two kinds --------------------------------------------------
             var a4Props = new List<PropPresence>();
             var b4Props = new List<PropPresence>();
             if (!EnsureProps(k_A4Props, a4Props)) return;
             if (!EnsureProps(k_B4Props, b4Props)) return;
 
+            var a4Clouds = new List<PointCloudFigure>();
+            var b4Clouds = new List<PointCloudFigure>();
+            if (!EnsureCloudProps(k_A4Clouds, a4Clouds)) return;
+            if (!EnsureCloudProps(k_B4Clouds, b4Clouds)) return;
+
             // --- S3-2: Figure_A4 and its two objects gather, and go again at S3-4 -----------
             Arrive(timeline, director, a4, "S3-2 真人A4", s32, s34, handover);
             for (int i = 0; i < k_A4Props.Length; i++)
-                Arrive(timeline, director, a4Props[i], k_A4Props[i].trackName, s32, s34, handover);
+                Arrive(timeline, director, a4Props[i], k_A4Props[i].trackName,
+                       s32 + k_PropDelaySeconds, s34, handover);
+            for (int i = 0; i < k_A4Clouds.Length; i++)
+                Arrive(timeline, director, a4Clouds[i], k_A4Clouds[i].trackName,
+                       s32 + k_PropDelaySeconds, s34, handover);
 
             // --- S3-3: Figure_B4 and its two objects do the same, one beat later ------------
             Arrive(timeline, director, b4, "S3-3 真人B4", s33, s34, handover);
             for (int i = 0; i < k_B4Props.Length; i++)
-                Arrive(timeline, director, b4Props[i], k_B4Props[i].trackName, s33, s34, handover);
+                Arrive(timeline, director, b4Props[i], k_B4Props[i].trackName,
+                       s33 + k_PropDelaySeconds, s34, handover);
+            for (int i = 0; i < k_B4Clouds.Length; i++)
+                Arrive(timeline, director, b4Clouds[i], k_B4Clouds[i].trackName,
+                       s33 + k_PropDelaySeconds, s34, handover);
 
             // --- S3-4: each player is shown the other one's 真人 ----------------------------
             //
@@ -385,6 +516,219 @@ namespace CompositeBody.Multiplayer.EditorSetup
         }
 
         /// <summary>
+        /// Each cloud prop wearing its bake, with the mesh it replaces switched off behind it.
+        ///
+        /// THE CLOUD GOES ON A CHILD, NOT ON THE PROP ITSELF, and the child is left at identity.
+        /// Two reasons. The t-shirt's geometry is a LODGroup with two renderers under it, so
+        /// there is no single renderer on the prop to take the cloud anyway; and the bake is
+        /// written in THE PROP'S OWN LOCAL SPACE, which an identity child shares exactly -- so
+        /// the points land on top of the mesh they were sampled from, and the shader's dissolve
+        /// origin means the same thing as the authored one on the prop.
+        ///
+        /// THE MESH IS SWITCHED OFF, NOT DELETED. It is the only record in the scene of where
+        /// this prop came from and the only thing a re-bake can read, and a disabled renderer
+        /// costs a frame nothing. It does cost the bake, though: see <see cref="k_A4Clouds"/>.
+        /// </summary>
+        static bool EnsureCloudProps(CloudProp[] props, List<PointCloudFigure> into)
+        {
+            foreach (CloudProp prop in props)
+            {
+                GameObject go = Find(prop.path);
+                if (go == null)
+                {
+                    Debug.LogError($"[S3Figures] RESULT: FAIL - no {prop.path} in MainScene.");
+                    return false;
+                }
+
+                Mesh cloud = LoadCloud(prop.cloud);
+                if (cloud == null)
+                {
+                    Debug.LogError($"[S3Figures] RESULT: FAIL - no point cloud at {prop.cloud}. " +
+                                   "It is a bake, not a source asset -- see k_A4Clouds for how " +
+                                   "to make it again.");
+                    return false;
+                }
+
+                var material = AssetDatabase.LoadAssetAtPath<Material>(prop.material);
+                if (material == null)
+                {
+                    Debug.LogError($"[S3Figures] RESULT: FAIL - no material at {prop.material}, " +
+                                   "so the cloud would render pink.");
+                    return false;
+                }
+
+                // --- the cloud itself -------------------------------------------------------
+                string childName = go.name + "_Points";
+                Transform child = go.transform.Find(childName);
+                if (child == null)
+                {
+                    var made = new GameObject(childName);
+                    Undo.RegisterCreatedObjectUndo(made, "S3 cloud prop");
+                    child = made.transform;
+                    child.SetParent(go.transform, false);
+                    Debug.Log($"[S3Figures] {go.name}: {childName} added.");
+                }
+
+                child.localPosition = Vector3.zero;
+                child.localRotation = Quaternion.identity;
+                child.localScale = Vector3.one;
+                if (!child.gameObject.activeSelf) child.gameObject.SetActive(true);
+
+                // The prop's own layer. A cloud on a layer the headset's camera mask does not
+                // list is invisible in the build and perfectly fine in the editor, which is a
+                // bug this show has already shipped once.
+                child.gameObject.layer = go.layer;
+
+                var filter = child.GetComponent<MeshFilter>();
+                if (filter == null) filter = Undo.AddComponent<MeshFilter>(child.gameObject);
+                filter.sharedMesh = cloud;
+                EditorUtility.SetDirty(filter);
+
+                var renderer = child.GetComponent<MeshRenderer>();
+                if (renderer == null) renderer = Undo.AddComponent<MeshRenderer>(child.gameObject);
+                renderer.sharedMaterial = material;
+                EditorUtility.SetDirty(renderer);
+
+                // --- and the mesh it stands in for ------------------------------------------
+                int hidden = HideSourceGeometry(go, child, prop.sourceMaterial);
+
+                // PropPresence is the other mechanism. Left on, it is a component nothing drives
+                // -- its track is about to be replaced by a FigurePresenceTrack of the same name
+                // -- and the next reader has to work out which of the two is live.
+                var stale = go.GetComponent<PropPresence>();
+                if (stale != null)
+                {
+                    Undo.DestroyObjectImmediate(stale);
+                    Debug.Log($"[S3Figures] {go.name}: PropPresence removed -- it dissolves as a " +
+                              "cloud now.");
+                }
+
+                var figure = go.GetComponent<PointCloudFigure>();
+                if (figure == null)
+                {
+                    figure = Undo.AddComponent<PointCloudFigure>(go);
+                    Debug.Log($"[S3Figures] {go.name}: PointCloudFigure added.");
+                }
+
+                TuneCloudProp(figure, renderer, go.transform, cloud.bounds);
+
+                into.Add(figure);
+                Debug.Log($"[S3Figures] {go.name}: {cloud.vertexCount / 4:N0} points on " +
+                          $"{material.name}, {hidden} source renderer(s) switched off.");
+            }
+
+            return true;
+        }
+
+        /// <summary>The mesh a .ply imported into, or null.</summary>
+        static Mesh LoadCloud(string path)
+        {
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
+                if (asset is Mesh mesh) return mesh;
+            return null;
+        }
+
+        /// <summary>
+        /// The modelled prop behind the cloud, taken out of the frame.
+        ///
+        /// THE LODGROUP HAS TO GO FIRST, and switching the renderers off is not enough on its
+        /// own: a LODGroup owns the enabled flag of every renderer it lists and writes it again
+        /// the moment the camera moves, so the t-shirt would come back the first time anybody
+        /// walked towards it -- in the build, not in the editor, where nothing is culling.
+        /// </summary>
+        static int HideSourceGeometry(GameObject prop, Transform cloud, string sourceMaterial)
+        {
+            foreach (LODGroup group in prop.GetComponentsInChildren<LODGroup>(true))
+            {
+                if (!group.enabled) continue;
+                group.enabled = false;
+                EditorUtility.SetDirty(group);
+            }
+
+            var stock = AssetDatabase.LoadAssetAtPath<Material>(sourceMaterial);
+            int hidden = 0;
+
+            foreach (Renderer r in prop.GetComponentsInChildren<Renderer>(true))
+            {
+                if (r.transform == cloud || r.transform.IsChildOf(cloud)) continue;
+
+                if (stock != null && r.sharedMaterial != stock)
+                {
+                    r.sharedMaterial = stock;
+                    EditorUtility.SetDirty(r);
+                }
+
+                if (!r.enabled) continue;
+                r.enabled = false;
+                EditorUtility.SetDirty(r);
+                hidden++;
+            }
+
+            return hidden;
+        }
+
+        /// <summary>
+        /// A prop cloud's idle and its departure, in the room's metres rather than the object's.
+        ///
+        /// DIVIDED BY THE PROP'S SCALE, every one of them, because the shader works in the
+        /// cloud's object space and these two props are not at scale 1: the t-shirt is at 0.8
+        /// and the stone at 3. One authored pair of numbers would otherwise mean two different
+        /// looks, and the stone -- the one furthest from 1 -- would get three times the shimmer
+        /// and three times the drift of the shirt beside it.
+        ///
+        /// THE DRIFT DIRECTION IS WORLD UP, EXPRESSED LOCALLY. _DissolveDir is an object-space
+        /// vector, and the t-shirt is lying at (90, 157.8, 0) -- its own up points across the
+        /// room. Authored as a plain Vector3.up the shirt's points would leave sideways while
+        /// the 真人 next to it rose, which is the one thing these two cues must not do.
+        ///
+        /// NO REVEAL RADIUS. The presence track writes _Dissolve and nothing else (see
+        /// <see cref="FigurePresenceBehaviour"/>: an arrival is the dissolve running backwards),
+        /// so _Reveal stays at the authored 1 forever -- and at 1 a non-zero radius still fades
+        /// out the points furthest from the reveal origin. The bake's prefab sets one; this
+        /// clears it.
+        /// </summary>
+        static void TuneCloudProp(PointCloudFigure figure, Renderer cloud, Transform prop,
+                                  Bounds bounds)
+        {
+            Vector3 lossy = prop.lossyScale;
+            float scale = Mathf.Max(1e-4f, (Mathf.Abs(lossy.x) + Mathf.Abs(lossy.y) + Mathf.Abs(lossy.z)) / 3f);
+
+            var so = new SerializedObject(figure);
+
+            SerializedProperty bound = so.FindProperty("m_Cloud");
+            if (bound != null) bound.objectReferenceValue = cloud;
+
+            SetFloat(so, "m_Turbulence", k_CloudTurbulence / scale);
+            SetFloat(so, "m_TurbulenceScale", k_CloudGrain * scale);
+
+            SetFloat(so, "m_Reveal", 1f);
+            SetFloat(so, "m_RevealRadius", 0f);
+            SetVector(so, "m_RevealFrom", Vector3.zero);
+
+            // Out of the middle of the object and outwards, which on something this size is the
+            // only reading of 'comes apart' that is not just a translation.
+            SetVector(so, "m_DissolveFrom", bounds.center);
+            SetFloat(so, "m_DissolveRadius", bounds.extents.magnitude);
+            SetFloat(so, "m_DissolveDrift", k_CloudDrift / scale);
+            SetFloat(so, "m_DissolveSpread", k_CloudSpread / scale);
+            SetVector(so, "m_DissolveDir", prop.InverseTransformDirection(Vector3.up).normalized);
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        static void SetFloat(SerializedObject so, string property, float value)
+        {
+            SerializedProperty p = so.FindProperty(property);
+            if (p != null) p.floatValue = value;
+        }
+
+        static void SetVector(SerializedObject so, string property, Vector3 value)
+        {
+            SerializedProperty p = so.FindProperty(property);
+            if (p != null) p.vector3Value = value;
+        }
+
+        /// <summary>
         /// A copy of a prop's own material, made clippable.
         ///
         /// COPIED FROM THE NAMED SOURCE EVERY RUN rather than patched in place, which is what
@@ -435,6 +779,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         static void Arrive(TimelineAsset timeline, PlayableDirector director, PointCloudFigure figure,
                            string trackName, double inAt, double outAt, double outSeconds)
         {
+            DropSuperseded<FigurePresenceTrack>(timeline, director, trackName);
             FigurePresenceTrack track = Rebuild<FigurePresenceTrack>(timeline, trackName);
 
             // ABSENT UNTIL CUED. Without this the mixer answers 0 before the first clip anyway
@@ -456,6 +801,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
         static void Arrive(TimelineAsset timeline, PlayableDirector director, PropPresence prop,
                            string trackName, double inAt, double outAt, double outSeconds)
         {
+            DropSuperseded<PropPresenceTrack>(timeline, director, trackName);
             PropPresenceTrack track = Rebuild<PropPresenceTrack>(timeline, trackName);
 
             // AND HERE IT IS NOT THE DEFAULT. PropPresenceTrack answers 1 before its first clip,
@@ -655,6 +1001,37 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// band: running a builder twice is not meant to be a way of discovering that a track
         /// now has two arrivals on it.
         /// </summary>
+        /// <summary>
+        /// A track of this name that is not the kind being authored, taken off Main.
+        ///
+        /// BECAUSE A PROP CAN CHANGE MECHANISM. 'S3-2 A4 T恤' was a PropPresenceTrack until the
+        /// t-shirt became a point cloud, and <see cref="Rebuild{T}"/> matches on name AND type:
+        /// without this it would leave the old track exactly where it is, with its two clips and
+        /// its binding, and add a second track beside it under the same name. The show would
+        /// have one cue written twice, one of them onto a component that is no longer there, and
+        /// the running order would read as though somebody had run the builder twice.
+        ///
+        /// The binding goes with it. A director keeps bindings keyed on the track asset, and a
+        /// deleted track leaves an entry pointing at nothing that the next scene save writes out.
+        /// </summary>
+        static void DropSuperseded<T>(TimelineAsset timeline, PlayableDirector director, string name)
+            where T : TrackAsset
+        {
+            foreach (TrackAsset t in new List<TrackAsset>(timeline.GetOutputTracks()))
+            {
+                if (t == null || t.name != name || t is T) continue;
+
+                string kind = t.GetType().Name;
+                director.ClearGenericBinding(t);
+                timeline.DeleteTrack(t);
+                EditorUtility.SetDirty(timeline);
+                EditorUtility.SetDirty(director);
+
+                Debug.Log($"[S3Figures] '{name}': a {kind} of the same name was how this cue used " +
+                          "to be driven; removed, so the new one is the only track with that name.");
+            }
+        }
+
         static T Rebuild<T>(TimelineAsset timeline, string name) where T : TrackAsset, new()
         {
             T track = null;
