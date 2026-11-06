@@ -229,7 +229,7 @@ namespace CompositeBody.Interaction.ObjectAssembly.EditorTools
         /// WHY THIS IS NOT JUST "Build Demo" AGAIN. The full build writes the prefab from a fresh
         /// hierarchy through SaveAsPrefabAssetAndConnect, which hands every object in it a new
         /// local file id. MainScene carries these two prefabs as instances with per-beat overrides
-        /// on their controllers -- m_BeatRoot, m_Phase1ClipP1/P2, m_Phase2Clip, the onCompleted
+        /// on their controllers -- m_BeatRoot, m_Phase1ClipP1/P2, m_Phase2ClipP1/P2, the onCompleted
         /// call -- and every one of those overrides is addressed BY that file id. Rebuilding the
         /// prefab to add two speakers would therefore silently drop the whole S2 integration, and
         /// the first sign of it would be a beat that never starts in the venue. This touches only

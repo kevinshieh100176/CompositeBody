@@ -3,8 +3,8 @@ using UnityEngine;
 namespace CompositeBody.Experience
 {
     /// <summary>
-    /// A looping sound bed that belongs to a STRETCH of the show rather than to a clip on it --
-    /// the sea under the whole onboarding room, O-0 through O-2.
+    /// A looping sound bed that belongs to a ROOM rather than to a clip on the show -- the sea
+    /// under the onboarding, O-0 through O-2, and the music under S2.
     ///
     /// WHY THIS IS NOT AN AudioTrack. A gated beat does not end after an authored number of
     /// seconds; it ends when both players have done the thing, and
@@ -16,54 +16,75 @@ namespace CompositeBody.Experience
     /// onboarding must not say. So the bed is an AudioSource in the scene, outside the graph the
     /// hold pauses, and it keeps sounding through the wait.
     ///
-    /// Same shape as <see cref="DistantSoundBed"/>, which already keeps O-0's low ambience off
+    /// Same shape as <see cref="DistantSoundBed"/>, which already keeps the distant events off
     /// the timeline for the same reason. This one adds the envelope.
     ///
-    /// THE ENVELOPE IS A FUNCTION OF SHOW TIME, not an animation started by an event. The fades
-    /// are authored in the same numbers as the running order -- the blackout that ends the
-    /// onboarding is at 395s, so that is where the sea starts leaving -- and both headsets
-    /// compute the level from the clock they already agree on, so neither can end up a second
-    /// ahead of the other in a blackout. A scrub, a jump and a late joiner all land on the right
-    /// level for where the playhead actually is, which is the argument
+    /// TWO KINDS OF ROOM, AND THEY ARRIVE ON DIFFERENT CLOCKS. The onboarding room is older than
+    /// the show: the players are standing in it through the lobby and the calibration, before
+    /// staff press start, and the sea is what tells them the place has a size. A bed like that
+    /// comes up on its own wall clock the moment it wakes up and does not wait for a show time
+    /// that is pinned at 0 until the show is started -- <see cref="m_InAt"/> negative.
+    ///
+    /// A room the show walks INTO is the other case. S2 begins at 767s, inside the blackout that
+    /// closes S1, and its music must not be audible over the end of S1's narration a moment
+    /// earlier. There is no wall clock that knows where that is; only show time does. So
+    /// <see cref="m_InAt"/> set to a show time puts the arrival on the same clock as the
+    /// departure, and the bed is silent until the show reaches the section it belongs to.
+    ///
+    /// The departure is always show time, for both kinds.
+    ///
+    /// Leaving is the opposite case. The end of the onboarding is a scored moment -- a blackout
+    /// at 395s with S1 opening behind it -- so the fade out is a function of
+    /// <see cref="ShowTimelineDriver.showTime"/>, authored in the same numbers as the running
+    /// order, and both headsets compute it from the clock they already agree on. Neither can end
+    /// up a second ahead of the other in a blackout, and a scrub, a jump or a late joiner lands
+    /// on the level that where-the-playhead-actually-is calls for. That is the argument
     /// <see cref="ScreenFadeBehaviour"/> makes for the alpha it drives.
     ///
-    /// Which also means the envelope FREEZES during a hold, because show time does. That is the
-    /// behaviour you want: a hold inside a fade would otherwise go on fading while the show
-    /// waited. No gate sits inside either window here -- O-1's is at 301s, the fade out starts at
-    /// 395s -- so in practice the hold freezes the bed at full level and the loop runs on.
+    /// Which also means the fade out FREEZES during a hold, because show time does. That is the
+    /// behaviour you want -- a hold inside a fade would otherwise go on fading while the show
+    /// waited -- and no gate sits inside the window here: O-1's is at 301s, the fade out starts
+    /// at 395s. So in practice a hold freezes the bed at full level and the loop runs on.
     ///
-    /// PLAYBACK, HOWEVER, RUNS ON REAL TIME: the AudioSource has its own clock and nothing here
-    /// touches it once it has started. So a hold makes audio time and show time diverge -- 90
-    /// seconds of waiting puts the file 90 seconds further in than the show is -- and this does
-    /// NOT seek to close the gap. A seek on a bed is an audible click, and where a field
-    /// recording of the sea happens to be is not something an audience can be wrong about.
-    /// <see cref="AudioSource.loop"/> covers running past the end of the file.
+    /// PLAYBACK RUNS ON ITS OWN CLOCK and nothing here touches it once it has started. Audio time
+    /// and show time therefore diverge -- by the whole length of the lobby, plus every second of
+    /// every hold -- and this does NOT seek to close the gap. A seek on a bed is an audible
+    /// click, and where a field recording of the sea happens to be is not something an audience
+    /// can be wrong about. The consequence is that the loop point is reached routinely rather
+    /// than exceptionally, which is why the asset is cut as a seamless loop; see
+    /// <c>BuildOnboardingSea</c> for how.
     /// </summary>
     public class AmbientBed : MonoBehaviour
     {
         [SerializeField, Tooltip("The looping source. Left empty, the one on this object is used.")]
         AudioSource m_Source;
 
-        [SerializeField, Range(0f, 1f), Tooltip("Level the bed holds at between the two fades. " +
-                                                "This is the volume knob: the envelope below " +
-                                                "only ever scales it.")]
+        [SerializeField, Range(0f, 1f), Tooltip("Level the bed holds at between arriving and " +
+                                                "leaving. This is the volume knob: the fades " +
+                                                "only ever scale it.")]
         float m_Level = 0.5f;
 
         [Header("In")]
-        [SerializeField, Tooltip("Seconds into the SHOW that the bed starts arriving. 0 is the " +
-                                 "top of the show, which is also while the screen is still " +
-                                 "black -- the script's own first line is 「聲音先於空間」.")]
-        float m_InAt;
+        [SerializeField, Tooltip("Seconds into the SHOW that the bed starts arriving -- for a " +
+                                 "room the show walks into, like S2's music, which must be " +
+                                 "silent until the show gets there.\n\n" +
+                                 "NEGATIVE instead means the bed arrives on this machine's own " +
+                                 "wall clock, from the moment the scene wakes up: the onboarding " +
+                                 "room, which is there before the show is. That is the default.")]
+        float m_InAt = -1f;
 
-        [SerializeField, Min(0f), Tooltip("How long it takes to arrive. Wants to finish before " +
-                                          "the first authored cue, or the bed fades up underneath " +
-                                          "something and reads as a mix error.")]
+        [SerializeField, Min(0f), Tooltip("How long the bed takes to arrive, on whichever clock " +
+                                          "the field above selects -- from the show time it " +
+                                          "names, or from the moment the scene wakes up.\n\n" +
+                                          "0 means it is simply there, at full level, the " +
+                                          "instant it is due.")]
         float m_InSeconds = 8f;
 
-        [Header("Out")]
-        [SerializeField, Tooltip("Seconds into the show that the bed starts leaving. Owned by " +
-                                 "BuildOnboardingSea, which reads it off the blackout clip on " +
-                                 "Main.playable rather than having it typed here.")]
+        [Header("Out -- always on show time")]
+        [SerializeField, Tooltip("Seconds into the SHOW that the bed starts leaving. Owned by " +
+                                 "the builder -- BuildOnboardingSea, BuildS2Music -- which reads " +
+                                 "it off the blackout clip on Main.playable rather than having " +
+                                 "it typed here.")]
         float m_OutAt = 395f;
 
         [SerializeField, Min(0f), Tooltip("How long it takes to leave. Wants to end while the " +
@@ -72,19 +93,19 @@ namespace CompositeBody.Experience
         float m_OutSeconds = 6.7f;
 
         [Header("No show")]
-        [SerializeField, Tooltip("Play flat, with no envelope, when there is no ShowTimelineDriver " +
-                                 "in the scene -- a harness scene, or the room opened on its own " +
-                                 "to listen to it. Off means silent without a show.")]
+        [SerializeField, Tooltip("Keep playing, with no fade out, when there is no " +
+                                 "ShowTimelineDriver in the scene -- a harness scene, or the " +
+                                 "room opened on its own to listen to it. Off means silent " +
+                                 "without a show.")]
         bool m_PlayWithoutShow = true;
 
         float m_Applied;
         bool m_WarnedNoShow;
 
-        // When the show first went missing, or -1 while there is one. See FlatLevel.
-        float m_NoShowSince = -1f;
-
-        /// <summary>How long a missing show is taken for one that has not woken up yet.</summary>
-        const float k_NoShowGrace = 0.5f;
+        // Unscaled time at which the source last started. The arrival is measured from here
+        // rather than from OnEnable so that a bed which comes back -- a staff scrub back into
+        // the onboarding -- arrives again instead of snapping on at full level.
+        float m_SoundingSince;
 
         /// <summary>The level actually being applied, 0 to 1. For the debug panel.</summary>
         public float level => m_Applied;
@@ -92,15 +113,17 @@ namespace CompositeBody.Experience
         /// <summary>True while the source is running, hold or no hold.</summary>
         public bool sounding => m_Source != null && m_Source.isPlaying;
 
-        /// <summary>One line for the debug panel: where the envelope is and whether it sounds.</summary>
+        /// <summary>One line for the debug panel: where the bed is and whether it sounds.</summary>
         public string status
         {
             get
             {
                 if (m_Source == null || m_Source.clip == null) return "ambient bed: no clip";
-                string where = TryShowTime(out float t) ? $"{t:F0}s" : "no show";
-                return $"ambient bed {m_Source.clip.name}: {where}, level {m_Applied:0.00}" +
-                       (sounding ? "" : ", silent");
+                string where = TryShowTime(out float t) ? $"show {t:F0}s" : "no show";
+                string arrival = m_InAt >= 0f ? $"in at {m_InAt:F0}s" : "in on the local clock";
+                return $"ambient bed {m_Source.clip.name}: {where}, {arrival}, " +
+                       $"level {m_Applied:0.00}" +
+                       (sounding ? $", {m_Source.time:F0}s into the loop" : ", silent");
             }
         }
 
@@ -109,9 +132,8 @@ namespace CompositeBody.Experience
             if (m_Source == null) m_Source = GetComponent<AudioSource>();
             if (m_Source == null) return;
 
-            // Not playOnAwake: the bed starts when the envelope opens, which on a show held at 0
-            // for the lobby is when staff press start. Playing from Awake would have the file
-            // minutes in by then, at a level of zero, for nothing.
+            // Not playOnAwake: Update starts it on the first frame anyway, at a level of zero,
+            // and letting it do that keeps one place deciding whether the bed should sound.
             m_Source.playOnAwake = false;
             m_Source.loop = true;
 
@@ -133,12 +155,12 @@ namespace CompositeBody.Experience
         {
             if (m_Source == null || m_Source.clip == null) return;
 
-            float target = m_Level * (TryShowTime(out float show) ? Envelope(show) : FlatLevel());
-
-            if (target <= 0f)
+            float gate = Gate();
+            if (gate <= 0f)
             {
-                // Stopped rather than left playing at zero, so an eight-minute stream is not
-                // decoded for the rest of the show after the onboarding has gone.
+                // Stopped rather than left playing at zero, so a seven-minute stream is not
+                // decoded for the rest of the show after the onboarding has gone -- and, with a
+                // show-time arrival, is not decoded for the half hour BEFORE the section either.
                 if (m_Source.isPlaying) m_Source.Stop();
                 m_Source.volume = 0f;
                 m_Applied = 0f;
@@ -147,16 +169,89 @@ namespace CompositeBody.Experience
 
             if (!m_Source.isPlaying)
             {
-                // From the head of the file, so the sea starts where the recording starts -- its
-                // first two seconds are the quietest part of it, which is what makes the arrival
-                // read as an arrival. A scrub back into the show restarts it the same way.
+                // From the head of the file, and the arrival is timed from here.
                 m_Source.volume = 0f;
                 m_Source.time = 0f;
                 m_Source.Play();
+                m_SoundingSince = Time.unscaledTime;
             }
 
+            float target = m_Level * Mathf.Min(Arrival(), gate);
             m_Source.volume = target;
             m_Applied = target;
+        }
+
+        /// <summary>
+        /// How far into its arrival the bed is, 0 to 1, on this machine's own clock.
+        ///
+        /// Unsynchronised, and that is correct rather than merely tolerable: this runs while the
+        /// two players are in the lobby, which they reach at different moments and sometimes on
+        /// machines that are not talking to each other yet. There is nothing to agree with. By
+        /// the time anything scored happens, both have been at full level for minutes.
+        ///
+        /// Flat 1 when the arrival is on show time, where <see cref="InGateAt"/> shapes it
+        /// instead. Both at once would ramp the bed twice -- the source starts on the frame the
+        /// show-time gate opens, so the local clock would be running the same fade over again --
+        /// and the Min in Update would just pick whichever happened to be slower.
+        /// </summary>
+        float Arrival()
+        {
+            if (m_InAt >= 0f) return 1f;
+            if (m_InSeconds <= 0f) return 1f;
+
+            float since = Time.unscaledTime - m_SoundingSince;
+            if (since >= m_InSeconds) return 1f;
+            return Mathf.SmoothStep(0f, 1f, since / m_InSeconds);
+        }
+
+        /// <summary>
+        /// How much of the bed the show wants right now, 0 to 1: up across the arrival when that
+        /// is on show time, 1 while the section runs, down across the fade out, 0 outside.
+        /// </summary>
+        float Gate() => TryShowTime(out float show) ? GateAt(show) : NoShowGate();
+
+        /// <summary>
+        /// The gate at a given show time. Split out from <see cref="Gate"/> so the envelope can
+        /// be read off at the landmarks -- the gate at 301s, at the start of the blackout, at the
+        /// moment the screen is fully covered -- without a show running to put the playhead there.
+        ///
+        /// Multiplied rather than Min'd: the two ends never overlap on a bed that is worth
+        /// building, and a product keeps the shape honest if somebody ever authors one that does.
+        /// </summary>
+        float GateAt(float show) => InGateAt(show) * OutGateAt(show);
+
+        /// <summary>
+        /// 0 before the bed is due, ramping to 1 across the arrival, 1 after it -- and a flat 1
+        /// at all times when the arrival is on this machine's own clock instead.
+        ///
+        /// Same smoothstep as the way out, and for the same reason.
+        /// </summary>
+        float InGateAt(float show)
+        {
+            if (m_InAt < 0f) return 1f;
+
+            if (show <= m_InAt) return 0f;
+            if (m_InSeconds <= 0f) return 1f;
+            if (show >= m_InAt + m_InSeconds) return 1f;
+
+            return Mathf.SmoothStep(0f, 1f, (show - m_InAt) / m_InSeconds);
+        }
+
+        /// <summary>
+        /// 1 while the show still wants the room, ramping to 0 across the fade out, 0 after it.
+        ///
+        /// Smoothstepped on amplitude rather than ramped linearly -- a linear ramp has a corner
+        /// at each end, and on a bed this long and this broad the corner is what you hear rather
+        /// than the fade. The shape is one call; change it here if the sea wants to leave faster
+        /// than it arrives.
+        /// </summary>
+        float OutGateAt(float show)
+        {
+            if (show <= m_OutAt) return 1f;
+            if (m_OutSeconds <= 0f) return 0f;
+            if (show >= m_OutAt + m_OutSeconds) return 0f;
+
+            return Mathf.SmoothStep(1f, 0f, (show - m_OutAt) / m_OutSeconds);
         }
 
         /// <summary>
@@ -177,65 +272,34 @@ namespace CompositeBody.Experience
                 return false;
             }
 
-            m_NoShowSince = -1f;
             show = driver.showTime;
             return true;
         }
 
         /// <summary>
-        /// What to do with no show driving: nothing for a moment, then the bed flat out.
+        /// What to do with no show driving: keep the room, or nothing.
         ///
-        /// THE GRACE PERIOD IS NOT PAPERING OVER ANYTHING -- it is what keeps the first frame of
-        /// MainScene silent. <see cref="ShowTimelineDriver.Instance"/> is assigned in its Awake,
-        /// and an Awake that has not run yet is indistinguishable here from a scene that has no
-        /// show in it at all. Without the wait, a frame of "no show" at startup would open this
-        /// bed at full level for that frame and then stop it again, which is a click at the top
-        /// of the piece.
+        /// There is no startup race to worry about here, unlike the fade out -- the arrival
+        /// starts at zero either way, so a frame or two before
+        /// <see cref="ShowTimelineDriver"/>'s Awake has run cannot produce a click.
+        ///
+        /// Note that this overrides a show-time arrival as well as the fade out: a section bed
+        /// opened in a harness scene sounds straight away rather than waiting for a show time
+        /// that will never arrive. That is the point of the switch -- somebody wants to hear the
+        /// file -- and the only reason it is worth saying is that it makes the one case where
+        /// this bed is audible outside its own section.
         /// </summary>
-        float FlatLevel()
+        float NoShowGate()
         {
             if (!m_PlayWithoutShow) return 0f;
-
-            if (m_NoShowSince < 0f) m_NoShowSince = Time.unscaledTime;
-            if (Time.unscaledTime - m_NoShowSince < k_NoShowGrace) return 0f;
 
             if (!m_WarnedNoShow)
             {
                 m_WarnedNoShow = true;
                 Debug.Log($"[AmbientBed] {name}: no ShowTimelineDriver in the scene, so the bed " +
-                          "is playing flat with no fades. Fine in a harness scene; in MainScene " +
+                          "arrives and then simply stays. Fine in a harness scene; in MainScene " +
                           "it means the show is not being driven.");
             }
-            return 1f;
-        }
-
-        /// <summary>
-        /// The envelope: silent, up, held, down, silent.
-        ///
-        /// Smoothstepped on amplitude rather than ramped linearly -- a linear ramp has a corner
-        /// at each end, and on a bed this long and this broad the corner is what you hear rather
-        /// than the fade. The shape is one call; change it here if the sea wants to leave faster
-        /// than it arrives.
-        /// </summary>
-        float Envelope(float show)
-        {
-            if (show <= m_InAt) return 0f;
-
-            if (m_InSeconds > 0f && show < m_InAt + m_InSeconds)
-                return Mathf.SmoothStep(0f, 1f, (show - m_InAt) / m_InSeconds);
-
-            // An out that is not after the in is an out that never happens -- which is how you
-            // ask for a bed that just keeps going.
-            if (m_OutAt <= m_InAt) return 1f;
-
-            if (show >= m_OutAt + m_OutSeconds) return 0f;
-
-            if (show > m_OutAt)
-            {
-                if (m_OutSeconds <= 0f) return 0f;
-                return Mathf.SmoothStep(1f, 0f, (show - m_OutAt) / m_OutSeconds);
-            }
-
             return 1f;
         }
     }

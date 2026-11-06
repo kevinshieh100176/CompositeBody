@@ -108,7 +108,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
   m_Name: AudioPlayableAsset
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
-  m_Clip: {fileID: 8300000, guid: 385d8533ea093254e811e1a66b5c5180, type: 3}
+  m_Clip: {fileID: 8300000, guid: b73f1b9531192884b81d67c1a2965589, type: 3}
   m_Loop: 0
   m_bufferingTime: 0.1
   m_ClipProperties:
@@ -389,7 +389,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f10dd60657c6004587f237a7e90f8e4, type: 3}
   m_Name: AudioPlayableAsset
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AudioPlayableAsset
-  m_Clip: {fileID: 8300000, guid: 385d8533ea093254e811e1a66b5c5180, type: 3}
+  m_Clip: {fileID: 8300000, guid: 14425814c077c7442b95a8367922f197, type: 3}
   m_Loop: 0
   m_bufferingTime: 0.1
   m_ClipProperties:

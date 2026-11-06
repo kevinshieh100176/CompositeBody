@@ -122,24 +122,42 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const double k_Between = 1d;
 
         /// <summary>
-        /// List: two up, twenty-two on screen, four down. Fourteen lines of Chinese at about two
-        /// degrees a line; twenty-two seconds is an unhurried read with room to go back to the
-        /// top. The long tail out is the piece ending rather than a card changing.
+        /// List: two up, twenty-two on screen, four down. Fifteen lines of Chinese at about two
+        /// degrees a line; twenty-two seconds is a steady read with a little room to go back to
+        /// the top. The long tail out is the piece ending rather than a card changing.
+        ///
+        /// The 1106 artwork added two lines -- 演員 and 改編文本 -- to the thirteen that were
+        /// here, so the same twenty-two seconds is now about 1.5 seconds a line rather than 1.7.
+        /// Widening this clip is safe and costs only show length: the curves are rebuilt from
+        /// whatever duration the clip has, and TrimTail moves the end of the timeline with it.
         /// </summary>
         const double k_ListLength = 28d;
         const float k_ListIn = 2f;
         const float k_ListOut = 4f;
 
         /// <summary>
-        /// How wide the staff list's TYPE should be across the view. Fourteen lines inside 26°
-        /// puts each line a little over two degrees, which is a comfortable read even on a
-        /// headset at the low end of PCVR's angular resolution. See <see cref="ListWidthDegrees"/>
-        /// -- the card itself comes out much wider than this, because the page is mostly margin.
+        /// How wide the staff list's TYPE should be across the view -- the widest LINE of it,
+        /// which is what <see cref="InkWidthFraction"/> measures. Twenty-six degrees puts each
+        /// of the fifteen lines a little under two degrees tall, which is a comfortable read
+        /// even on a headset at the low end of PCVR's angular resolution. The card itself comes
+        /// out much wider than this, because the page is mostly margin: the 1106 artwork's
+        /// widest line covers 32% of it, so the card lands near 72°.
         /// </summary>
         const float k_InkDegrees = 26f;
 
         /// <summary>Used only if the artwork cannot be measured.</summary>
         const float k_ListFallbackDegrees = 70f;
+
+        /// <summary>
+        /// How much taller than the median line a row may be and still count as type.
+        ///
+        /// Half again. The 1106 page is 142 rows a line and 240 for the row carrying the two
+        /// funder marks, which is the gap this has to see; a page whose lines genuinely differ
+        /// by less than this is one where either answer is within a few per cent. Raise it and
+        /// the marks start setting the type size again; lower it much and one line with a
+        /// 《》 or a parenthesis overshooting the others gets thrown out.
+        /// </summary>
+        const float k_BodyLineSlack = 1.5f;
 
         [MenuItem("Tools/Show/Build the End Credits")]
         public static void Run()
@@ -525,7 +543,27 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
         /// <summary>
         /// How much of a card's width its artwork actually marks, 0 to 1: the width of the
-        /// alpha's bounding box over the width of the image.
+        /// widest LINE OF TYPE on it, not of the whole page's bounding box.
+        ///
+        /// THE DIFFERENCE IS THE LOGOS. On a page that is nothing but centred type the two
+        /// measures are the same number -- the staff list this replaced came out at 30.5%
+        /// either way, and so does the logotype, which is one line all by itself. The 1106
+        /// artwork ends on 「補助單位｜」 followed by the 文化部 and 國立臺灣文學館 marks,
+        /// which run most of the way to the right edge and sit well off centre. As one bounding
+        /// box that page is 58% ink; as lines, its widest line is the 48% the logos occupy.
+        /// Either number sizes the MARKS to <see cref="k_InkDegrees"/> and leaves the names at
+        /// 1.1° to 1.3° a line, half the size they had been -- precisely the silent shrink
+        /// <see cref="CardWidthDegrees"/> exists to stop.
+        ///
+        /// SO THE LOGO ROW IS NOT A LINE OF TYPE, and the page says so itself: it is 240 rows
+        /// tall where every line of names is 142. The lines are measured, the median line
+        /// height is taken as what a line of this page's type looks like, and anything more
+        /// than <see cref="k_BodyLineSlack"/> times that is a device on a row of its own rather
+        /// than a line to be read -- free to be wider than the names without dragging them
+        /// down, since the card is centred on the page and the names are centred on it too.
+        ///
+        /// A LINE here is a run of consecutive rows with any ink in them, which is all the
+        /// structure these cards have: leading separates the lines and nothing else does.
         /// </summary>
         static float InkWidthFraction(string path)
         {
@@ -540,22 +578,65 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 Color32[] px = probe.GetPixels32();
                 int w = probe.width, h = probe.height;
-                int min = w, max = -1;
 
-                for (int y = 0; y < h; y++)
+                var widths = new List<int>();
+                var heights = new List<int>();
+
+                int min = w, max = -1, top = -1;
+
+                // One row past the bottom, so artwork that runs to the edge still closes its
+                // last line instead of leaving it unmeasured.
+                for (int y = 0; y <= h; y++)
                 {
-                    int row = y * w;
-                    for (int x = 0; x < w; x++)
+                    bool inked = false;
+
+                    if (y < h)
                     {
-                        // A tenth of full alpha: antialiasing tapers to nothing at a glyph's
-                        // edge, and a threshold of zero measures the taper instead of the type.
-                        if (px[row + x].a < 26) continue;
-                        if (x < min) min = x;
-                        if (x > max) max = x;
+                        int row = y * w;
+                        for (int x = 0; x < w; x++)
+                        {
+                            // A tenth of full alpha: antialiasing tapers to nothing at a
+                            // glyph's edge, and a threshold of zero measures the taper
+                            // instead of the type.
+                            if (px[row + x].a < 26) continue;
+                            inked = true;
+                            if (x < min) min = x;
+                            if (x > max) max = x;
+                        }
                     }
+
+                    if (inked)
+                    {
+                        if (top < 0) top = y;
+                        continue;
+                    }
+
+                    // A blank row ends the line. Bank it and start the next one empty.
+                    if (max >= min)
+                    {
+                        widths.Add(max - min + 1);
+                        heights.Add(y - top);
+                    }
+
+                    min = w;
+                    max = -1;
+                    top = -1;
                 }
 
-                return max < min ? 0f : (max - min + 1) / (float)w;
+                if (widths.Count == 0) return 0f;
+
+                var ordered = new List<int>(heights);
+                ordered.Sort();
+                int body = ordered[ordered.Count / 2];
+                int tallest = Mathf.CeilToInt(body * k_BodyLineSlack);
+
+                int widest = 0;
+                for (int i = 0; i < widths.Count; i++)
+                    if (heights[i] <= tallest && widths[i] > widest)
+                        widest = widths[i];
+
+                // The median line always passes that test, so this cannot come back empty.
+                return widest / (float)w;
             }
             finally { Object.DestroyImmediate(probe); }
         }

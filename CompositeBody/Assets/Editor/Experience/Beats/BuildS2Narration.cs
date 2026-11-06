@@ -11,11 +11,22 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// <summary>
     /// S2's 旁白, one private deck per player: 「玩家a 跟玩家b會各自聽到不同的vo」.
     ///
-    /// S2-1 門關上之後 is the first line on those decks. The two players hear different
-    /// recordings of it -- and A's recording does not exist yet, so BOTH decks are pointed at
-    /// S2_1_B for now. That is deliberate and it is reported: the run ends with a warning naming
-    /// the file both players are hearing, because a placeholder nobody notices is a placeholder
-    /// that ships.
+    /// S2-3｜隱藏的記憶 is the line on those decks: 「s2-3現在會在timeline上播放s2-3-ab讓兩位玩家
+    /// 都聽同一段，我現在想要改成兩個人會聽到不一樣的」(2026-11-06). It used to be a 共同 line, one
+    /// 191-second recording out of both headsets, and it is now one line per player -- which is
+    /// the move this tool is built for and the reason S2 has private decks at all.
+    ///
+    /// NEITHER RECORDING EXISTS YET -- 「我會自己放入音檔」 -- so both decks hold S2-3-AB in the
+    /// meantime and the beat keeps its narration. That is deliberate and it is reported: the run
+    /// ends with a warning naming the file both players are hearing, because a placeholder nobody
+    /// notices is a placeholder that ships. <see cref="k_S23A"/> and <see cref="k_S23B"/> are the
+    /// two lines to change when the files land; nothing else in here knows the difference.
+    ///
+    /// MOVING A LINE BETWEEN THE TWO TABLES IS TWO EDITS, NOT ONE. The clip the 共同 row was
+    /// playing stays in the asset when its table entry goes, and a table that no longer mentions
+    /// it cannot replace it either -- so it keeps playing, over the top of the new private decks,
+    /// and it sounds exactly like the private decks not working. <see cref="k_Retired"/> is the
+    /// second edit.
     ///
     /// WHY THE TRACKS GO ON Main AND NOT ON S2_1.playable. The S1 block already does it this way
     /// -- 'S1 旁白 共同 (SP)' / 'S1 旁白 A (Player1)' / 'S1 旁白 B (Player2)' are tracks on the
@@ -33,9 +44,9 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// one AudioSource per player: a second track for the same player wants a second source, a
     /// second RoleAudible, and a second place to get the role wrong. Add to <see cref="k_Lines"/>.
     ///
-    /// AND A THIRD ROW FOR THE LINES BOTH PLAYERS HEAR. The -AB stems -- S2-2-AB, S2-3-AB,
-    /// S2-6-AB -- are one recording for the room, not a private line that happens to be the same
-    /// on both decks. That distinction is the whole reason they do not go on the two private
+    /// AND A THIRD ROW FOR THE LINES BOTH PLAYERS HEAR. The -AB stems still unplaced -- S2-2-AB
+    /// and S2-6-AB -- are one recording for the room, not a private line that happens to be the
+    /// same on both decks. That distinction is the whole reason they do not go on the two private
     /// rows: a line the room hears would then exist as two clips to keep in step every time the
     /// cue moves, each one standing behind a role gate that can only silence it. 'S2 旁白 共同
     /// (SP)' is the same third row S1 already has -- 'S1 旁白 共同 (SP)' bound to Beat_S1/S1 VO/
@@ -84,8 +95,25 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_S21B = "Assets/_Audio/S2_1_B.wav";
 
         /// <summary>
-        /// S2-3｜隱藏的記憶's line, 191s of it. One recording for the room, so it rides the 共同
-        /// row and not the two private decks -- see the class remarks.
+        /// S2-3｜隱藏的記憶's line, now one per player: 「timeline上播放s2-3-ab讓兩位玩家都聽同一
+        /// 段，改成兩個人會聽到不一樣的」(2026-11-06). So it moved off the 共同 row onto the two
+        /// private decks and <see cref="k_S23AB"/> is only the stand-in both of them hold until
+        /// the recordings land -- 「我會自己放入」 -- which is the same place S2-1 and S3 each
+        /// started from. <see cref="AuthorLines"/> names the file on every run while the two
+        /// paths are equal, because a placeholder nobody notices is a placeholder that ships.
+        ///
+        /// These two lines are the whole of what is left to do: point them at A's and B's own
+        /// recordings and re-run. Nothing else in here knows the difference, and the decks, their
+        /// sources and their role gates are already the finished structure.
+        /// </summary>
+        const string k_S23A = k_S23AB;
+
+        const string k_S23B = k_S23AB;
+
+        /// <summary>
+        /// What S2-3 was: one 191s recording for the room, played out of both headsets off the
+        /// 共同 row. It is kept as the stand-in above rather than deleted, so the beat still has
+        /// narration in it while the two private recordings are outstanding.
         /// </summary>
         const string k_S23AB = "Assets/_Audio/S2-3-AB.wav";
 
@@ -102,27 +130,56 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// <summary>
         /// One row per line: which beat it belongs to, what the clips are called, and what each
         /// player hears. The beat is NAMED rather than timed -- see <see cref="BeatSlot"/>.
+        ///
+        /// S2-1 IS NOT IN HERE ANY MORE, and that is the -80 cut rather than a change of mind
+        /// about the line. The back half moved 80 seconds earlier and the 68-second element at
+        /// 785 collapsed to a 1-second one, which left S2-1 a 767-772s row: 5 seconds wide for a
+        /// 15.5s recording. Its two clips went with that cut. Re-adding the entry would put them
+        /// back at a time the show no longer has -- 10.5 seconds of it over the top of S2-2 and
+        /// S2-3 -- so the row has to be widened, or the line re-cut, before this comes back:
+        ///     ("S2-1", "S2-1", k_S21A, k_S21B),
         /// </summary>
         static readonly (string beat, string label, string lineA, string lineB)[] k_Lines =
         {
-            ("S2-1", "S2-1", k_S21A, k_S21B),
+            ("S2-3", "S2-3", k_S23A, k_S23B),
         };
 
         /// <summary>
         /// The lines both players hear, each cued at an ABSOLUTE time on the running order rather
         /// than at an offset from its beat. That is the difference between this table and
         /// <see cref="k_Lines"/>, and it is not a style choice: 共同 lines are called by the clock
-        /// everyone in the building is reading -- 14:13 -- while a private deck's lines are
-        /// described relative to the block they sit in.
+        /// everyone in the building is reading, while a private deck's lines are described
+        /// relative to the block they sit in.
         ///
-        /// 14:13 is also exactly where S2-3's own row begins, so this line opens the beat instead
-        /// of following <see cref="k_Lead"/> behind it. <see cref="AuthorSharedLines"/> checks
-        /// that against the running order on every run and says so, because the two numbers
-        /// agreeing today is not the same as them being the same number.
+        /// IT IS EMPTY NOW. S2-3 was the one entry -- 14:13 by the clock, which the -80 cut had
+        /// already made 80 seconds stale against a row that begins at 12:53 -- and S2-3 is a line
+        /// the two players no longer share. The row, its source and this table all stay: S2-2-AB
+        /// and S2-6-AB are recorded and unplaced, and this is where they go. The clip S2-3 left
+        /// behind on that row is named in <see cref="k_Retired"/> rather than left to play over
+        /// the two private decks.
         /// </summary>
         static readonly (string beat, string label, string line, double at)[] k_SharedLines =
         {
-            ("S2-3", "S2-3", k_S23AB, 14 * 60 + 13),
+        };
+
+        /// <summary>
+        /// Clips this tool authored on a row it no longer owns, removed on every run.
+        ///
+        /// Moving a line from one table to the other is not enough on its own: the clip the old
+        /// table wrote is in the asset, and a table that no longer mentions it can no longer
+        /// replace it either, so it sits there being played. For S2-3 that is the whole of the
+        /// bug -- the 共同 row's 191 seconds would keep coming out of both headsets underneath
+        /// the two private lines, which is the thing we were asked to stop doing, and it would
+        /// sound exactly like the private decks not working.
+        ///
+        /// Matched by track and display name, so it only ever takes this tool's own clips.
+        /// Entries stay here once the move is done: the row is re-authored from the tables on
+        /// every run, and a retirement that quietly stops being checked is one re-run away from
+        /// coming back.
+        /// </summary>
+        static readonly (string track, string label)[] k_Retired =
+        {
+            (k_TrackSP, "S2-3-AB"),
         };
 
         sealed class Deck
@@ -182,6 +239,11 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 show.SetGenericBinding(deck.track, deck.source);
             }
+
+            // BEFORE the tables are authored, not after: a retired label and a live one can name
+            // the same clip on the same row, and this pass must never be able to take the clip
+            // the authoring pass just wrote.
+            Retire(timeline, decks);
 
             if (!AuthorLines(timeline, decks)) return;
             if (!AuthorSharedLines(timeline, System.Array.Find(decks, d => !d.role.HasValue)))
@@ -267,12 +329,27 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// Found by name and reused, so the clips are replaced without the track object changing.
         /// Bindings key off the track object rather than its name: renaming a track in the
         /// Timeline window cannot break them, but deleting and recreating one would.
+        ///
+        /// A muted row is unmuted, and that is not housekeeping. Both private decks were muted
+        /// while S2-3 was a 共同 line and they had no clips on them -- correct then, and the one
+        /// way this change fails silently now: the clips are in the asset, the bindings are right,
+        /// the role gates are right, the Verify below passes, and neither headset makes a sound.
+        /// Said out loud rather than done quietly, because a row somebody muted on purpose this
+        /// morning is a row they will want to know got turned back on.
         /// </summary>
         static AudioTrack EnsureTrack(TimelineAsset timeline, string name)
         {
             foreach (TrackAsset existing in timeline.GetOutputTracks())
             {
-                if (existing is AudioTrack audio && audio.name == name) return audio;
+                if (existing is not AudioTrack audio || audio.name != name) continue;
+
+                if (audio.muted)
+                {
+                    audio.muted = false;
+                    Debug.Log($"[S2VO] unmuted '{name}'; a muted row is silence with no symptom.");
+                }
+
+                return audio;
             }
 
             var track = timeline.CreateTrack<AudioTrack>(null, name);
@@ -308,7 +385,7 @@ namespace CompositeBody.Multiplayer.EditorSetup
             if (source == null) source = holder.gameObject.AddComponent<AudioSource>();
 
             // playOnAwake would start whatever clip the inspector happens to be holding at show
-            // start, 767 seconds before this deck is due.
+            // start, nearly 13 minutes before this deck is due.
             source.playOnAwake = false;
             source.loop = false;
             source.spatialBlend = 0f;
@@ -378,10 +455,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 if (lineA == lineB)
                 {
                     Debug.LogWarning($"[S2VO] {label}: BOTH PLAYERS HEAR " +
-                                     $"{System.IO.Path.GetFileName(lineA)}. 玩家A 的音檔還沒有，" +
-                                     "所以先用同一個檔案 -- the two decks are wired and private " +
-                                     "already, and pointing k_S21A at A's own recording is the " +
-                                     "whole of what is left to do.");
+                                     $"{System.IO.Path.GetFileName(lineA)}. 兩個人的音檔還沒有，" +
+                                     "所以先用同一個檔案 -- the two decks are wired, private and " +
+                                     $"audible already, so pointing {label}'s two paths at A's " +
+                                     "and B's own recordings is the whole of what is left to do.");
                 }
             }
 
@@ -517,6 +594,40 @@ namespace CompositeBody.Multiplayer.EditorSetup
         }
 
         /// <summary>
+        /// Takes this tool's own clips off the rows it has stopped owning -- see
+        /// <see cref="k_Retired"/> for why that is not the same as removing them from a table.
+        ///
+        /// A retirement that finds nothing is normal and silent: the clip is gone on every run
+        /// after the first. A retirement that names a track this tool does not have is not, and
+        /// it says so rather than passing, because that is how a renamed row leaves an orphan
+        /// playing with nothing watching it.
+        /// </summary>
+        static void Retire(TimelineAsset timeline, Deck[] decks)
+        {
+            foreach ((string trackName, string label) in k_Retired)
+            {
+                Deck deck = System.Array.Find(decks, d => d.trackName == trackName);
+                if (deck?.track == null)
+                {
+                    Debug.LogWarning($"[S2VO] cannot retire '{label}': no '{trackName}' among " +
+                                     "this tool's rows. If that row was renamed, its copy of " +
+                                     "the clip is still in the asset and still playing.");
+                    continue;
+                }
+
+                foreach (TimelineClip old in new List<TimelineClip>(deck.track.GetClips()))
+                {
+                    if (old.displayName != label) continue;
+
+                    Debug.Log($"[S2VO] retired '{label}' from {trackName} " +
+                              $"({old.start:F1}-{old.end:F1}s): that line is not on this row " +
+                              "any more. The wav is untouched.");
+                    timeline.DeleteClip(old);
+                }
+            }
+        }
+
+        /// <summary>
         /// One line, as long as the wav is, replacing any earlier copy of itself.
         ///
         /// Sized to the audio and not to a typed number, so a clip can never be shorter than the
@@ -568,6 +679,16 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 {
                     Debug.LogError($"[S2VO] RESULT: FAIL - '{bound.name}' is not active in the " +
                                    "hierarchy; Timeline cannot sound through a disabled source.");
+                    return false;
+                }
+
+                // EnsureTrack unmutes, so this can only fire if something muted the row between
+                // then and now. Checked anyway: it is the one fault on this path that leaves
+                // every other check in here passing.
+                if (deck.track.muted)
+                {
+                    Debug.LogError($"[S2VO] RESULT: FAIL - '{deck.trackName}' is muted, so its " +
+                                   "clips are in the asset and nothing plays them.");
                     return false;
                 }
 

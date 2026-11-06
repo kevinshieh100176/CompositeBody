@@ -2,6 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Playables;
+using UnityEngine.Serialization;
 using UnityEngine.Timeline;
 using CompositeBody.Diagnostics;
 using CompositeBody.Experience;
@@ -53,7 +54,7 @@ namespace CompositeBody.Interaction.ObjectAssembly
     /// When the halves appear is an <see cref="OAAppearMarker"/> on that asset, read from the asset
     /// and compared with the clock, never delivered as a signal.
     ///
-    /// LINES, AND ALL THREE PHASES ARE ASYMMETRIC EXCEPT THE LAST. Phase 0 is TWO timeline tracks,
+    /// LINES, AND ALL THREE PHASES ARE ASYMMETRIC. Phase 0 is TWO timeline tracks,
     /// "Phase0 VO A" and "Phase0 VO B", bound to two AudioSources that each stand behind a
     /// <see cref="CompositeBody.Multiplayer.RoleAudible"/> gate: the two players are told different
     /// things from the beat's first sentence. Timeline knows nothing about players, but every
@@ -64,8 +65,14 @@ namespace CompositeBody.Interaction.ObjectAssembly
     /// has started, and the right deck has to be able to come back mid-clip.
     /// Phase 1 is per role too, but played ONLY on the claimant's machine when the claim arrives;
     /// its end is judged by the clock, not AudioSource.isPlaying, so a missing clip or a muted
-    /// device still moves the gate on. Phase 2 is the one line BOTH players hear, through one
-    /// ungated source, started from the shared stamp.
+    /// device still moves the gate on. Phase 2 is per role as well -- a closing line each -- but
+    /// unlike Phase 1 it plays on BOTH machines, each picking its own from the local role and
+    /// starting it from the shared stamp through one ungated source. Nothing about the choice is
+    /// replicated: it is the same local pick as Phase 1's, so one asset serves both headsets.
+    /// Its LENGTH, though, is the longer of the two lines on every machine, never the local one.
+    /// The float, the Done flip, onCompleted and the dissolve are all drawn from it, so a length
+    /// that differed per machine would have the two headsets disagree about where the beat has
+    /// got to -- the same reason the Phase 0 appear marker belongs at the end of the longer deck.
     ///
     /// THE HALVES STILL APPEAR AT ONE TIME for both players -- the OAAppearMarker is on the shared
     /// clock and has to be, or the two headsets would disagree about the beat. The two phase-0
@@ -144,10 +151,15 @@ namespace CompositeBody.Interaction.ObjectAssembly
                                           "join reaches the holders before the ownership does.")]
         float m_ReclaimDelay = 0.25f;
 
-        [Header("Phase 2 (both hear it)")]
-        [SerializeField] AudioClip m_Phase2Clip;
+        [Header("Phase 2 (one line each)")]
+        [SerializeField, FormerlySerializedAs("m_Phase2Clip"),
+         Tooltip("Player 1's closing line. Each machine picks by its own role, like Phase 1 -- but " +
+                 "the beat's length is the longer of the two lines on every machine.")]
+        AudioClip m_Phase2ClipP1;
+        [SerializeField, Tooltip("Player 2's closing line.")]
+        AudioClip m_Phase2ClipP2;
         [SerializeField] AudioSource m_Phase2Source;
-        [SerializeField, Min(0.1f), Tooltip("Seconds Phase 2 lasts when there is no clip.")]
+        [SerializeField, Min(0.1f), Tooltip("Seconds Phase 2 lasts when neither role has a clip.")]
         float m_Phase2FallbackSeconds = 6f;
         [SerializeField, Min(0f), Tooltip("Float duration; 0 = the Phase 2 length.")]
         float m_FloatDurationOverride;
@@ -249,8 +261,20 @@ namespace CompositeBody.Interaction.ObjectAssembly
             ? m_JoinedAt.Value + m_GlideDuration + m_SettleDuration
             : InteractionPhaseClock.Unset;
 
-        /// <summary>Seconds Phase 2 (and by default the float) lasts.</summary>
-        public float phase2Length => m_Phase2Clip != null ? m_Phase2Clip.length : m_Phase2FallbackSeconds;
+        /// <summary>
+        /// Seconds Phase 2 (and by default the float) lasts: the LONGER of the two lines, never the
+        /// line this machine happens to be playing. Every machine has to agree about it -- see the
+        /// class summary.
+        /// </summary>
+        public float phase2Length
+        {
+            get
+            {
+                float longest = Mathf.Max(m_Phase2ClipP1 != null ? m_Phase2ClipP1.length : 0f,
+                                          m_Phase2ClipP2 != null ? m_Phase2ClipP2.length : 0f);
+                return longest > 0f ? longest : m_Phase2FallbackSeconds;
+            }
+        }
 
         public float floatDuration => m_FloatDurationOverride > 0f ? m_FloatDurationOverride : phase2Length;
 
@@ -846,15 +870,33 @@ namespace CompositeBody.Interaction.ObjectAssembly
             if (m_Phase2Started || !InteractionPhaseClock.IsSet(start) || InteractionPhaseClock.now < start) return;
 
             m_Phase2Started = true;
+            PlayerRole role = Phase2Role();
+            AudioClip clip = role == PlayerRole.Player2 ? m_Phase2ClipP2 : m_Phase2ClipP1;
             float since = (float)(InteractionPhaseClock.now - start);
-            if (m_Phase2Source != null && m_Phase2Clip != null && since < m_Phase2Clip.length)
+            if (m_Phase2Source != null && clip != null && since < clip.length)
             {
-                m_Phase2Source.clip = m_Phase2Clip;
-                m_Phase2Source.time = Mathf.Clamp(since, 0f, m_Phase2Clip.length - 0.01f);
+                m_Phase2Source.clip = clip;
+                m_Phase2Source.time = Mathf.Clamp(since, 0f, clip.length - 0.01f);
                 m_Phase2Source.Play();
             }
-            Debug.Log($"[OAController] Phase 2 ('{(m_Phase2Clip != null ? m_Phase2Clip.name : "no clip -- " + m_Phase2FallbackSeconds + "s")}'); " +
+            Debug.Log($"[OAController] Phase 2 as {role} ('{(clip != null ? clip.name : "no clip -- silent for " + phase2Length + "s")}'); " +
                       $"floating to '{(m_Destination != null ? m_Destination.name : "nowhere")}' over {floatDuration:0.0}s.", this);
+        }
+
+        /// <summary>
+        /// Which Phase 2 line this machine plays. The local role, and -- when that has not resolved
+        /// yet -- the role of the half this machine claimed, the same fallback Phase 1 uses. Unlike
+        /// Phase 1 this is read once, as the line starts: the length of the beat does not depend on
+        /// it, so a role that resolves mid-line changes nothing but what is heard next time.
+        /// </summary>
+        PlayerRole Phase2Role()
+        {
+            PlayerRole role = InteractionDebug.LocalRole();
+            if (role != PlayerRole.Unassigned) return role;
+
+            OAFragment mine = m_FragmentA != null && m_FragmentA.claimedLocally ? m_FragmentA
+                            : m_FragmentB != null && m_FragmentB.claimedLocally ? m_FragmentB : null;
+            return mine != null ? mine.claimedRole : PlayerRole.Unassigned;
         }
 
         // ---- IDebugInteraction -----------------------------------------------------------------

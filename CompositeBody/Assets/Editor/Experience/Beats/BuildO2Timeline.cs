@@ -31,6 +31,15 @@ namespace CompositeBody.Multiplayer.EditorSetup
     /// before saving. Their debug rows survive it, because InteractionDebugRoster registers
     /// components on inactive objects too.
     ///
+    /// THE LINE IS NOT HERE ANY MORE. 「一邊播放 vo[你有沒有發現]」 used to be an AudioTrack on this
+    /// timeline, and a voice nested under a Control clip is re-seeked every time the master's
+    /// drift trim writes a speed -- at frame rate that is the crackle the venue heard on this
+    /// beat and on no other, because every other line in the show already sits on Main. The two
+    /// per-player decks now live on Main.playable with the rest; see
+    /// <see cref="BuildO2Narration"/>, which is also what re-times them when O-2 is re-cut. So
+    /// this builder authors the room and nothing audible: do not give it a cue track again, and
+    /// nothing it writes can bring the clicks back.
+    ///
     /// Unity.exe -batchmode -quit -projectPath &lt;path&gt;
     ///   -executeMethod CompositeBody.Multiplayer.EditorSetup.BuildO2Timeline.Run
     /// </summary>
@@ -41,29 +50,8 @@ namespace CompositeBody.Multiplayer.EditorSetup
         const string k_GhostClip = "Assets/_Timeline/O2_Ghosts.anim";
         const string k_Prefab = "Assets/_Scenes/Onboarding.prefab";
 
-        /// <summary>
-        /// 「一邊播放 vo[O-AB3_你有沒有發現]」 -- 85.5 seconds over a 90-second beat, so the line is
-        /// very nearly the whole of O-2 and the four scans are paced to it rather than to the
-        /// beat's length.
-        ///
-        /// IT REPLACES S0-2.wav, WHICH IS NOT IN THE PROJECT ANY MORE. This builder has been
-        /// failing on the missing file -- returning before it wrote anything -- so the O_2
-        /// timeline on disk is whatever it was last built as, which is why its duration still
-        /// said 120s. The same failure WireO1Payoff had, for the same reason: a running order
-        /// moved on and the builder kept asking for the file it used to name.
-        ///
-        /// NOT O-2AB_你有沒有發現.wav, which is a 165-second cut of the same line and would be
-        /// most of a minute longer than the beat it has to fit inside.
-        /// </summary>
-        const string k_CueClip = "Assets/_Audio/O-AB3_你有沒有發現.wav";
-
         /// <summary>The object inside the prefab that carries this beat's director.</summary>
         public const string DirectorName = "Timeline O_2";
-
-        const string k_SpeakerName = "Cue O-2";
-
-        /// <summary>What that speaker was called while it played S0-2; renamed in place.</summary>
-        const string k_OldSpeakerName = "Cue S0-2";
 
         /// <summary>The group of four scans, built by <see cref="BuildO2Ghosts"/>.</summary>
         const string k_GhostGroup = "O_2 Ghosts";
@@ -86,7 +74,6 @@ namespace CompositeBody.Multiplayer.EditorSetup
         /// </summary>
         const double k_OrbitsAt = 0.5d;
         const double k_FootprintsAt = 2.5d;
-        const double k_CueAt = 1.5d;
 
         const double k_OrbitFade = 3.5d;
 
@@ -137,13 +124,6 @@ namespace CompositeBody.Multiplayer.EditorSetup
         {
             Debug.Log("[O2Timeline] Starting...");
 
-            var cue = AssetDatabase.LoadAssetAtPath<AudioClip>(k_CueClip);
-            if (cue == null)
-            {
-                Debug.LogError($"[O2Timeline] RESULT: FAIL - no audio clip at {k_CueClip}.");
-                return;
-            }
-
             TimelineAsset timeline = LoadOrCreate();
             if (timeline == null) return;
 
@@ -181,7 +161,6 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 Clear(timeline);
 
                 PlayableDirector director = EnsureDirector(root.transform, timeline);
-                AudioSource speaker = EnsureSpeaker(content);
 
                 BuildActivation(timeline, director, orbits.gameObject, "O-2: orbit lights",
                                 k_OrbitsAt, "Orbits on");
@@ -214,8 +193,6 @@ namespace CompositeBody.Multiplayer.EditorSetup
 
                 if (!BuildBoxesOut(timeline, director, grab)) return;
 
-                BuildCue(timeline, director, speaker, cue);
-
                 // Off in the prefab, because nothing hides them before this beat runs.
                 Hide(orbits.gameObject);
                 Hide(prints.gameObject);
@@ -228,15 +205,10 @@ namespace CompositeBody.Multiplayer.EditorSetup
                 PrefabUtility.SaveAsPrefabAsset(root, k_Prefab);
 
                 Debug.Log($"[O2Timeline] {k_Timeline}: a {k_BeatSeconds}s beat -- orbits at " +
-                          $"{k_OrbitsAt}s, footprints at {k_FootprintsAt}s, {cue.name} " +
-                          $"({cue.length:F1}s) at {k_CueAt}s running to " +
-                          $"{k_CueAt + cue.length:F1}s.");
-
-                if (k_CueAt + cue.length > k_BeatSeconds)
-                    Debug.LogWarning($"[O2Timeline] {cue.name} runs {k_CueAt + cue.length:F1}s " +
-                                     $"into a {k_BeatSeconds}s beat, so the master's Control " +
-                                     "clip stops driving this director before the line is over " +
-                                     "and the last of it is never heard.");
+                          $"{k_OrbitsAt}s, footprints at {k_FootprintsAt}s, scans every " +
+                          $"{k_GhostSlot}s from {k_GhostsAt}s, boxes gone by " +
+                          $"{k_BoxesOutAt + k_BoxesOut}s. No audio: the line is on Main " +
+                          "(Tools > O-2 > Build O-2 Narration).");
 
                 Debug.Log("[O2Timeline] RESULT: PASS");
             }
@@ -296,45 +268,6 @@ namespace CompositeBody.Multiplayer.EditorSetup
             director.extrapolationMode = DirectorWrapMode.Hold;
 
             return director;
-        }
-
-        /// <summary>
-        /// The speaker for S0-2, inside the prefab so the audio track can bind to it. 2D: the cue
-        /// is the room's own sound rather than a thing in it.
-        /// </summary>
-        static AudioSource EnsureSpeaker(Transform content)
-        {
-            Transform speaker = content.Find(k_SpeakerName);
-
-            // RENAMED, NOT REPLACED. This object was 'Cue S0-2' while it played that clip; a
-            // second one beside it would leave an orphan AudioSource in the prefab that nothing
-            // drives and nobody deletes, which is how a scene ends up with three speakers.
-            if (speaker == null)
-            {
-                Transform old = content.Find(k_OldSpeakerName);
-                if (old != null)
-                {
-                    old.name = k_SpeakerName;
-                    speaker = old;
-                    Debug.Log($"[O2Timeline] renamed '{k_OldSpeakerName}' to '{k_SpeakerName}'; " +
-                              "the beat's line is O-AB3 now.");
-                }
-            }
-
-            if (speaker == null)
-            {
-                var go = new GameObject(k_SpeakerName);
-                go.transform.SetParent(content, false);
-                speaker = go.transform;
-                Debug.Log($"[O2Timeline] created '{k_SpeakerName}' in the prefab.");
-            }
-
-            var source = speaker.GetComponent<AudioSource>();
-            if (source == null) source = speaker.gameObject.AddComponent<AudioSource>();
-            source.playOnAwake = false;
-            source.loop = false;
-            source.spatialBlend = 0f;
-            return source;
         }
 
         /// <summary>
@@ -606,19 +539,6 @@ namespace CompositeBody.Multiplayer.EditorSetup
             for (Transform t = target.parent; t != null && t != root; t = t.parent)
                 path = t.name + "/" + path;
             return path;
-        }
-
-        static void BuildCue(TimelineAsset timeline, PlayableDirector director,
-                             AudioSource speaker, AudioClip cue)
-        {
-            var track = timeline.CreateTrack<AudioTrack>(null, "O-2: the line");
-            TimelineClip clip = track.CreateClip<AudioPlayableAsset>();
-            ((AudioPlayableAsset)clip.asset).clip = cue;
-            clip.start = k_CueAt;
-            clip.duration = cue.length;
-            clip.displayName = cue.name;
-
-            director.SetGenericBinding(track, speaker);
         }
     }
 }
